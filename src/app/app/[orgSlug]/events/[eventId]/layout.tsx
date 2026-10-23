@@ -4,6 +4,7 @@ import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { getEvent } from "@/modules/events/queries";
 import { canManageEvents } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
+import { canReadRegistrations } from "@/modules/registrations/roles";
 import { EventSubNav } from "./event-sub-nav";
 import { StatusActions } from "./status-actions";
 
@@ -38,7 +39,7 @@ export default async function EventLayout({
           ) : null}
         </div>
         {canManageEvents(org.role) ? <StatusActions organizationSlug={org.slug} eventId={event.id} status={event.status} /> : null}
-        <EventSubNav base={base} />
+        <EventSubNav base={base} showRegistrations={canReadRegistrations(org.role)} />
       </div>
       {children}
     </div>

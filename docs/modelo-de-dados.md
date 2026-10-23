@@ -45,3 +45,17 @@ Ciclo de status (`private.event_transition_allowed`, espelhado em `src/modules/e
 - `ended` e `cancelled` são finais: o evento, seus ingressos e o formulário deixam de aceitar edição.
 
 Publicar exige término no futuro, local preenchido em evento presencial/híbrido e ao menos um ingresso ativo. A página pública também considera as datas: passado o encerramento das inscrições ela mostra "inscrições encerradas" mesmo que o status ainda seja `published`.
+
+## Fase 3 · inscrições
+
+| Tabela | Conteúdo |
+| --- | --- |
+| `registrations` | um participante por inscrição: evento, ingresso (FK composta com o evento), versão do formulário (`form_id`), status, nome, e-mail (minúsculo), respostas (`answers` jsonb por chave estável), preço aplicado em centavos e moeda, token público aleatório (64 hex), chave de idempotência, origem e datas |
+
+Decisões:
+
+- **Respostas em jsonb, não em `registration_answers`:** cada inscrição aponta para uma versão imutável do formulário, então a chave estável + a versão já dão o significado; uma tabela por resposta só vale quando houver relatório por campo.
+- **Capacidade:** sem contador. A função trava a linha do evento e conta as inscrições ativas (`pending_payment` e `confirmed`) com índice parcial. Simples e provado por teste concorrente; trocar por contador se a contagem ficar lenta em eventos muito grandes.
+- **Duplicidade:** no máximo uma inscrição ativa por e-mail por evento (índice único parcial). Cancelada ou expirada libera o e-mail.
+- **Status:** `pending_payment`, `confirmed`, `cancelled`, `expired`, `refunded`. Nesta fase só `confirmed` é criado; o estado financeiro fica em `payments` (Fase 4).
+- A capacidade do evento não pode ser reduzida abaixo das vagas ocupadas, e ingresso com inscrições não pode ser apagado (desativar).

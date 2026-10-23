@@ -19,6 +19,16 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   SLUG_LOCKED: "O endereço do evento não pode mudar depois da publicação, para não quebrar links já divulgados.",
   IDENTITY_FIELDS_REQUIRED: "O formulário precisa dos campos Nome e E-mail, ativos e obrigatórios.",
   INVALID_FORM: "O formulário enviado é inválido.",
+  CAPACITY_BELOW_REGISTRATIONS: "A capacidade não pode ficar abaixo do número de inscrições já confirmadas.",
+  EVENT_NOT_FOUND: "Evento não encontrado.",
+  REGISTRATION_CLOSED: "As inscrições para este evento não estão abertas.",
+  TICKET_UNAVAILABLE: "Este ingresso não está disponível. Escolha outro.",
+  PAID_TICKET: "Ingressos pagos ainda não estão disponíveis para inscrição online.",
+  FORM_OUTDATED: "O formulário deste evento foi atualizado. Recarregue a página e preencha novamente.",
+  INVALID_ANSWERS: "Há respostas inválidas. Revise o formulário e tente novamente.",
+  ALREADY_REGISTERED: "Já existe uma inscrição ativa com este e-mail para este evento.",
+  SOLD_OUT: "As vagas deste evento se esgotaram.",
+  TICKET_SOLD_OUT: "Este ingresso esgotou. Escolha outro, se houver.",
 };
 
 // Códigos SQLSTATE e exceções lançadas pelas funções do banco, traduzidos para o usuário.
@@ -30,6 +40,8 @@ export function mapDatabaseError(error: { code?: string; message?: string }): Ac
       return error.message?.includes("slug")
         ? { ok: false, fieldErrors: { slug: "Use letras minúsculas, números e hífens." } }
         : { ok: false, message: "Alguns dados são inválidos. Revise os campos e tente novamente." };
+    case "23503":
+      return { ok: false, message: "Este item já tem inscrições ligadas a ele. Desative-o em vez de excluir." };
     case "22P02":
       return { ok: false, message: "Alguns dados são inválidos. Revise os campos e tente novamente." };
     case "P0001":
