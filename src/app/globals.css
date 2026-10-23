@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * Sistema de design do EventHubs. Cores, tipografia, raios e sombras são tokens aqui;
+ * componentes usam somente estes tokens (nunca cores soltas).
+ * Modo escuro ainda não é suportado: o tema é claro com contraste AA verificado.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: #f4f7f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eaf0f3;
+  --color-ink: #13202b;
+  --color-ink-muted: #4f5f6c;
+  --color-line: #d5dee5;
+  --color-line-strong: #b4c2cc;
+
+  --color-brand-50: #eef7f8;
+  --color-brand-100: #d3eaee;
+  --color-brand-500: #17788b;
+  --color-brand-600: #126476;
+  --color-brand-700: #0e5160;
+  --color-brand-900: #0a3640;
+  --color-accent-400: #e7b44a;
+
+  --color-success-bg: #e7f5ee;
+  --color-success-ink: #17603a;
+  --color-warning-bg: #fdf3da;
+  --color-warning-ink: #7a5300;
+  --color-danger-bg: #fdecea;
+  --color-danger-ink: #a11d14;
+  --color-info-bg: #e8f0fb;
+  --color-info-ink: #1b4f9c;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --radius-control: 0.5rem;
+  --radius-card: 0.875rem;
+
+  --shadow-card: 0 1px 2px rgb(19 32 43 / 0.06), 0 1px 1px rgb(19 32 43 / 0.04);
+  --shadow-overlay: 0 12px 32px rgb(19 32 43 / 0.18);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-accent-400);
+    outline-offset: 2px;
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
 }
