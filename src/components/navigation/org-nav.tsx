@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import type { OrganizationSummary } from "@/modules/organizations/queries";
 
 export type NavItem = { label: string; href?: string };
 
@@ -20,45 +22,98 @@ export function buildOrgNav(orgSlug: string): NavItem[] {
   ];
 }
 
-export function OrgNav({ orgSlug }: { orgSlug: string }) {
+// Seletor de organização + seções da organização ativa, na sidebar.
+// A lista vem do servidor (RLS: só organizações em que o usuário é membro ativo); trocar
+// apenas navega para /app/<slug>, e o layout da organização revalida o vínculo no servidor.
+export function OrgNav({ organizations }: { organizations: OrganizationSummary[] }) {
   const pathname = usePathname();
-  const items = buildOrgNav(orgSlug);
+  const router = useRouter();
+  const params = useParams<{ orgSlug?: string }>();
+  const [open, setOpen] = useState(false);
+  const active = organizations.find((org) => org.slug === params.orgSlug);
 
   return (
-    <nav aria-label="Seções da organização" className="-mx-4 overflow-x-auto border-b border-line px-4 sm:-mx-6 sm:px-6">
-      <ul className="flex gap-1">
-        {items.map((item) => {
-          if (!item.href) {
-            return (
-              <li key={item.label} className="shrink-0">
-                <span
-                  aria-disabled="true"
-                  className="inline-flex min-h-11 cursor-not-allowed items-center gap-2 px-3 text-sm text-ink-muted/70"
-                >
-                  {item.label}
-                  <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
-                    Em breve
-                  </span>
-                </span>
-              </li>
-            );
-          }
-          const current = pathname === item.href || (item.href !== `/app/${orgSlug}` && pathname.startsWith(`${item.href}/`));
-          return (
-            <li key={item.label} className="shrink-0">
-              <Link
-                href={item.href}
-                aria-current={current ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-medium ${
-                  current ? "border-brand-600 text-ink" : "border-transparent text-ink-muted hover:text-ink"
-                }`}
-              >
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <div className="grid gap-4 px-3 pb-4 lg:flex-1 lg:content-start lg:overflow-y-auto">
+      <div className="grid gap-1.5 px-2">
+        <label htmlFor="org-switcher" className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+          Organização
+        </label>
+        {organizations.length > 1 || !active ? (
+          <select
+            id="org-switcher"
+            value={active?.slug ?? ""}
+            onChange={(e) => e.target.value && router.push(`/app/${e.target.value}`)}
+            className="min-h-10 w-full rounded-(--radius-control) border border-line-strong bg-surface px-3 text-sm font-medium text-ink"
+          >
+            {!active ? (
+              <option value="" disabled>
+                Selecione…
+              </option>
+            ) : null}
+            {organizations.map((org) => (
+              <option key={org.id} value={org.slug}>
+                {org.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <p id="org-switcher" className="truncate text-sm font-semibold text-ink">
+            {active.name}
+          </p>
+        )}
+        <Link href="/onboarding" className="text-sm font-medium text-brand-700 hover:underline">
+          + Nova organização
+        </Link>
+      </div>
+
+      {active ? (
+        <nav aria-label="Seções da organização">
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+            className="flex min-h-10 w-full items-center justify-between rounded-(--radius-control) px-3 text-sm font-medium text-ink hover:bg-brand-50 lg:hidden"
+          >
+            Menu
+            <span aria-hidden="true">{open ? "▲" : "▼"}</span>
+          </button>
+          <ul className={`${open ? "grid" : "hidden"} gap-0.5 lg:grid`}>
+            {buildOrgNav(active.slug).map((item) => {
+              if (!item.href) {
+                return (
+                  <li key={item.label}>
+                    <span
+                      aria-disabled="true"
+                      className="flex min-h-10 cursor-not-allowed items-center justify-between gap-2 px-3 text-sm text-ink-muted/70"
+                    >
+                      {item.label}
+                      <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+                        Em breve
+                      </span>
+                    </span>
+                  </li>
+                );
+              }
+              const current =
+                pathname === item.href || (item.href !== `/app/${active.slug}` && pathname.startsWith(`${item.href}/`));
+              return (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={current ? "page" : undefined}
+                    className={`flex min-h-10 items-center rounded-(--radius-control) px-3 text-sm font-medium ${
+                      current ? "bg-brand-100 text-brand-900" : "text-ink-muted hover:bg-brand-50 hover:text-ink"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      ) : null}
+    </div>
   );
 }
