@@ -1,36 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EventHubs
 
-## Getting Started
+Plataforma independente para criar eventos, receber inscrições, gerenciar participantes e acompanhar a presença. Multi-organização, com isolamento de dados garantido pelo banco (Row Level Security).
 
-First, run the development server:
+> **Status (Fase 1 — fundação):** autenticação, organizações, papéis, onboarding, painel básico, design system e isolamento de dados estão implementados e testados localmente. Eventos, formulários, inscrições, pagamentos e check-in **não** foram iniciados. Veja [Limitações conhecidas](#limitações-conhecidas).
+
+## Stack
+
+- Next.js 16 (App Router, `proxy.ts`), React 19, TypeScript estrito
+- Supabase Auth e PostgreSQL com RLS, via `@supabase/ssr` e `@supabase/supabase-js`
+- Tailwind CSS v4, validação com Zod 4
+- Vitest (unitários e testes de segurança contra PostgreSQL real)
+- Vercel para hospedagem (ainda não conectada)
+
+## Pré-requisitos
+
+- Node.js 22 LTS ou superior
+- PostgreSQL 16+ local para testes de banco (ou Supabase CLI com Docker)
+- Um projeto Supabase próprio do EventHubs (para executar a aplicação completa)
+
+## Como instalar
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # preencha as variáveis (veja docs/configuracao.md)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Como executar localmente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev          # http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Sem as variáveis `NEXT_PUBLIC_*`, a página inicial funciona, mas rotas privadas respondem 503 e o servidor registra quais variáveis faltam (somente nomes).
 
-## Learn More
+## Banco de dados
 
-To learn more about Next.js, take a look at the following resources:
+As migrations ficam em `supabase/migrations/` e são aplicadas em ordem.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Supabase remoto:** `supabase link --project-ref <ref>` e depois `supabase db push`. Nenhuma migration foi aplicada a um projeto remoto nesta fase.
+- **Banco local de testes:** `TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:54322/postgres npm run db:reset:local`. O script recusa hosts que não sejam loopback, pois apaga e recria os schemas.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Testes
 
-## Deploy on Vercel
+```bash
+npm test              # unitários: slug, redirecionamentos seguros, env, mapeamento de erros
+npm run test:db       # isolamento, RLS, grants e funções (exige TEST_DATABASE_URL)
+npm run lint
+npm run typecheck
+npm run build
+npm run verify        # tudo acima, em sequência
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Os testes de banco usam transações com `set local role` e `request.jwt.claims`, o mesmo mecanismo do Supabase, e fazem rollback ao final. Um teste de mutação confirmou que remover uma política RLS faz os testes de isolamento falharem.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deploy
+
+Veja [docs/deploy.md](docs/deploy.md).
+
+## Documentação
+
+- [Arquitetura](docs/arquitetura.md)
+- [Modelo de dados](docs/modelo-de-dados.md)
+- [Políticas RLS](docs/rls.md)
+- [Segurança e privacidade](docs/seguranca.md)
+- [Configuração (Supabase, Auth, variáveis)](docs/configuracao.md)
+- [Deploy](docs/deploy.md)
+- [Operação e diagnóstico](docs/operacao.md)
+
+## Variáveis de ambiente
+
+| Nome | Uso | Onde |
+|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | URL pública, para e-mails e redirecionamentos | Servidor e navegador |
+| `NEXT_PUBLIC_SUPABASE_URL` | API do projeto Supabase | Servidor e navegador |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave publicável (respeita RLS) | Servidor e navegador |
+| `TEST_DATABASE_URL` | Banco local de testes | Somente testes |
+
+A chave secreta do Supabase não é usada nesta fase.
+
+## Limitações conhecidas
+
+- Nenhum projeto Supabase ou projeto Vercel foi criado ou conectado. O plano gratuito da conta Supabase já tem dois projetos de outros produtos.
+- Fluxos de cadastro, confirmação de e-mail, recuperação de senha e login Google dependem da configuração no Supabase (ver `docs/configuracao.md`) e **não foram testados de ponta a ponta**.
+- Não há testes E2E de navegador ainda.
+- Não há limite de taxa (rate limiting) em cadastro e criação de organização.
+- Não há exclusão de organização pela API. Excluir a conta do último proprietário é bloqueado pelo banco (`LAST_OWNER`) até que a transferência de propriedade seja implementada.
+- Alteração de papéis, convites e alteração de endereço público ainda não existem; a interface indica isso.
+- Modo escuro não implementado.
+
+## Funcionalidades ainda não implementadas
+
+Eventos, página pública, formulários dinâmicos, tipos de ingresso, inscrições, reserva de vagas, pagamentos e webhooks, notificações por e-mail, check-in e relatórios. Todos aparecem no menu como "Em breve" e não possuem rotas.
