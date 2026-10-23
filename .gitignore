@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Exemplo de configuração versionado; nunca coloque valores reais aqui
+!.env.example
