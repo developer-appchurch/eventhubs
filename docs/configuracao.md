@@ -27,12 +27,20 @@ Em **Authentication → URL Configuration**:
 
 Em **Authentication → Providers → Email**: habilite e-mail com senha. A confirmação de e-mail é recomendada.
 
-Em **Authentication → Email Templates**, use o token do link de confirmação e de recuperação apontando para a aplicação:
+### E-mails de confirmação e recuperação
 
-- Confirmação: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next=/onboarding`
-- Recuperação de senha: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
+O app funciona com os **modelos de e-mail padrão** do Supabase (que só podem ser editados com SMTP próprio). O link do e-mail passa pelo Supabase e volta ao app em `/auth/callback?code=...`, onde o código é trocado por sessão (fluxo PKCE).
 
-Use o `NEXT_PUBLIC_APP_URL` correto no lugar de `{{ .SiteURL }}` se o Site URL for diferente.
+Para isso funcionar, em **Redirect URLs** inclua um curinga do domínio, porque o link carrega `?next=`:
+
+- `https://<dominio-do-app>/**` (por exemplo, o domínio do preview) e `http://localhost:3000/**`
+
+Limitações do fluxo padrão:
+
+- O link precisa ser aberto **no mesmo navegador** em que o cadastro ou o pedido de recuperação foi feito (o verificador PKCE fica em cookie). Em outro navegador ou aparelho, o login mostra "O link expirou".
+- O serviço de e-mail padrão do Supabase tem limite baixo de envios por hora e é indicado só para desenvolvimento.
+
+Com SMTP próprio, é possível trocar para o fluxo por `token_hash` (independe do navegador): edite os modelos para `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next=/onboarding` (cadastro) e `...&type=recovery&next=/reset-password` (recuperação) e volte as chamadas em `src/modules/auth/actions.ts` para `/auth/confirm`. A rota `/auth/confirm` continua disponível para isso.
 
 ### Login com Google (opcional)
 

@@ -57,7 +57,8 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/confirm?next=/onboarding`,
+      // Modelos de e-mail padrão do Supabase: o link volta com ?code= (PKCE), trocado por sessão em /auth/callback.
+      emailRedirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/onboarding`,
     },
   });
 
@@ -100,7 +101,7 @@ export async function requestPasswordReset(_prev: ActionState, formData: FormDat
   const env = getEnv();
   const supabase = await createSupabaseServerClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/confirm?type=recovery&next=/reset-password`,
+    redirectTo: `${env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
   });
 
   return {
