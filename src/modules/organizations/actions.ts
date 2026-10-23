@@ -1,26 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
-import { mapDatabaseError, type ActionState } from "@/lib/errors";
+import { firstErrors, formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { slugify } from "@/lib/slug";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/modules/auth/session";
 import { canManageOrganization, type OrganizationRole } from "./roles";
 import { createOrganizationSchema, updateOrganizationSchema } from "./schemas";
-
-function firstErrors(error: z.ZodError): Record<string, string> {
-  const errors: Record<string, string> = {};
-  for (const issue of error.issues) {
-    errors[String(issue.path[0] ?? "form")] ??= issue.message;
-  }
-  return errors;
-}
-
-function text(formData: FormData, key: string): string {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : "";
-}
 
 // Cria a organização e o vínculo de proprietário numa única função do banco. O dono é
 // sempre o usuário da sessão; não há parâmetro de papel nem de usuário.

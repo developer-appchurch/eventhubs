@@ -45,3 +45,16 @@ Projeto remoto `eventhubs-dev` (sa-east-1, ref `mdabmyxbjrgjoblngfzq`): as três
 - `create_organization` e `list_organization_members` são `SECURITY DEFINER` e executáveis por `authenticated`. Isso é o desenho: as duas funções verificam `auth.uid()` e o vínculo ativo antes de agir, e não são executáveis por `anon`.
 
 Limitação: o acesso anônimo à Data API não foi verificado a partir do ambiente de desenvolvimento, porque a política de rede bloqueia o host do Supabase. Repetir esta verificação a partir de um ambiente com acesso.
+
+## Fase 2 · eventos
+
+| Tabela | SELECT | INSERT | UPDATE | DELETE |
+| --- | --- | --- | --- | --- |
+| `events` | membros ativos | owner, admin, event_manager da organização | mesmos papéis; colunas `status`, `published_at`, `cancelled_at`, `created_by` e `organization_id` sem grant | mesmos papéis, só rascunho nunca publicado |
+| `ticket_types` | membros ativos | owner, admin, event_manager, evento não encerrado/cancelado (`private.can_edit_event`) | idem | idem |
+| `form_fields` | membros ativos | sem grant (só `save_event_form`) | sem grant | sem grant |
+| `event_forms` | membros ativos | sem grant (versões gravadas por função) | sem grant | sem grant |
+
+`anon` não tem grant em nenhuma dessas tabelas. O público lê eventos apenas por `get_public_event` e `list_public_events` (SECURITY DEFINER, `search_path` vazio), que nunca devolvem rascunhos nem colunas internas (`created_by`, `online_url`). `get_event_preview` exige membro ativo. `change_event_status` e `save_event_form` exigem owner/admin/event_manager, travam a linha do evento e gravam auditoria.
+
+Testes: `tests/security/events-rls.test.ts` (isolamento entre organizações, papéis, manipulação de `organization_id`, acesso anônimo, ciclo de status e versões do formulário).

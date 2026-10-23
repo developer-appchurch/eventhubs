@@ -58,9 +58,9 @@ type CommonProps = { name: string; label: string; error?: string; hint?: string 
 export function TextInput({ name, label, error, hint, ...props }: InputHTMLAttributes<HTMLInputElement> & CommonProps) {
   const ids = useFieldIds(hint, error);
   return (
-    <FieldWrapper label={label} name={name} hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId}>
+    <FieldWrapper label={label} name={props.id ?? name} hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId}>
       <input
-        id={name}
+        id={props.id ?? name}
         name={name}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={ids.describedBy}
@@ -81,9 +81,9 @@ export function SelectInput({
 }: SelectHTMLAttributes<HTMLSelectElement> & CommonProps) {
   const ids = useFieldIds(hint, error);
   return (
-    <FieldWrapper label={label} name={name} hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId}>
+    <FieldWrapper label={label} name={props.id ?? name} hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId}>
       <select
-        id={name}
+        id={props.id ?? name}
         name={name}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={ids.describedBy}
@@ -99,9 +99,9 @@ export function SelectInput({
 export function TextArea({ name, label, error, hint, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & CommonProps) {
   const ids = useFieldIds(hint, error);
   return (
-    <FieldWrapper label={label} name={name} hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId}>
+    <FieldWrapper label={label} name={props.id ?? name} hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId}>
       <textarea
-        id={name}
+        id={props.id ?? name}
         name={name}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={ids.describedBy}
