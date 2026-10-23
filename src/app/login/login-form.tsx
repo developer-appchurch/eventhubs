@@ -40,7 +40,7 @@ export function LoginForm({ next }: { next: string }) {
         <span className="h-px flex-1 bg-line" />
       </div>
       <form action={signInWithGoogle}>
-        <Button variant="secondary" className="w-full">
+        <Button type="submit" variant="secondary" className="w-full">
           Continuar com Google
         </Button>
       </form>

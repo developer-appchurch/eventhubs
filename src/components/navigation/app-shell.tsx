@@ -60,7 +60,7 @@ export function AppShell({
             {userName}
           </Link>
           <form action={signOut} className="mt-2">
-            <Button variant="ghost" className="min-h-9 px-0 text-ink-muted hover:bg-transparent hover:text-ink">
+            <Button type="submit" variant="ghost" className="min-h-9 px-0 text-ink-muted hover:bg-transparent hover:text-ink">
               Sair
             </Button>
           </form>
@@ -73,7 +73,7 @@ export function AppShell({
             {userName}
           </Link>
           <form action={signOut}>
-            <Button variant="ghost" className="min-h-9 px-2 text-sm text-ink-muted hover:bg-transparent hover:text-ink">
+            <Button type="submit" variant="ghost" className="min-h-9 px-2 text-sm text-ink-muted hover:bg-transparent hover:text-ink">
               Sair
             </Button>
           </form>
