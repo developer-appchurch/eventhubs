@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { getOrganizationContext, listTeam } from "@/modules/organizations/queries";
 import { canManageOrganization } from "@/modules/organizations/roles";
 import { notFound } from "next/navigation";
+import { countEvents } from "@/modules/events/queries";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
@@ -13,7 +13,7 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
   const org = await getOrganizationContext(orgSlug);
   if (!org) notFound();
 
-  const team = await listTeam(org.id);
+  const [team, events] = await Promise.all([listTeam(org.id), countEvents(org.id)]);
   const activeTeam = team.filter((member) => member.status === "active").length;
 
   return (
@@ -28,13 +28,12 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
           </Link>
         </Card>
         <Card>
-          <p className="text-sm font-medium text-ink-muted">Eventos, inscrições e pagamentos</p>
-          <p className="mt-1 flex items-center gap-2 text-base font-semibold">
-            <Badge>Em breve</Badge>
-          </p>
-          <p className="mt-3 text-sm text-ink-muted">
-            Os indicadores são calculados a partir dos dados reais e aparecem quando o módulo de eventos for publicado.
-          </p>
+          <p className="text-sm font-medium text-ink-muted">Eventos</p>
+          <p className="mt-1 text-3xl font-bold tabular-nums">{events.total}</p>
+          <p className="mt-1 text-sm text-ink-muted">{events.published} publicado{events.published === 1 ? "" : "s"}</p>
+          <Link href={`/app/${org.slug}/events`} className="mt-3 inline-block text-sm font-semibold text-brand-700 hover:underline">
+            Ver eventos
+          </Link>
         </Card>
       </section>
 
@@ -55,7 +54,9 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
           </li>
           <li className="flex gap-3">
             <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-full bg-surface-muted text-xs font-bold text-ink-muted">3</span>
-            <span className="text-ink-muted">Criar o primeiro evento, disponível na próxima etapa de desenvolvimento.</span>
+            <span className="text-ink-muted">
+              {events.total > 0 ? "Cadastre ingressos e publique seus eventos." : "Crie o primeiro evento em Eventos."}
+            </span>
           </li>
         </ol>
       </Card>

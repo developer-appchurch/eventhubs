@@ -29,7 +29,7 @@ returns uuid
 language sql
 stable
 as $$
-  select nullif(current_setting('request.jwt.claims', true)::json ->> 'sub', '')::uuid;
+  select nullif(nullif(current_setting('request.jwt.claims', true), '')::json ->> 'sub', '')::uuid;
 $$;
 
 grant usage on schema auth to anon, authenticated, service_role;

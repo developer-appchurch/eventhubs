@@ -10,7 +10,7 @@ export function buildOrgNav(orgSlug: string): NavItem[] {
   const base = `/app/${orgSlug}`;
   return [
     { label: "Visão geral", href: base },
-    { label: "Eventos" },
+    { label: "Eventos", href: `${base}/events` },
     { label: "Inscrições" },
     { label: "Participantes" },
     { label: "Check-in" },
@@ -43,7 +43,7 @@ export function OrgNav({ orgSlug }: { orgSlug: string }) {
               </li>
             );
           }
-          const current = pathname === item.href;
+          const current = pathname === item.href || (item.href !== `/app/${orgSlug}` && pathname.startsWith(`${item.href}/`));
           return (
             <li key={item.label} className="shrink-0">
               <Link
