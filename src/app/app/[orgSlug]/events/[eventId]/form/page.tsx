@@ -4,6 +4,7 @@ import { getEvent, getFormVersion, listFormFields } from "@/modules/events/queri
 import { canManageEvents } from "@/modules/events/status";
 import { FIELD_TYPE_LABELS } from "@/modules/forms/fields";
 import { getOrganizationContext } from "@/modules/organizations/queries";
+import { listBankQuestions } from "@/modules/question-bank/queries";
 import { FormBuilder } from "./form-builder";
 
 export const metadata: Metadata = { title: "Formulário de inscrição" };
@@ -14,7 +15,7 @@ export default async function EventFormPage({ params }: { params: Promise<{ orgS
   const event = org ? await getEvent(org.id, eventId) : null;
   if (!org || !event) notFound();
 
-  const [fields, version] = await Promise.all([listFormFields(event.id), getFormVersion(event.id)]);
+  const [fields, version, bank] = await Promise.all([listFormFields(event.id), getFormVersion(event.id), listBankQuestions(org.id)]);
   const editable = canManageEvents(org.role) && event.status !== "ended" && event.status !== "cancelled";
 
   return (
@@ -24,7 +25,7 @@ export default async function EventFormPage({ params }: { params: Promise<{ orgS
         respostas antigas mantenham o significado.
       </p>
       {editable ? (
-        <FormBuilder key={version} organizationSlug={org.slug} eventId={event.id} initialFields={fields} />
+        <FormBuilder key={version} organizationSlug={org.slug} eventId={event.id} initialFields={fields} bank={bank} />
       ) : (
         <ol className="grid gap-2 text-sm">
           {fields.map((f) => (

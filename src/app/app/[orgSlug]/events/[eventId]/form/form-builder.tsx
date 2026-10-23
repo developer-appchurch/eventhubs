@@ -7,16 +7,51 @@ import { inputClass } from "@/components/ui/field";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { INITIAL_STATE } from "@/lib/errors";
 import { saveEventForm } from "@/modules/forms/actions";
-import { CHOICE_TYPES, FIELD_TYPE_LABELS, FIELD_TYPES, fieldKeyFromLabel, IDENTITY_TYPES, type FieldType, type FormField } from "@/modules/forms/fields";
+import {
+  bankFieldKey,
+  bankQuestionToField,
+  CHOICE_TYPES,
+  FIELD_TYPE_LABELS,
+  FIELD_TYPES,
+  fieldKeyFromLabel,
+  IDENTITY_TYPES,
+  type BankQuestion,
+  type FieldType,
+  type FormField,
+} from "@/modules/forms/fields";
 
 const ADDABLE_TYPES = FIELD_TYPES.filter((t) => !IDENTITY_TYPES.includes(t));
 const LIMIT_TYPES: readonly FieldType[] = ["short_text", "long_text", "number"];
 
 // Construtor do formulário de inscrição. Edita a lista localmente e envia tudo de uma vez;
 // o servidor valida e grava uma nova versão. Nome e e-mail são fixos e obrigatórios.
-export function FormBuilder({ organizationSlug, eventId, initialFields }: { organizationSlug: string; eventId: string; initialFields: FormField[] }) {
+// Perguntas do banco: as "sempre" entram ativas e obrigatórias; as demais ligam e desligam.
+export function FormBuilder({
+  organizationSlug,
+  eventId,
+  initialFields,
+  bank,
+}: {
+  organizationSlug: string;
+  eventId: string;
+  initialFields: FormField[];
+  bank: BankQuestion[];
+}) {
   const [state, action] = useActionState(saveEventForm, INITIAL_STATE);
-  const [fields, setFields] = useState(initialFields);
+  const lockedKeys = bank.filter((q) => q.always_on).map((q) => bankFieldKey(q.id));
+  const [fields, setFields] = useState(() => {
+    const list = initialFields.map((f) => (lockedKeys.includes(f.key) ? { ...f, required: true, is_active: true } : f));
+    const missing = bank.filter((q) => q.always_on && !list.some((f) => f.key === bankFieldKey(q.id)));
+    return [...list, ...missing.map(bankQuestionToField)];
+  });
+  const toggleBank = (q: BankQuestion, on: boolean) =>
+    setFields((list) =>
+      list.some((f) => f.key === bankFieldKey(q.id))
+        ? list.map((f) => (f.key === bankFieldKey(q.id) ? { ...f, is_active: on } : f))
+        : on
+          ? [...list, bankQuestionToField(q)]
+          : list,
+    );
   const [newType, setNewType] = useState<FieldType>("short_text");
 
   const update = (index: number, patch: Partial<FormField>) => setFields((list) => list.map((f, i) => (i === index ? { ...f, ...patch } : f)));
@@ -56,6 +91,7 @@ export function FormBuilder({ organizationSlug, eventId, initialFields }: { orga
       <ol className="grid gap-4">
         {fields.map((field, index) => {
           const identity = IDENTITY_TYPES.includes(field.type);
+          const locked = identity || lockedKeys.includes(field.key);
           const id = (part: string) => `field-${field.key}-${part}`;
           return (
             <li key={field.key} className={`grid gap-4 rounded-(--radius-card) border border-line bg-surface p-4 ${field.is_active ? "" : "opacity-70"}`}>
@@ -71,7 +107,7 @@ export function FormBuilder({ organizationSlug, eventId, initialFields }: { orga
                   <Button variant="ghost" onClick={() => move(index, 1)} disabled={index === fields.length - 1} aria-label={`Mover ${field.label} para baixo`}>
                     ↓
                   </Button>
-                  {identity ? null : (
+                  {locked ? null : (
                     <Button variant="ghost" className="text-danger-ink" onClick={() => setFields((list) => list.filter((_, i) => i !== index))}>
                       Remover
                     </Button>
@@ -131,6 +167,8 @@ export function FormBuilder({ organizationSlug, eventId, initialFields }: { orga
 
               {identity ? (
                 <p className="text-sm text-ink-muted">Campo fixo: identifica o participante e é sempre obrigatório.</p>
+              ) : locked ? (
+                <p className="text-sm text-ink-muted">Obrigatória em todos os eventos (definido no banco de perguntas).</p>
               ) : (
                 <div className="flex flex-wrap gap-5 text-sm">
                   <label className="flex items-center gap-2">
@@ -147,6 +185,38 @@ export function FormBuilder({ organizationSlug, eventId, initialFields }: { orga
           );
         })}
       </ol>
+
+      {bank.some((q) => !q.always_on) ? (
+        <fieldset className="grid gap-2 rounded-(--radius-card) border border-line p-4">
+          <legend className="px-1 text-sm font-semibold">Perguntas do banco</legend>
+          <ul className="grid divide-y divide-line">
+            {bank
+              .filter((q) => !q.always_on)
+              .map((q) => {
+                const on = fields.some((f) => f.key === bankFieldKey(q.id) && f.is_active);
+                return (
+                  <li key={q.id} className="flex items-center justify-between gap-3 py-2">
+                    <span className={`text-sm font-medium ${on ? "" : "text-ink-muted"}`}>
+                      {q.label} <span className="font-normal text-ink-muted">· {FIELD_TYPE_LABELS[q.type]}</span>
+                    </span>
+                    <label className="flex shrink-0 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        role="switch"
+                        className="size-4"
+                        checked={on}
+                        disabled={!on && fields.length >= 60}
+                        onChange={(e) => toggleBank(q, e.target.checked)}
+                        aria-label={`Usar "${q.label}" neste formulário`}
+                      />
+                      {on ? "Ativado" : "Desativado"}
+                    </label>
+                  </li>
+                );
+              })}
+          </ul>
+        </fieldset>
+      ) : null}
 
       <div className="flex flex-wrap items-end gap-3 rounded-(--radius-card) border border-dashed border-line-strong p-4">
         <div className="grid gap-1.5">
