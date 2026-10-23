@@ -40,4 +40,8 @@ Todas usam `SECURITY DEFINER` e `SET search_path = ''`, com referências qualifi
 
 `npm run test:db` cobre isolamento entre organizações, papéis, tentativas de alterar `organization_id`/`created_by`, `anon`, RLS habilitado em todas as tabelas, grants de `anon` e `search_path` das funções.
 
-Ainda não executado: `get_advisors` (security) do Supabase, porque não há projeto remoto. Deve ser rodado após a criação do projeto.
+Projeto remoto `eventhubs-dev` (sa-east-1, ref `mdabmyxbjrgjoblngfzq`): as três migrations foram aplicadas e a RLS está habilitada nas quatro tabelas. `get_advisors` (security) retornou dois avisos, ambos aceitos de forma intencional:
+
+- `create_organization` e `list_organization_members` são `SECURITY DEFINER` e executáveis por `authenticated`. Isso é o desenho: as duas funções verificam `auth.uid()` e o vínculo ativo antes de agir, e não são executáveis por `anon`.
+
+Limitação: o acesso anônimo à Data API não foi verificado a partir do ambiente de desenvolvimento, porque a política de rede bloqueia o host do Supabase. Repetir esta verificação a partir de um ambiente com acesso.
