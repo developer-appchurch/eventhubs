@@ -109,3 +109,29 @@ export function fieldKeyFromLabel(label: string, existing: readonly string[]): s
   for (let i = 2; existing.includes(key); i++) key = `${base}_${i}`;
   return key;
 }
+
+// Banco de perguntas da organização. No formulário, a pergunta vira um campo com chave
+// estável derivada do id, o que liga campo e pergunta sem coluna extra.
+export type BankQuestion = Omit<FormField, "key" | "is_active"> & { id: string; always_on: boolean };
+
+export const bankFieldKey = (id: string) => `q_${id.replace(/-/g, "")}`;
+
+export function bankQuestionToField(q: BankQuestion): FormField {
+  const { id, always_on, ...rest } = q;
+  return { ...rest, key: bankFieldKey(id), required: always_on || q.required, is_active: true };
+}
+
+// Mesmas regras de um campo de formulário; "sempre" implica obrigatória.
+export function parseBankQuestion(input: Omit<BankQuestion, "id">) {
+  if (IDENTITY_TYPES.includes(input.type)) return { ok: false as const, message: "Nome e e-mail já são campos fixos do formulário." };
+  const parsed = fieldSchema.safeParse({ ...input, key: "q", is_active: true });
+  if (!parsed.success) return { ok: false as const, message: parsed.error.issues[0]?.message ?? "Revise a pergunta." };
+  const { label, type, required, options, validation, help_text, placeholder } = parsed.data;
+  const always_on = input.always_on;
+  return { ok: true as const, data: { label, type, options, validation, help_text, placeholder, always_on, required: always_on || required } };
+}
+
+// Perguntas "sempre" que faltam no formulário (ausentes, inativas ou opcionais).
+export function missingAlwaysOn(fields: readonly FormField[], bank: readonly BankQuestion[]): BankQuestion[] {
+  return bank.filter((q) => q.always_on && !fields.some((f) => f.key === bankFieldKey(q.id) && f.is_active && f.required));
+}

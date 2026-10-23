@@ -7,7 +7,8 @@ import { getEvent, getEventPreview, isUuid } from "@/modules/events/queries";
 import { canManageEvents } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { answersFromFormData, validateAnswers } from "./answers";
-import { formDefinitionSchema, type FormField } from "./fields";
+import { listBankQuestions } from "@/modules/question-bank/queries";
+import { formDefinitionSchema, missingAlwaysOn, type FormField } from "./fields";
 
 export async function saveEventForm(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const org = await getOrganizationContext(text(formData, "organizationSlug"));
@@ -22,6 +23,9 @@ export async function saveEventForm(_prev: ActionState, formData: FormData): Pro
   }
   const parsed = formDefinitionSchema.safeParse(json);
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Revise os campos do formulário." };
+
+  const missing = missingAlwaysOn(parsed.data, await listBankQuestions(org.id));
+  if (missing.length) return { ok: false, message: `A pergunta "${missing[0].label}" é obrigatória em todos os eventos.` };
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("save_event_form", { p_event_id: event.id, p_fields: parsed.data });
