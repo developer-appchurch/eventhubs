@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export function EventSubNav({ base }: { base: string }) {
+export function EventSubNav({ base, showRegistrations }: { base: string; showRegistrations: boolean }) {
   const pathname = usePathname();
   const items = [
     { label: "Detalhes", href: base },
     { label: "Ingressos", href: `${base}/tickets` },
     { label: "Formulário", href: `${base}/form` },
     { label: "Pré-visualizar", href: `${base}/preview` },
+    ...(showRegistrations ? [{ label: "Inscrições", href: `${base}/registrations` }] : []),
   ];
   return (
     <nav aria-label="Seções do evento">

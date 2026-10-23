@@ -74,7 +74,13 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
                 ))}
               </ul>
             )}
-            <p className="mt-4 text-sm text-ink-muted">Capacidade total: {event.capacity.toLocaleString("pt-BR")} vagas.</p>
+            <p className="mt-4 text-sm text-ink-muted">
+              {typeof event.remaining === "number"
+                ? event.remaining === 0
+                  ? "Vagas esgotadas."
+                  : `${event.remaining.toLocaleString("pt-BR")} de ${event.capacity.toLocaleString("pt-BR")} vagas disponíveis.`
+                : `Capacidade total: ${event.capacity.toLocaleString("pt-BR")} vagas.`}
+            </p>
           </Card>
 
           <Card>

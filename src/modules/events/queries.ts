@@ -56,11 +56,11 @@ export type TicketType = {
 export type PublicTicket = Pick<
   TicketType,
   "id" | "name" | "description" | "price_cents" | "currency" | "sales_start_at" | "sales_end_at" | "min_per_order" | "max_per_order"
->;
+> & { sold_out: boolean };
 
 export type PublicEventPayload = {
   organization: { name: string; slug: string };
-  event: Omit<EventRecord, "organization_id" | "online_url" | "published_at">;
+  event: Omit<EventRecord, "organization_id" | "online_url" | "published_at"> & { remaining: number };
   tickets: PublicTicket[];
   form: { version: number; fields: Omit<FormField, "is_active">[] } | null;
 };

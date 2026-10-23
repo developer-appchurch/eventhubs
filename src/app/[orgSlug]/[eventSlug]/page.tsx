@@ -1,8 +1,11 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PublicEventView } from "@/components/events/public-event-view";
+import { RegistrationForm } from "@/components/events/registration-form";
 import { getPublicEvent } from "@/modules/events/queries";
+import { publicAvailability } from "@/modules/events/status";
 
 type Props = { params: Promise<{ orgSlug: string; eventSlug: string }> };
 
@@ -30,10 +33,19 @@ export default async function PublicEventPage({ params }: Props) {
       <PublicEventView
         data={data}
         registration={
-          // shortcut: inscrição online entra na Fase 3; até lá a página informa e não exibe botão sem ação.
-          <p className="text-sm text-ink-muted">
-            As inscrições online serão abertas em breve. Em caso de dúvida, fale com o organizador pelo contato desta página.
-          </p>
+          publicAvailability(data.event) === "open" && data.form && data.event.remaining !== 0 ? (
+            <RegistrationForm
+              orgSlug={data.organization.slug}
+              eventSlug={data.event.slug}
+              // Uma chave por carregamento da página: reenviar o mesmo formulário não duplica a inscrição.
+              idempotencyKey={randomUUID()}
+              tickets={data.tickets}
+              fields={data.form.fields}
+              hasTerms={Boolean(data.event.participant_terms)}
+            />
+          ) : (
+            <p className="text-sm text-ink-muted">A inscrição online não está disponível agora. Veja a situação do evento acima.</p>
+          )
         }
       />
     </div>

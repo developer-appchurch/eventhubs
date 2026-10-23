@@ -58,3 +58,17 @@ Limitação: o acesso anônimo à Data API não foi verificado a partir do ambie
 `anon` não tem grant em nenhuma dessas tabelas. O público lê eventos apenas por `get_public_event` e `list_public_events` (SECURITY DEFINER, `search_path` vazio), que nunca devolvem rascunhos nem colunas internas (`created_by`, `online_url`). `get_event_preview` exige membro ativo. `change_event_status` e `save_event_form` exigem owner/admin/event_manager, travam a linha do evento e gravam auditoria.
 
 Testes: `tests/security/events-rls.test.ts` (isolamento entre organizações, papéis, manipulação de `organization_id`, acesso anônimo, ciclo de status e versões do formulário).
+
+## Fase 3 · inscrições
+
+| Tabela | SELECT | INSERT / UPDATE / DELETE |
+| --- | --- | --- |
+| `registrations` | owner, admin, event_manager e checkin_operator da organização (`private.registration_reader_roles`) | sem grant para ninguém; só `register_for_event` grava |
+
+`report_viewer` não vê dados pessoais dos inscritos. `anon` não tem grant na tabela. Funções:
+
+- `register_for_event` (anon e authenticated, SECURITY DEFINER): trava a linha do evento (`FOR UPDATE`), confere status/prazo, ingresso ativo do mesmo evento e período de vendas, preço 0 (pago fica para a Fase 4), versão vigente do formulário, chaves e obrigatórios das respostas, nome/e-mail, duplicidade e só então conta vagas (capacidade global e limite do ingresso) e insere. Idempotente por `(event_id, idempotency_key)`.
+- `get_registration(token)` (anon e authenticated): devolve só a inscrição do token de 64 hex; token inválido ou inexistente devolve null.
+- `private.active_registrations` não é executável por clientes.
+
+Testes: `tests/security/registrations.test.ts` (inclui 20 inscrições simultâneas para 5 vagas e limite de ingresso concorrente). Remoto (eventhubs-dev, transação revertida): inscrição confirmada, segunda inscrição na última vaga recusada com `SOLD_OUT`, consulta por token ok, `anon` sem acesso à tabela. Advisor: só os avisos já aceitos de funções públicas SECURITY DEFINER.
