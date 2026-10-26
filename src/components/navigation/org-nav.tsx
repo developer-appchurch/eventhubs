@@ -13,7 +13,6 @@ export function buildOrgNav(orgSlug: string): NavItem[] {
   return [
     { label: "Visão geral", href: base },
     { label: "Eventos", href: `${base}/events` },
-    { label: "Banco de perguntas", href: `${base}/questions` },
     { label: "Inscrições" },
     { label: "Participantes" },
     { label: "Check-in" },
