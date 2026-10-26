@@ -40,7 +40,7 @@ export default async function EventLayout({
           ) : null}
         </div>
         {canManageEvents(org.role) ? <StatusActions organizationSlug={org.slug} eventId={event.id} status={event.status} /> : null}
-        <EventSubNav base={base} showRegistrations={canReadRegistrations(org.role)} showPayments={canReadPayments(org.role)} />
+        <EventSubNav base={base} showRegistrations={canReadRegistrations(org.role)} showFinance={canReadPayments(org.role)} />
       </div>
       {children}
     </div>
