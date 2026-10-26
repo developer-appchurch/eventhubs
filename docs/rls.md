@@ -72,3 +72,10 @@ Testes: `tests/security/events-rls.test.ts` (isolamento entre organizações, pa
 - `private.active_registrations` não é executável por clientes.
 
 Testes: `tests/security/registrations.test.ts` (inclui 20 inscrições simultâneas para 5 vagas e limite de ingresso concorrente). Remoto (eventhubs-dev, transação revertida): inscrição confirmada, segunda inscrição na última vaga recusada com `SOLD_OUT`, consulta por token ok, `anon` sem acesso à tabela. Advisor: só os avisos já aceitos de funções públicas SECURITY DEFINER.
+
+## Fase 5 · check-in
+
+- `checkins`: RLS ativa; SELECT para `private.registration_reader_roles()` (owner, admin, event_manager, checkin_operator). Nenhuma escrita direta (`revoke all`, só `select` para authenticated).
+- `check_in(p_event_id, p_code, p_registration_id)` (authenticated, SECURITY DEFINER): exige sessão, papel de leitor de inscrições na organização do evento (inexistente e sem permissão respondem `FORBIDDEN`), evento fora de rascunho/cancelado, inscrição do próprio evento (código de outro evento = `CHECKIN_NOT_FOUND`) e confirmada. `insert ... on conflict do nothing`: leituras simultâneas geram um único check-in, e as seguintes devolvem `already_checked_in` com horário e operador originais. Grava `registration.checked_in` em `audit_logs`.
+- `get_registration` passa a devolver `checkin_code` só para inscrição confirmada em evento não cancelado.
+- Exportação CSV (`/registrations/export`) só para quem administra eventos; o operador de check-in vê a lista, mas não exporta.
