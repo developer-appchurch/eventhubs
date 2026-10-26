@@ -57,3 +57,30 @@ export function getEmailEnv(): EmailEnv | null {
   });
   return parsed.success ? parsed.data : null;
 }
+
+// Pagamentos são opcionais: sem esta configuração completa, ingressos pagos ficam
+// indisponíveis e a tela de configurações diz o que falta, sem fingir conexão.
+const paymentSchema = z.object({
+  SUPABASE_SECRET_KEY: z.string().min(20),
+  MERCADOPAGO_CLIENT_ID: z.string().regex(/^\d{1,20}$/),
+  MERCADOPAGO_CLIENT_SECRET: z.string().min(10),
+  MERCADOPAGO_WEBHOOK_SECRET: z.string().min(10),
+  // 32 bytes em base64 (openssl rand -base64 32): cifra os tokens das organizações no banco.
+  PAYMENT_TOKEN_KEY: z.string().refine((v) => Buffer.from(v, "base64").length === 32, "32 bytes em base64"),
+  // Taxa do EventHubs em pontos-base (500 = 5%), retida pelo Mercado Pago em cada pagamento.
+  PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(0),
+});
+
+export type PaymentEnv = z.infer<typeof paymentSchema>;
+
+export function getPaymentEnv(): PaymentEnv | null {
+  const parsed = paymentSchema.safeParse({
+    SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+    MERCADOPAGO_CLIENT_ID: process.env.MERCADOPAGO_CLIENT_ID,
+    MERCADOPAGO_CLIENT_SECRET: process.env.MERCADOPAGO_CLIENT_SECRET,
+    MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
+    PAYMENT_TOKEN_KEY: process.env.PAYMENT_TOKEN_KEY,
+    PLATFORM_FEE_BPS: process.env.PLATFORM_FEE_BPS || undefined,
+  });
+  return parsed.success ? parsed.data : null;
+}

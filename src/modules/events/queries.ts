@@ -60,6 +60,7 @@ export type PublicTicket = Pick<
 
 export type PublicEventPayload = {
   organization: { name: string; slug: string };
+  payments_enabled: boolean;
   event: Omit<EventRecord, "organization_id" | "online_url" | "published_at"> & { remaining: number };
   tickets: PublicTicket[];
   form: { version: number; fields: Omit<FormField, "is_active">[] } | null;

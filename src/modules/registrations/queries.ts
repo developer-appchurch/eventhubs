@@ -19,6 +19,8 @@ export type PublicRegistration = {
   attendee_email: string;
   created_at: string;
   price_cents: number;
+  // Prazo da reserva de ingresso pago.
+  expires_at: string | null;
   // Só com inscrição confirmada e evento não cancelado.
   checkin_code: string | null;
   ticket: { name: string };

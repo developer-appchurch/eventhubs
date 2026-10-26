@@ -78,3 +78,15 @@ Decisões:
 
 - Inscrição gratuita: o e-mail sai depois da resposta (`after()` do Next.js), sem atrasar a página. O QR vai como imagem PNG inline (`cid:`), com o código em texto e o link da página da inscrição, que também mostra o QR.
 - Sem `RESEND_API_KEY`, `EMAIL_FROM` e `SUPABASE_SECRET_KEY`, nada é enviado e nada é registrado como enviado.
+
+## Fase 4 · pagamentos
+
+| Tabela / coluna | Papel | Observações |
+| --- | --- | --- |
+| `registrations.expires_at` | Fim da reserva de ingresso pago | Obrigatório em `pending_payment`. Reserva vencida deixa de contar na capacidade imediatamente. |
+| `registrations.platform_fee_cents`, `checkout_url`, `payment_seller_id` | Checkout criado | Taxa calculada no servidor; o pagamento precisa ser da conta em `payment_seller_id`. |
+| `private.payment_accounts` | Conta Mercado Pago da organização | Uma por organização; `provider_user_id` único. Tokens cifrados (AES-256-GCM). |
+| `payments` | Um registro por pagamento do Mercado Pago | `unique (provider, external_id)`. Centavos e moeda explícitos. `attention` marca o que exige ação humana. |
+| `payment_events` | Notificações recebidas | `unique (provider, notification_id)` com `x-request-id`; `processed_at` evita reprocessar. |
+
+Detalhes do fluxo e das regras de reconciliação: `docs/pagamentos.md`.
