@@ -42,6 +42,7 @@ export default async function PublicEventPage({ params }: Props) {
               tickets={data.tickets}
               fields={data.form.fields}
               hasTerms={Boolean(data.event.participant_terms)}
+                paymentsEnabled={data.payments_enabled}
             />
           ) : (
             <p className="text-sm text-ink-muted">A inscrição online não está disponível agora. Veja a situação do evento acima.</p>

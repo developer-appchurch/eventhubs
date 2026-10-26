@@ -9,6 +9,7 @@ import { publicAvailability } from "@/modules/events/status";
 import { answersFromFormData, validateAnswers } from "@/modules/forms/answers";
 import type { FormField } from "@/modules/forms/fields";
 import { sendConfirmationEmail } from "@/modules/notifications/confirmation";
+import { checkoutUrlFor } from "@/modules/payments/service";
 import { ticketAvailability } from "./tickets";
 
 // Inscrição pública. Tudo que vem do navegador é revalidado aqui (respostas pela versão
@@ -26,7 +27,7 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
 
   const ticketId = text(formData, "ticketTypeId");
   const ticket = data.tickets.find((t) => t.id === ticketId);
-  if (!ticket || ticketAvailability(ticket) !== "available") {
+  if (!ticket || ticketAvailability(ticket, undefined, data.payments_enabled) !== "available") {
     return { ok: false, message: "Escolha um ingresso disponível.", fieldErrors: { ticketTypeId: "Escolha um ingresso disponível." } };
   }
 
@@ -52,7 +53,27 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
   if (error) return mapDatabaseError(error);
 
   const { public_token: token, status } = created as { public_token: string; status: string };
+  const statusPage = `/${data.organization.slug}/${data.event.slug}/inscricao/${token}`;
   // O e-mail sai depois da resposta: a pessoa não espera o provedor para ver a inscrição.
   if (status === "confirmed") after(() => sendConfirmationEmail({ token }));
-  redirect(`/${data.organization.slug}/${data.event.slug}/inscricao/${token}`);
+  redirect((status === "pending_payment" && (await safeCheckoutUrl(token))) || statusPage);
+}
+
+// Pagamento da reserva. Falha no Mercado Pago não perde a inscrição: a página dela oferece
+// tentar de novo enquanto a reserva vale.
+export async function payRegistration(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const token = text(formData, "token");
+  if (!/^[0-9a-f]{64}$/.test(token)) return { ok: false, message: "Inscrição não encontrada." };
+  const url = await safeCheckoutUrl(token);
+  if (!url) return { ok: false, message: "Não foi possível abrir o pagamento agora. Tente novamente em instantes." };
+  redirect(url);
+}
+
+async function safeCheckoutUrl(token: string): Promise<string | null> {
+  try {
+    return await checkoutUrlFor(token);
+  } catch (error) {
+    console.error("[pagamentos] falha ao criar checkout", { error: error instanceof Error ? error.message : "erro" });
+    return null;
+  }
 }

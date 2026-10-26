@@ -18,11 +18,12 @@ type Props = {
   tickets: PublicTicket[];
   fields: Omit<FormField, "is_active">[];
   hasTerms: boolean;
+  paymentsEnabled: boolean;
 };
 
-export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, fields, hasTerms }: Props) {
+export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, fields, hasTerms, paymentsEnabled }: Props) {
   const [state, action, pending] = useActionState(registerForEvent, INITIAL_STATE);
-  const available = tickets.filter((t) => ticketAvailability(t) === "available");
+  const available = tickets.filter((t) => ticketAvailability(t, undefined, paymentsEnabled) === "available");
   const errors = state.fieldErrors ?? {};
 
   // Envio manual: com <form action>, o React limpa os campos ao terminar e o participante
@@ -56,7 +57,7 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
           Ingresso<span className="text-danger-ink"> *</span>
         </legend>
         {tickets.map((ticket) => {
-          const status = ticketAvailability(ticket);
+          const status = ticketAvailability(ticket, undefined, paymentsEnabled);
           const disabled = status !== "available";
           return (
             <label
@@ -105,6 +106,12 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
       <Button type="submit" disabled={pending} aria-busy={pending} className="w-full sm:w-auto">
         {pending ? "Enviando inscrição…" : "Confirmar inscrição"}
       </Button>
+      {paymentsEnabled && tickets.some((t) => t.price_cents > 0) ? (
+        <p className="text-sm text-ink-muted">
+          Em ingressos pagos, a vaga fica reservada por 30 minutos e você é levado ao Mercado Pago para pagar. A inscrição é confirmada quando o
+          pagamento é aprovado.
+        </p>
+      ) : null}
     </form>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export function EventSubNav({ base, showRegistrations }: { base: string; showRegistrations: boolean }) {
+export function EventSubNav({ base, showRegistrations, showPayments }: { base: string; showRegistrations: boolean; showPayments: boolean }) {
   const pathname = usePathname();
   const items = [
     { label: "Detalhes", href: base },
@@ -16,6 +16,7 @@ export function EventSubNav({ base, showRegistrations }: { base: string; showReg
           { label: "Check-in", href: `${base}/checkin` },
         ]
       : []),
+    ...(showPayments ? [{ label: "Pagamentos", href: `${base}/payments` }] : []),
   ];
   return (
     <nav aria-label="Seções do evento">

@@ -84,3 +84,12 @@ Testes: `tests/security/registrations.test.ts` (inclui 20 inscrições simultân
 
 - `notifications`: RLS ativa; SELECT para `private.registration_reader_roles()`. Sem escrita direta.
 - `claim_confirmation_email(p_registration_id, p_token)` e `finish_confirmation_email(...)`: só `service_role`. O servidor usa a chave secreta apenas para essas duas chamadas. `claim` só devolve dados de inscrição confirmada em evento não cancelado, e só uma vez (ou de novo depois de falha).
+
+## Fase 4 · pagamentos
+
+- `private.payment_accounts`: fora da Data API, `revoke all` de anon/authenticated. Tokens cifrados pela aplicação.
+- `payments`: RLS ativa; SELECT para `private.payment_reader_roles()` (owner, admin, event_manager, report_viewer). Sem escrita direta.
+- `payment_events`: RLS ativa sem políticas: só funções do sistema.
+- Só `service_role`: `save_payment_account`, `get_payment_account`, `checkout_context`, `set_checkout`, `begin_payment_event`, `finish_payment_event`, `record_payment`. O servidor usa a chave secreta apenas para essas chamadas, depois de validar sessão e papel (conexão) ou a assinatura do webhook.
+- `payment_account_status` (authenticated): só owner/admin da organização, sem tokens.
+- `register_for_event` (anon): ingresso pago só com conta conectada; cria `pending_payment` com 30 minutos e marca como `expired` as reservas vencidas do evento, sob a trava.

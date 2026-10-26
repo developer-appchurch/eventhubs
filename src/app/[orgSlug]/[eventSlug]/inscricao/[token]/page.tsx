@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { Alert } from "@/components/ui/alert";
+import { PayButton } from "@/components/events/pay-button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { formatDateTime } from "@/lib/datetime";
+import { formatCents, formatDateTime } from "@/lib/datetime";
 import { getEnv } from "@/lib/env";
 import { checkinUrl } from "@/modules/checkins/code";
 import { FORMAT_LABELS } from "@/modules/events/status";
@@ -50,6 +51,17 @@ export default async function RegistrationStatusPage({ params }: Props) {
         <Alert tone="danger">Este evento foi cancelado pelo organizador.</Alert>
       ) : confirmed ? (
         <Alert tone="success">Inscrição confirmada. Guarde este link: é por ele que você consulta sua inscrição.</Alert>
+      ) : registration.status === "pending_payment" && registration.expires_at ? (
+        <Card>
+          <CardTitle>Pagamento pendente</CardTitle>
+          <p className="mt-1 mb-4 text-sm text-ink-muted">
+            Sua vaga está reservada até {formatDateTime(registration.expires_at, tz)}. Pague {formatCents(registration.price_cents)} para confirmar a
+            inscrição. Se você já pagou, a confirmação aparece aqui assim que o Mercado Pago aprovar.
+          </p>
+          <PayButton token={token} />
+        </Card>
+      ) : registration.status === "expired" ? (
+        <Alert tone="warning">A reserva expirou sem pagamento aprovado e a vaga foi liberada. Faça uma nova inscrição, se ainda houver vagas.</Alert>
       ) : (
         <Alert tone="warning">Situação da inscrição: {REGISTRATION_STATUS_LABELS[registration.status]}.</Alert>
       )}
