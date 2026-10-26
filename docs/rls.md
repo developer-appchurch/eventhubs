@@ -79,3 +79,8 @@ Testes: `tests/security/registrations.test.ts` (inclui 20 inscrições simultân
 - `check_in(p_event_id, p_code, p_registration_id)` (authenticated, SECURITY DEFINER): exige sessão, papel de leitor de inscrições na organização do evento (inexistente e sem permissão respondem `FORBIDDEN`), evento fora de rascunho/cancelado, inscrição do próprio evento (código de outro evento = `CHECKIN_NOT_FOUND`) e confirmada. `insert ... on conflict do nothing`: leituras simultâneas geram um único check-in, e as seguintes devolvem `already_checked_in` com horário e operador originais. Grava `registration.checked_in` em `audit_logs`.
 - `get_registration` passa a devolver `checkin_code` só para inscrição confirmada em evento não cancelado.
 - Exportação CSV (`/registrations/export`) só para quem administra eventos; o operador de check-in vê a lista, mas não exporta.
+
+## E-mail de confirmação
+
+- `notifications`: RLS ativa; SELECT para `private.registration_reader_roles()`. Sem escrita direta.
+- `claim_confirmation_email(p_registration_id, p_token)` e `finish_confirmation_email(...)`: só `service_role`. O servidor usa a chave secreta apenas para essas duas chamadas. `claim` só devolve dados de inscrição confirmada em evento não cancelado, e só uma vez (ou de novo depois de falha).

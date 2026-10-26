@@ -69,3 +69,12 @@ Decisões:
 
 - Presença por evento e filtros "presentes/ausentes" vêm de junção com `checkins`, sem contador separado.
 - Exportação CSV usa `;` e BOM UTF-8 (Excel em português) e neutraliza células que começam com `= + - @`, tab ou CR.
+
+## E-mail de confirmação
+
+| Tabela | Papel | Observações |
+| --- | --- | --- |
+| `notifications` | Estado de cada e-mail | `unique (registration_id, kind)`: a mesma confirmação nunca sai duas vezes. Guarda `sending`/`sent`/`failed`, tentativas, id do provedor e erro (sem conteúdo da resposta). |
+
+- Inscrição gratuita: o e-mail sai depois da resposta (`after()` do Next.js), sem atrasar a página. O QR vai como imagem PNG inline (`cid:`), com o código em texto e o link da página da inscrição, que também mostra o QR.
+- Sem `RESEND_API_KEY`, `EMAIL_FROM` e `SUPABASE_SECRET_KEY`, nada é enviado e nada é registrado como enviado.
