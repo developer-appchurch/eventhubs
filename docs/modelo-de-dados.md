@@ -59,3 +59,22 @@ Decisões:
 - **Duplicidade:** no máximo uma inscrição ativa por e-mail por evento (índice único parcial). Cancelada ou expirada libera o e-mail.
 - **Status:** `pending_payment`, `confirmed`, `cancelled`, `expired`, `refunded`. Nesta fase só `confirmed` é criado; o estado financeiro fica em `payments` (Fase 4).
 - A capacidade do evento não pode ser reduzida abaixo das vagas ocupadas, e ingresso com inscrições não pode ser apagado (desativar).
+
+## Fase 5 · participantes e check-in
+
+| Tabela / coluna | Papel | Observações |
+| --- | --- | --- |
+| `registrations.checkin_code` | Código do QR | 128 bits aleatórios, único, separado de `public_token`. O QR leva o link `/app/<org>/events/<evento>/checkin?code=<código>`, que só abre para a equipe logada. |
+| `checkins` | Presença | Uma linha por inscrição (`unique registration_id`): o primeiro registro é preservado. Guarda método (`qr` ou `manual`), operador (`checked_in_by`) e horário. |
+
+- Presença por evento e filtros "presentes/ausentes" vêm de junção com `checkins`, sem contador separado.
+- Exportação CSV usa `;` e BOM UTF-8 (Excel em português) e neutraliza células que começam com `= + - @`, tab ou CR.
+
+## E-mail de confirmação
+
+| Tabela | Papel | Observações |
+| --- | --- | --- |
+| `notifications` | Estado de cada e-mail | `unique (registration_id, kind)`: a mesma confirmação nunca sai duas vezes. Guarda `sending`/`sent`/`failed`, tentativas, id do provedor e erro (sem conteúdo da resposta). |
+
+- Inscrição gratuita: o e-mail sai depois da resposta (`after()` do Next.js), sem atrasar a página. O QR vai como imagem PNG inline (`cid:`), com o código em texto e o link da página da inscrição, que também mostra o QR.
+- Sem `RESEND_API_KEY`, `EMAIL_FROM` e `SUPABASE_SECRET_KEY`, nada é enviado e nada é registrado como enviado.

@@ -29,6 +29,9 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   ALREADY_REGISTERED: "Já existe uma inscrição ativa com este e-mail para este evento.",
   SOLD_OUT: "As vagas deste evento se esgotaram.",
   TICKET_SOLD_OUT: "Este ingresso esgotou. Escolha outro, se houver.",
+  CHECKIN_NOT_FOUND: "Código não encontrado neste evento. Confira se o QR é deste evento.",
+  CHECKIN_UNAVAILABLE: "Check-in indisponível: o evento está em rascunho ou foi cancelado.",
+  REGISTRATION_NOT_CONFIRMED: "Esta inscrição não está confirmada. Não é possível registrar presença.",
 };
 
 // Códigos SQLSTATE e exceções lançadas pelas funções do banco, traduzidos para o usuário.

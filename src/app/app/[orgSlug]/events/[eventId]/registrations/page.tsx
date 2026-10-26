@@ -6,11 +6,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { inputClass } from "@/components/ui/field";
 import { formatShortDateTime } from "@/lib/datetime";
 import { getEvent, listTicketTypes } from "@/modules/events/queries";
+import { canManageEvents } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import {
   countRegistrations,
   listFormVersions,
   listRegistrations,
+  PRESENCE_FILTERS,
+  type PresenceFilter,
   REGISTRATION_STATUS_LABELS,
   REGISTRATION_STATUSES,
   REGISTRATIONS_PAGE_SIZE,
@@ -22,7 +25,7 @@ export const metadata: Metadata = { title: "Inscrições" };
 
 const STATUS_TONES = { pending_payment: "warning", confirmed: "success", cancelled: "danger", expired: "neutral", refunded: "neutral" } as const;
 
-type SearchParams = { q?: string; status?: string; ticket?: string; page?: string };
+type SearchParams = { q?: string; status?: string; ticket?: string; presence?: string; page?: string };
 
 export default async function RegistrationsPage({
   params,
@@ -41,17 +44,20 @@ export default async function RegistrationsPage({
   const status = REGISTRATION_STATUSES.includes(sp.status as RegistrationStatus) ? (sp.status as RegistrationStatus) : undefined;
   const tickets = await listTicketTypes(event.id);
   const ticket = tickets.some((t) => t.id === sp.ticket) ? sp.ticket : undefined;
+  const presence = PRESENCE_FILTERS.includes(sp.presence as PresenceFilter) ? (sp.presence as PresenceFilter) : undefined;
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
 
   const [{ registrations, total }, counts, forms] = await Promise.all([
-    listRegistrations(event.id, { q, status, ticket, page }),
+    listRegistrations(event.id, { q, status, ticket, presence, page }),
     countRegistrations(event.id),
     listFormVersions(event.id),
   ]);
   const ticketNames = new Map(tickets.map((t) => [t.id, t.name]));
   const pages = Math.max(1, Math.ceil(total / REGISTRATIONS_PAGE_SIZE));
   const base = `/app/${org.slug}/events/${event.id}/registrations`;
-  const pageHref = (n: number) => `${base}?${new URLSearchParams({ q, ...(status ? { status } : {}), ...(ticket ? { ticket } : {}), page: String(n) })}`;
+  const filters = { q, ...(status ? { status } : {}), ...(ticket ? { ticket } : {}), ...(presence ? { presence } : {}) };
+  const pageHref = (n: number) => `${base}?${new URLSearchParams({ ...filters, page: String(n) })}`;
+  const filtered = Boolean(q || status || ticket || presence);
   const occupied = counts.confirmed + counts.pending_payment;
 
   return (
@@ -88,14 +94,27 @@ export default async function RegistrationsPage({
             ))}
           </select>
         </label>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Presença
+          <select name="presence" defaultValue={presence ?? ""} className={inputClass()}>
+            <option value="">Todas</option>
+            <option value="present">Presentes</option>
+            <option value="absent">Ausentes</option>
+          </select>
+        </label>
         <button type="submit" className="inline-flex min-h-11 items-center rounded-(--radius-control) bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
           Filtrar
         </button>
+        {canManageEvents(org.role) ? (
+          <a href={`${base}/export?${new URLSearchParams(filters)}`} className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-brand-700 hover:underline">
+            Exportar CSV
+          </a>
+        ) : null}
       </form>
 
       {registrations.length === 0 ? (
-        <EmptyState title={q || status || ticket ? "Nenhuma inscrição encontrada" : "Nenhuma inscrição ainda"}>
-          {q || status || ticket ? "Ajuste a busca ou os filtros." : "As inscrições feitas na página pública aparecem aqui."}
+        <EmptyState title={filtered ? "Nenhuma inscrição encontrada" : "Nenhuma inscrição ainda"}>
+          {filtered ? "Ajuste a busca ou os filtros." : "As inscrições feitas na página pública aparecem aqui."}
         </EmptyState>
       ) : (
         <ul className="grid gap-2">
@@ -117,6 +136,7 @@ export default async function RegistrationsPage({
                       <span>{ticketNames.get(r.ticket_type_id)}</span>
                       <span className="tabular-nums text-ink-muted">{formatShortDateTime(r.created_at, event.timezone)}</span>
                       <Badge tone={STATUS_TONES[r.status]}>{REGISTRATION_STATUS_LABELS[r.status]}</Badge>
+                      {r.checkins ? <Badge tone="brand">Presente</Badge> : null}
                     </span>
                   </summary>
                   <dl className="grid gap-2 border-t border-line px-4 py-3 text-sm sm:grid-cols-2">

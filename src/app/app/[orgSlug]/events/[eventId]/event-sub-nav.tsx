@@ -10,7 +10,12 @@ export function EventSubNav({ base, showRegistrations }: { base: string; showReg
     { label: "Ingressos", href: `${base}/tickets` },
     { label: "Formulário", href: `${base}/form` },
     { label: "Pré-visualizar", href: `${base}/preview` },
-    ...(showRegistrations ? [{ label: "Inscrições", href: `${base}/registrations` }] : []),
+    ...(showRegistrations
+      ? [
+          { label: "Inscrições", href: `${base}/registrations` },
+          { label: "Check-in", href: `${base}/checkin` },
+        ]
+      : []),
   ];
   return (
     <nav aria-label="Seções do evento">

@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -7,6 +8,7 @@ import { getPublicEvent, isUuid } from "@/modules/events/queries";
 import { publicAvailability } from "@/modules/events/status";
 import { answersFromFormData, validateAnswers } from "@/modules/forms/answers";
 import type { FormField } from "@/modules/forms/fields";
+import { sendConfirmationEmail } from "@/modules/notifications/confirmation";
 import { ticketAvailability } from "./tickets";
 
 // Inscrição pública. Tudo que vem do navegador é revalidado aqui (respostas pela versão
@@ -49,5 +51,8 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
   });
   if (error) return mapDatabaseError(error);
 
-  redirect(`/${data.organization.slug}/${data.event.slug}/inscricao/${(created as { public_token: string }).public_token}`);
+  const { public_token: token, status } = created as { public_token: string; status: string };
+  // O e-mail sai depois da resposta: a pessoa não espera o provedor para ver a inscrição.
+  if (status === "confirmed") after(() => sendConfirmationEmail({ token }));
+  redirect(`/${data.organization.slug}/${data.event.slug}/inscricao/${token}`);
 }

@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import QRCode from "qrcode";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/datetime";
+import { getEnv } from "@/lib/env";
+import { checkinUrl } from "@/modules/checkins/code";
 import { FORMAT_LABELS } from "@/modules/events/status";
 import { getRegistrationByToken, REGISTRATION_STATUS_LABELS } from "@/modules/registrations/queries";
 
@@ -23,6 +26,14 @@ export default async function RegistrationStatusPage({ params }: Props) {
   const tz = event.timezone;
   const confirmed = registration.status === "confirmed";
   const cancelledEvent = event.status === "cancelled";
+  // O QR leva só o código opaco do check-in, nunca o token desta página nem dados pessoais.
+  const qr = registration.checkin_code
+    ? await QRCode.toString(checkinUrl(getEnv().NEXT_PUBLIC_APP_URL, registration.organization.slug, event.id, registration.checkin_code), {
+        type: "svg",
+        margin: 1,
+        errorCorrectionLevel: "M",
+      })
+    : null;
 
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-6">
@@ -42,6 +53,15 @@ export default async function RegistrationStatusPage({ params }: Props) {
       ) : (
         <Alert tone="warning">Situação da inscrição: {REGISTRATION_STATUS_LABELS[registration.status]}.</Alert>
       )}
+
+      {qr ? (
+        <Card>
+          <CardTitle>QR Code do check-in</CardTitle>
+          <p className="mt-1 text-sm text-ink-muted">Apresente este código na entrada do evento. Ele é único e vale para uma entrada.</p>
+          {/* SVG gerado no servidor pela biblioteca, sem conteúdo do usuário. */}
+          <div role="img" aria-label="QR Code do check-in" className="mx-auto mt-4 w-56 max-w-full bg-white p-2" dangerouslySetInnerHTML={{ __html: qr }} />
+        </Card>
+      ) : null}
 
       <Card>
         <CardTitle>Dados da inscrição</CardTitle>
