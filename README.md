@@ -2,7 +2,7 @@
 
 Plataforma independente para criar eventos, receber inscrições, gerenciar participantes e acompanhar a presença. Multi-organização, com isolamento de dados garantido pelo banco (Row Level Security).
 
-> **Status (Fases 1 a 5):** fundação, eventos, formulários, ingressos, inscrições gratuitas com capacidade global, banco de perguntas, check-in por QR Code ou manual, e-mail de confirmação com o QR Code (Resend, opcional), presença e exportação CSV estão implementados e testados localmente. Pagamentos pelo Mercado Pago (Fase 4, modelo marketplace) estão implementados e testados no banco local, mas ainda não contra o Mercado Pago real (veja [docs/pagamentos.md](docs/pagamentos.md)). Relatórios (Fase 6) **não** foram iniciados. Veja [Limitações conhecidas](#limitações-conhecidas).
+> **Status (Fases 1 a 6):** fundação, eventos, formulários, ingressos, inscrições gratuitas com capacidade global, banco de perguntas, check-in por QR Code ou manual, e-mail de confirmação com o QR Code (Resend, opcional), presença, exportação CSV e relatório do evento (inscrições, presença, ingressos, financeiro e confirmações por dia) estão implementados e testados localmente. Pagamentos pelo Mercado Pago (Fase 4, modelo marketplace) estão implementados e testados no banco local, mas ainda não contra o Mercado Pago real (veja [docs/pagamentos.md](docs/pagamentos.md)). Veja [Limitações conhecidas](#limitações-conhecidas).
 
 ## Stack
 

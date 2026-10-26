@@ -77,6 +77,7 @@ Testes: `tests/security/registrations.test.ts` (inclui 20 inscrições simultân
 
 - `checkins`: RLS ativa; SELECT para `private.registration_reader_roles()` (owner, admin, event_manager, checkin_operator). Nenhuma escrita direta (`revoke all`, só `select` para authenticated).
 - `check_in(p_event_id, p_code, p_registration_id)` (authenticated, SECURITY DEFINER): exige sessão, papel de leitor de inscrições na organização do evento (inexistente e sem permissão respondem `FORBIDDEN`), evento fora de rascunho/cancelado, inscrição do próprio evento (código de outro evento = `CHECKIN_NOT_FOUND`) e confirmada. `insert ... on conflict do nothing`: leituras simultâneas geram um único check-in, e as seguintes devolvem `already_checked_in` com horário e operador originais. Grava `registration.checked_in` em `audit_logs`.
+- `event_report(p_event_id)` (authenticated, SECURITY DEFINER): exige sessão e papel de `private.payment_reader_roles()` (owner, admin, gestor de eventos, visualizador de relatórios); inexistente e sem permissão respondem `FORBIDDEN`. Devolve só agregados (contagens por status, presença, por ingresso, confirmações por dia e totais do financeiro), nenhum dado pessoal.
 - `get_registration` passa a devolver `checkin_code` só para inscrição confirmada em evento não cancelado.
 - Exportação CSV (`/registrations/export`) só para quem administra eventos; o operador de check-in vê a lista, mas não exporta.
 

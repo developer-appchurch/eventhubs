@@ -103,6 +103,7 @@ afterAll(async () => {
   await pool.query("set session_replication_role = replica");
   await pool.query("delete from public.payments where organization_id = any($1::uuid[])", [[orgA, orgB]]);
   await pool.query("delete from public.registrations where organization_id = any($1::uuid[])", [[orgA, orgB]]);
+  await pool.query("delete from private.payment_accounts where organization_id = any($1::uuid[])", [[orgA, orgB]]);
   await pool.query("delete from public.organizations where id = any($1::uuid[])", [[orgA, orgB]]);
   await pool.query("delete from auth.users where id = any($1::uuid[])", [Object.values(ids)]);
   await pool.query("delete from public.payment_events where notification_id like 'teste-%'");
