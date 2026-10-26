@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Fragment, useActionState, useState, type ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
@@ -60,6 +60,7 @@ export function FormBuilder({
           : list,
     );
   const [newType, setNewType] = useState<FieldType>("short_text");
+  const [editing, setEditing] = useState<string | null>(null);
 
   const update = (index: number, patch: Partial<FormField>) => setFields((list) => list.map((f, i) => (i === index ? { ...f, ...patch } : f)));
   const move = (index: number, delta: number) =>
@@ -72,10 +73,12 @@ export function FormBuilder({
   const add = () =>
     setFields((list) => {
       const label = FIELD_TYPE_LABELS[newType];
+      const key = fieldKeyFromLabel(label, list.map((f) => f.key));
+      setEditing(key);
       return [
         ...list,
         {
-          key: fieldKeyFromLabel(label, list.map((f) => f.key)),
+          key,
           label,
           type: newType,
           required: false,
@@ -96,38 +99,72 @@ export function FormBuilder({
       <input type="hidden" name="newBankIds" value={JSON.stringify(newBankIds)} />
       {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
 
-      <ol className="grid gap-4">
-        {fields.map((field, index) => {
-          const identity = IDENTITY_TYPES.includes(field.type);
-          const locked = identity || lockedKeys.includes(field.key);
-          const id = (part: string) => `field-${field.key}-${part}`;
-          return (
-            <li key={field.key} className={`grid gap-4 rounded-(--radius-card) border border-line bg-surface p-4 ${field.is_active ? "" : "opacity-70"}`}>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold">
-                  {index + 1}. {FIELD_TYPE_LABELS[field.type]}
-                  <span className="ml-2 font-normal text-ink-muted">({field.key})</span>
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  <Button variant="ghost" onClick={() => move(index, -1)} disabled={index === 0} aria-label={`Mover ${field.label} para cima`}>
-                    ↑
-                  </Button>
-                  <Button variant="ghost" onClick={() => move(index, 1)} disabled={index === fields.length - 1} aria-label={`Mover ${field.label} para baixo`}>
-                    ↓
-                  </Button>
-                  {locked || field.key.startsWith("q_") ? null : (
-                    <Button variant="ghost" onClick={() => saveToBank(index)}>
-                      Salvar no banco
-                    </Button>
-                  )}
-                  {locked ? null : (
-                    <Button variant="ghost" className="text-danger-ink" onClick={() => setFields((list) => list.filter((_, i) => i !== index))}>
-                      Remover
-                    </Button>
-                  )}
-                </div>
-              </div>
-
+      <div className="overflow-x-auto rounded-(--radius-card) border border-line bg-surface">
+        <table className="w-full text-sm">
+          <thead className="border-b border-line-strong text-left text-xs uppercase tracking-wide text-ink-muted">
+            <tr>
+              <th scope="col" className="px-4 py-3 font-medium">Campo</th>
+              <th scope="col" className="px-2 py-3 text-center font-medium">
+                <span className="sm:hidden">Obrig.</span>
+                <span className="hidden sm:inline">Obrigatório</span>
+              </th>
+              <th scope="col" className="px-2 py-3 text-center font-medium">
+                <span className="sm:hidden">Ativo</span>
+                <span className="hidden sm:inline">Ativado / desativado</span>
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-medium">Opções</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {fields.map((field, index) => {
+              const identity = IDENTITY_TYPES.includes(field.type);
+              const locked = identity || lockedKeys.includes(field.key);
+              const open = editing === field.key;
+              const id = (part: string) => `field-${field.key}-${part}`;
+              return (
+                <Fragment key={field.key}>
+                  <tr className={field.is_active ? "" : "text-ink-muted"}>
+                    <th scope="row" className="break-words px-3 py-3 sm:px-4 text-left align-top">
+                      <span className="block text-base font-semibold">{field.label || "(sem rótulo)"}</span>
+                      <span className="text-xs font-normal text-ink-muted">
+                        {FIELD_TYPE_LABELS[field.type]}
+                        {field.key.startsWith("q_") ? " · banco de perguntas" : ""}
+                      </span>
+                    </th>
+                    <td className="px-2 py-3 text-center align-top">
+                      <input
+                        type="checkbox"
+                        className="size-5 accent-brand-600"
+                        checked={field.required}
+                        disabled={locked}
+                        onChange={(e) => update(index, { required: e.target.checked })}
+                        aria-label={`${field.label} é obrigatório`}
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-center align-top">
+                      {locked ? (
+                        <span className="text-xs text-ink-muted">Sempre</span>
+                      ) : (
+                        <Switch checked={field.is_active} onChange={(on) => update(index, { is_active: on })} label={`Usar ${field.label} neste formulário`} />
+                      )}
+                    </td>
+                    <td className="px-2 py-3 align-top sm:px-4">
+                      <div className="flex flex-col items-end gap-1 sm:flex-row sm:justify-end">
+                        <IconButton onClick={() => move(index, -1)} disabled={index === 0} label={`Mover ${field.label} para cima`}>↑</IconButton>
+                        <IconButton onClick={() => move(index, 1)} disabled={index === fields.length - 1} label={`Mover ${field.label} para baixo`}>↓</IconButton>
+                        <IconButton onClick={() => setEditing(open ? null : field.key)} label={`${open ? "Fechar edição de" : "Editar"} ${field.label}`} pressed={open}>✎</IconButton>
+                        {locked ? null : (
+                          <IconButton onClick={() => setFields((list) => list.filter((_, i) => i !== index))} label={`Excluir ${field.label}`} danger>
+                            🗑
+                          </IconButton>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {open ? (
+                    <tr className="bg-surface-muted/50">
+                      <td colSpan={4} className="px-4 py-4">
+                        <div className="grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
                   <label htmlFor={id("label")} className="text-sm font-medium">Rótulo</label>
@@ -178,58 +215,40 @@ export function FormBuilder({
                 </div>
               ) : null}
 
-              {identity ? (
-                <p className="text-sm text-ink-muted">Campo fixo: identifica o participante e é sempre obrigatório.</p>
-              ) : locked ? (
-                <p className="text-sm text-ink-muted">Obrigatória em todos os eventos (definido no banco de perguntas).</p>
-              ) : (
-                <div className="flex flex-wrap gap-5 text-sm">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" className="size-4" checked={field.required} onChange={(e) => update(index, { required: e.target.checked })} />
-                    Obrigatório
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" className="size-4" checked={field.is_active} onChange={(e) => update(index, { is_active: e.target.checked })} />
-                    Ativo
-                  </label>
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-
-      {bank.some((q) => !q.always_on) ? (
-        <fieldset className="grid gap-2 rounded-(--radius-card) border border-line p-4">
-          <legend className="px-1 text-sm font-semibold">Perguntas do banco</legend>
-          <ul className="grid divide-y divide-line">
+                        {locked || field.key.startsWith("q_") ? null : (
+                          <div>
+                            <Button variant="secondary" onClick={() => saveToBank(index)}>
+                              Salvar no banco de perguntas
+                            </Button>
+                          </div>
+                        )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
+              );
+            })}
             {bank
-              .filter((q) => !q.always_on)
-              .map((q) => {
-                const on = fields.some((f) => f.key === bankFieldKey(q.id) && f.is_active);
-                return (
-                  <li key={q.id} className="flex items-center justify-between gap-3 py-2">
-                    <span className={`text-sm font-medium ${on ? "" : "text-ink-muted"}`}>
-                      {q.label} <span className="font-normal text-ink-muted">· {FIELD_TYPE_LABELS[q.type]}</span>
-                    </span>
-                    <label className="flex shrink-0 items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        role="switch"
-                        className="size-4"
-                        checked={on}
-                        disabled={!on && fields.length >= 60}
-                        onChange={(e) => toggleBank(q, e.target.checked)}
-                        aria-label={`Usar "${q.label}" neste formulário`}
-                      />
-                      {on ? "Ativado" : "Desativado"}
-                    </label>
-                  </li>
-                );
-              })}
-          </ul>
-        </fieldset>
-      ) : null}
+              .filter((q) => !fields.some((f) => f.key === bankFieldKey(q.id)))
+              .map((q) => (
+                <tr key={q.id} className="text-ink-muted">
+                  <th scope="row" className="break-words px-3 py-3 sm:px-4 text-left font-semibold">
+                    {q.label}
+                    <span className="block text-xs font-normal">{FIELD_TYPE_LABELS[q.type]} · banco de perguntas</span>
+                  </th>
+                  <td className="px-2 py-3 text-center">
+                    <input type="checkbox" className="size-5" checked={q.required} disabled aria-label={`${q.label} é obrigatório`} />
+                  </td>
+                  <td className="px-2 py-3 text-center">
+                    <Switch checked={false} disabled={fields.length >= 60} onChange={() => toggleBank(q, true)} label={`Usar ${q.label} neste formulário`} />
+                  </td>
+                  <td />
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="flex flex-wrap items-end gap-3 rounded-(--radius-card) border border-dashed border-line-strong p-4">
         <div className="grid gap-1.5">
@@ -249,5 +268,57 @@ export function FormBuilder({
 
       <SubmitButton pendingLabel="Salvando…">Salvar formulário</SubmitButton>
     </form>
+  );
+}
+
+// Interruptor liga/desliga com o texto do estado ao lado.
+function Switch({ checked, onChange, label, disabled }: { checked: boolean; onChange: (on: boolean) => void; label: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className="inline-flex items-center gap-2 rounded-full text-xs text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50"
+    >
+      <span className={`relative h-6 w-11 rounded-full transition-colors ${checked ? "bg-brand-600" : "bg-line-strong"}`}>
+        <span className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-surface shadow transition-transform ${checked ? "translate-x-5" : ""}`} />
+      </span>
+      <span className="hidden sm:inline">{checked ? "Ativado" : "Desativado"}</span>
+    </button>
+  );
+}
+
+function IconButton({
+  children,
+  label,
+  onClick,
+  disabled,
+  danger,
+  pressed,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+  pressed?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      aria-pressed={pressed}
+      className={`inline-flex size-9 items-center justify-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-brand-600 disabled:opacity-40 ${
+        danger ? "text-danger-ink" : "text-brand-700"
+      } ${pressed ? "bg-brand-50" : ""}`}
+    >
+      <span aria-hidden="true">{children}</span>
+    </button>
   );
 }
