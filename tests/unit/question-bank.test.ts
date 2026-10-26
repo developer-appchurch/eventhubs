@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bankFieldKey, bankQuestionToField, formDefinitionSchema, missingAlwaysOn, parseBankQuestion, type BankQuestion } from "../../src/modules/forms/fields";
+import { bankFieldKey, bankQuestionFromField, bankQuestionToField, formDefinitionSchema, missingAlwaysOn, parseBankQuestion, type BankQuestion } from "../../src/modules/forms/fields";
 
 const q = (over: Partial<BankQuestion> = {}): BankQuestion => ({
   id: "6f1c2b9e-0d4a-4c1b-9a3e-1234567890ab",
@@ -46,5 +46,11 @@ describe("banco de perguntas", () => {
     expect(parseBankQuestion({ ...input, type: "email" }).ok).toBe(false);
     expect(parseBankQuestion({ ...input, type: "dropdown", options: ["A"] }).ok).toBe(false);
     expect(parseBankQuestion({ ...input, label: " " }).ok).toBe(false);
+  });
+
+  it("campo criado no formulário vira pergunta opcional do banco", () => {
+    const field = { ...bankQuestionToField(q({ type: "dropdown", options: ["A", "B"], required: true })), key: "tamanho_blusa" };
+    const r = parseBankQuestion(bankQuestionFromField(field));
+    expect(r.ok && r.data).toMatchObject({ label: "CPF", type: "dropdown", options: ["A", "B"], required: true, always_on: false });
   });
 });

@@ -8,7 +8,7 @@ import { canManageEvents } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { answersFromFormData, validateAnswers } from "./answers";
 import { listBankQuestions } from "@/modules/question-bank/queries";
-import { formDefinitionSchema, missingAlwaysOn, type FormField } from "./fields";
+import { bankFieldKey, bankQuestionFromField, formDefinitionSchema, missingAlwaysOn, parseBankQuestion, type FormField } from "./fields";
 
 export async function saveEventForm(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const org = await getOrganizationContext(text(formData, "organizationSlug"));
@@ -28,7 +28,27 @@ export async function saveEventForm(_prev: ActionState, formData: FormData): Pro
   if (missing.length) return { ok: false, message: `A pergunta "${missing[0].label}" é obrigatória em todos os eventos.` };
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("save_event_form", { p_event_id: event.id, p_fields: parsed.data });
+
+  // Perguntas criadas aqui e marcadas "Salvar no banco": entram no banco antes do formulário,
+  // e o campo passa a usar a chave da pergunta criada (o id do navegador é só provisório).
+  let newBankIds: unknown;
+  try {
+    newBankIds = JSON.parse(text(formData, "newBankIds") || "[]");
+  } catch {
+    newBankIds = [];
+  }
+  const fields = [...parsed.data];
+  for (const tempId of Array.isArray(newBankIds) ? newBankIds.slice(0, 60) : []) {
+    const index = typeof tempId === "string" && isUuid(tempId) ? fields.findIndex((f) => f.key === bankFieldKey(tempId)) : -1;
+    if (index < 0) continue;
+    const question = parseBankQuestion(bankQuestionFromField(fields[index]));
+    if (!question.ok) return { ok: false, message: question.message };
+    const { data: row, error } = await supabase.from("question_bank").insert({ ...question.data, organization_id: org.id }).select("id").single();
+    if (error) return mapDatabaseError(error);
+    fields[index] = { ...fields[index], key: bankFieldKey(row.id) };
+  }
+
+  const { data, error } = await supabase.rpc("save_event_form", { p_event_id: event.id, p_fields: fields });
   if (error) return mapDatabaseError(error);
 
   revalidatePath(`/app/${org.slug}/events/${event.id}`, "layout");

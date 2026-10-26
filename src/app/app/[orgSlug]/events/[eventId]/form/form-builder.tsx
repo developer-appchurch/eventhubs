@@ -44,6 +44,13 @@ export function FormBuilder({
     const missing = bank.filter((q) => q.always_on && !list.some((f) => f.key === bankFieldKey(q.id)));
     return [...list, ...missing.map(bankQuestionToField)];
   });
+  // Ids gerados aqui para perguntas novas do banco; o servidor as cria ao salvar.
+  const [newBankIds, setNewBankIds] = useState<string[]>([]);
+  const saveToBank = (index: number) => {
+    const id = crypto.randomUUID();
+    setNewBankIds((ids) => [...ids, id]);
+    update(index, { key: bankFieldKey(id) });
+  };
   const toggleBank = (q: BankQuestion, on: boolean) =>
     setFields((list) =>
       list.some((f) => f.key === bankFieldKey(q.id))
@@ -86,6 +93,7 @@ export function FormBuilder({
       <input type="hidden" name="organizationSlug" value={organizationSlug} />
       <input type="hidden" name="eventId" value={eventId} />
       <input type="hidden" name="fields" value={JSON.stringify(fields)} />
+      <input type="hidden" name="newBankIds" value={JSON.stringify(newBankIds)} />
       {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
 
       <ol className="grid gap-4">
@@ -107,6 +115,11 @@ export function FormBuilder({
                   <Button variant="ghost" onClick={() => move(index, 1)} disabled={index === fields.length - 1} aria-label={`Mover ${field.label} para baixo`}>
                     ↓
                   </Button>
+                  {locked || field.key.startsWith("q_") ? null : (
+                    <Button variant="ghost" onClick={() => saveToBank(index)}>
+                      Salvar no banco
+                    </Button>
+                  )}
                   {locked ? null : (
                     <Button variant="ghost" className="text-danger-ink" onClick={() => setFields((list) => list.filter((_, i) => i !== index))}>
                       Remover
