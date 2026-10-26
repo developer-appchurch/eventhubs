@@ -131,6 +131,14 @@ export function parseBankQuestion(input: Omit<BankQuestion, "id">) {
   return { ok: true as const, data: { label, type, options, validation, help_text, placeholder, always_on, required: always_on || required } };
 }
 
+// Campo criado no formulário que vai para o banco: mesma definição, opcional por padrão.
+export function bankQuestionFromField(field: FormField): Omit<BankQuestion, "id"> {
+  const { key: _key, is_active: _active, ...rest } = field;
+  void _key;
+  void _active;
+  return { ...rest, always_on: false };
+}
+
 // Perguntas "sempre" que faltam no formulário (ausentes, inativas ou opcionais).
 export function missingAlwaysOn(fields: readonly FormField[], bank: readonly BankQuestion[]): BankQuestion[] {
   return bank.filter((q) => q.always_on && !fields.some((f) => f.key === bankFieldKey(q.id) && f.is_active && f.required));
