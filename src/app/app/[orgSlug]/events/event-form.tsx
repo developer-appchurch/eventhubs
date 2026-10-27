@@ -1,13 +1,14 @@
 "use client";
 
 import { useActionState, useState, type ChangeEvent } from "react";
+import { PublicEventView } from "@/components/events/public-event-view";
 import { Alert } from "@/components/ui/alert";
 import { FieldWrapper, inputClass, TextArea, TextInput, useFieldIds } from "@/components/ui/field";
 import { SubmitButton } from "@/components/forms/submit-button";
-import { DEFAULT_TIMEZONE, formatDate, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
+import { DEFAULT_TIMEZONE, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
 import { createEvent, updateEvent } from "@/modules/events/actions";
-import type { EventRecord } from "@/modules/events/queries";
+import type { EventRecord, PublicTicket } from "@/modules/events/queries";
 import { EVENT_FORMATS, FORMAT_LABELS, type EventFormat } from "@/modules/events/status";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -17,11 +18,15 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
 // slugLocked: depois de publicado, o endereço não muda.
 export function EventForm({
   organizationSlug,
+  organizationName,
   event,
+  tickets = [],
   slugLocked = false,
 }: {
   organizationSlug: string;
+  organizationName: string;
   event?: EventRecord;
+  tickets?: PublicTicket[];
   slugLocked?: boolean;
 }) {
   const [state, action] = useActionState(event ? updateEvent : createEvent, INITIAL_STATE);
@@ -37,6 +42,11 @@ export function EventForm({
     venueName: event?.venue_name ?? "",
     address: event?.address ?? "",
     startsAt: localDate(event?.starts_at),
+    endsAt: localDate(event?.ends_at),
+    capacity: String(event?.capacity ?? ""),
+    contactEmail: event?.contact_email ?? "",
+    contactPhone: event?.contact_phone ?? "",
+    participantTerms: event?.participant_terms ?? "",
   });
   const errors = state.fieldErrors ?? {};
   const prefix = `${APP_URL}/${organizationSlug}/`;
@@ -59,7 +69,7 @@ export function EventForm({
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_18rem]">
+    <div className="grid gap-8 xl:grid-cols-[1fr_auto]">
       <form
         action={action}
         className="grid content-start gap-6"
@@ -187,7 +197,16 @@ export function EventForm({
         <SubmitButton pendingLabel="Salvando…">{event ? "Salvar alterações" : "Criar rascunho"}</SubmitButton>
       </form>
 
-      <EventPreview values={values} format={format} isPaid={isPaid} cover={cover} url={prefix + (values.slug || "…")} tz={tz} />
+      <PhonePreview
+        organization={{ name: organizationName, slug: organizationSlug }}
+        status={event?.status ?? "draft"}
+        tickets={tickets}
+        values={values}
+        format={format}
+        cover={cover}
+        url={prefix + (values.slug || "…")}
+        tz={tz}
+      />
     </div>
   );
 }
@@ -251,42 +270,67 @@ function Segmented({
   );
 }
 
-function EventPreview({
+// A página pública de verdade (mesmo componente), montada com o que está sendo digitado,
+// dentro de um celular. A inscrição aparece só na aba Pré-visualizar, que usa o formulário salvo.
+function PhonePreview({
+  organization,
+  status,
+  tickets,
   values,
   format,
-  isPaid,
   cover,
   url,
   tz,
 }: {
+  organization: { name: string; slug: string };
+  status: EventRecord["status"];
+  tickets: PublicTicket[];
   values: Record<string, string>;
   format: EventFormat;
-  isPaid: boolean;
   cover: string;
   url: string;
   tz: string;
 }) {
-  const starts = zonedLocalToUtc(`${values.startsAt}T00:00`, tz);
-  const place = format === "online" ? "Online" : [values.venueName, values.address].filter(Boolean).join(" · ");
+  const startsAt = (zonedLocalToUtc(`${values.startsAt}T00:00`, tz) ?? new Date()).toISOString();
+  const endsAt = (zonedLocalToUtc(`${values.endsAt || values.startsAt}T23:59`, tz) ?? new Date(startsAt)).toISOString();
+  const capacity = Math.max(Number(values.capacity) || 0, 0);
   return (
-    <aside className="hidden self-start lg:sticky lg:top-6 lg:block" aria-label="Pré-visualização da página do evento">
-      <p className="mb-2 text-sm font-medium text-ink-muted">Pré-visualização</p>
-      <div className="overflow-hidden rounded-(--radius-card) border border-line bg-surface">
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element -- prévia local (blob) ou capa já enviada.
-          <img src={cover} alt="" className="aspect-[3/1] w-full object-cover" />
-        ) : (
-          <div className="aspect-[3/1] bg-surface-muted" />
-        )}
-        <div className="grid gap-2 p-4">
-          <p className="text-xs font-semibold text-brand-700">
-            {FORMAT_LABELS[format]} · {isPaid ? "Pago" : "Gratuito"}
-          </p>
-          <p className="text-lg font-bold leading-tight">{values.title || "Nome do evento"}</p>
-          {starts ? <p className="text-sm text-ink-muted">{formatDate(starts.toISOString(), tz)}</p> : null}
-          {place ? <p className="text-sm text-ink">{place}</p> : null}
-          {values.description ? <p className="line-clamp-4 whitespace-pre-line text-sm text-ink">{values.description}</p> : null}
-          <p className="mt-2 truncate text-xs text-brand-700">{url}</p>
+    <aside className="hidden self-start xl:sticky xl:top-6 xl:block" aria-label="Pré-visualização da página do evento no celular">
+      <p className="mb-2 text-sm font-medium text-ink-muted">Como fica no celular</p>
+      <div className="w-[22rem] rounded-[2.75rem] border-[10px] border-ink bg-ink p-0 shadow-xl">
+        <div className="relative overflow-hidden rounded-[2rem] bg-canvas">
+          <div className="absolute top-2 left-1/2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-ink" aria-hidden />
+          <p className="truncate border-b border-line bg-surface px-4 pt-9 pb-2 text-center text-[11px] text-ink-muted">{url}</p>
+          <div className="h-[36rem] overflow-y-auto px-4 py-4" inert>
+            <PublicEventView
+              data={{
+                organization,
+                payments_enabled: true,
+                tickets,
+                form: null,
+                event: {
+                  id: "",
+                  slug: values.slug,
+                  title: values.title || "Nome do evento",
+                  description: values.description,
+                  cover_image_url: cover || null,
+                  format,
+                  venue_name: values.venueName,
+                  address: values.address,
+                  starts_at: startsAt,
+                  ends_at: endsAt,
+                  timezone: tz,
+                  capacity,
+                  remaining: capacity,
+                  contact_email: values.contactEmail || null,
+                  contact_phone: values.contactPhone || null,
+                  participant_terms: values.participantTerms,
+                  status,
+                },
+              }}
+              registration={<p className="text-sm text-ink-muted">O formulário de inscrição aparece aqui. Teste-o na aba Pré-visualizar.</p>}
+            />
+          </div>
         </div>
       </div>
     </aside>

@@ -23,7 +23,8 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
   const tz = event.timezone;
 
   return (
-    <article className="grid gap-6">
+    // Medidas pelo contêiner (@), não pela tela: a mesma página cabe no celular da pré-visualização.
+    <article className="@container grid gap-6">
       {event.cover_image_url ? (
         // eslint-disable-next-line @next/next/no-img-element -- URL externa definida pelo organizador; sem otimizador.
         <img
@@ -36,7 +37,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
 
       <header className="grid gap-2">
         <p className="text-sm font-semibold text-brand-700">{organization.name}</p>
-        <h1 className="text-3xl font-bold sm:text-4xl">{event.title}</h1>
+        <h1 className="text-3xl font-bold @xl:text-4xl">{event.title}</h1>
         <p className="text-ink-muted">
           {formatDate(event.starts_at, tz)} · {FORMAT_LABELS[event.format]}
         </p>
@@ -44,7 +45,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
 
       <Alert tone={notice.tone}>{notice.text}</Alert>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+      <div className="grid gap-6 @3xl:grid-cols-[1fr_22rem]">
         <div className="grid content-start gap-6">
           {event.description ? (
             <Card>

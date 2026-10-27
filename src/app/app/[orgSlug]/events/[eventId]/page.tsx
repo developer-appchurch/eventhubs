@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/datetime";
-import { getEvent } from "@/modules/events/queries";
+import { getEvent, listTicketTypes } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { EventForm } from "../event-form";
@@ -47,12 +47,14 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
     );
   }
 
+  const tickets = (await listTicketTypes(event.id)).filter((t) => t.is_active).map((t) => ({ ...t, sold_out: false }));
+
   return (
     <div className="grid gap-6">
       <Card>
         <CardTitle>Detalhes do evento</CardTitle>
         <div className="mt-6">
-          <EventForm organizationSlug={org.slug} event={event} slugLocked={event.published_at !== null} />
+          <EventForm organizationSlug={org.slug} organizationName={org.name} event={event} tickets={tickets} slugLocked={event.published_at !== null} />
         </div>
       </Card>
       {event.status === "draft" && event.published_at === null ? <DeleteEventForm organizationSlug={org.slug} eventId={event.id} /> : null}
