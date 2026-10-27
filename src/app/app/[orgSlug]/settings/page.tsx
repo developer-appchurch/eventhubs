@@ -60,6 +60,10 @@ export default async function SettingsPage({
               Os ingressos pagos são cobrados pelo Mercado Pago, na conta da própria organização. O valor vai direto para ela, e o Mercado Pago
               retém na hora a taxa do EventHubs e as tarifas dele.
             </p>
+            <p className="text-ink-muted">
+              No parcelamento, os juros são pagos pelo participante, a menos que você ative &quot;parcelamento sem juros&quot; na sua conta Mercado Pago.
+              Em caso de reembolso, a taxa do EventHubs não é devolvida à organização.
+            </p>
             {account ? (
               <p>
                 Conta conectada: <span className="font-semibold">{account.provider_user_id}</span>

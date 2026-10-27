@@ -109,7 +109,8 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
       {paymentsEnabled && tickets.some((t) => t.price_cents > 0) ? (
         <p className="text-sm text-ink-muted">
           Em ingressos pagos, a vaga fica reservada por 30 minutos e você é levado ao Mercado Pago para pagar. A inscrição é confirmada quando o
-          pagamento é aprovado.
+          pagamento é aprovado. No cartão parcelado, os juros das parcelas são acrescentados ao valor e informados pelo Mercado Pago antes de
+          você confirmar.
         </p>
       ) : null}
     </form>
