@@ -6,6 +6,7 @@ import { FIELD_TYPE_LABELS } from "@/modules/forms/fields";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { listBankQuestions } from "@/modules/question-bank/queries";
 import { FormBuilder } from "./form-builder";
+import { RegistrationToggle } from "./registration-toggle";
 
 export const metadata: Metadata = { title: "Formulário de inscrição" };
 
@@ -20,6 +21,11 @@ export default async function EventFormPage({ params }: { params: Promise<{ orgS
 
   return (
     <div className="grid gap-6">
+      {canManageEvents(org.role) && (event.status === "published" || event.status === "registration_closed") ? (
+        <RegistrationToggle organizationSlug={org.slug} eventId={event.id} open={event.status === "published"} />
+      ) : event.status === "draft" ? (
+        <p className="text-sm text-ink-muted">As inscrições abrem quando o evento for publicado.</p>
+      ) : null}
       <p className="text-sm text-ink-muted">
         Versão atual: {version}. Cada alteração salva gera uma nova versão; inscrições guardam a versão que responderam, para que
         respostas antigas mantenham o significado.
