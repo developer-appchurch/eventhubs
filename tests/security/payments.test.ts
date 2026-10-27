@@ -53,10 +53,12 @@ async function createEvent(slug: string, capacity: number): Promise<{ id: string
   );
   const [t] = await as<{ id: string }>(
     manager,
-    "insert into public.ticket_types (organization_id, event_id, name, price_cents, position) values ($1, $2, 'Inteira', 5000, 1) returning id",
+    "insert into public.ticket_types (organization_id, event_id, name, price_cents, position) values ($1, $2, 'Inteira', 0, 1) returning id",
     [orgA, ev.id],
   );
+  // Publica gratuito e depois cobra: sem conta conectada, publicar só com ingresso pago é recusado.
   await as(manager, "select public.change_event_status($1, 'published')", [ev.id]);
+  await as(manager, "update public.ticket_types set price_cents = 5000 where id = $1", [t.id]);
   return { id: ev.id, paid: t.id };
 }
 
