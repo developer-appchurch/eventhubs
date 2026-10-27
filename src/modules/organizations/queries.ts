@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { OrganizationRole } from "./roles";
 
@@ -15,7 +16,7 @@ export type TeamMember = {
 // Todas as consultas usam o cliente do usuário: a RLS limita o resultado às organizações
 // em que ele é membro ativo. O filtro por slug é conveniência, não barreira de segurança.
 
-export async function listMyOrganizations(): Promise<OrganizationContext[]> {
+export const listMyOrganizations = cache(async function listMyOrganizations(): Promise<OrganizationContext[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("organization_members")
@@ -29,9 +30,9 @@ export async function listMyOrganizations(): Promise<OrganizationContext[]> {
     const org = row.organization as unknown as OrganizationSummary | null;
     return org ? [{ ...org, role: row.role as OrganizationRole }] : [];
   });
-}
+});
 
-export async function getOrganizationContext(slug: string): Promise<OrganizationContext | null> {
+export const getOrganizationContext = cache(async function getOrganizationContext(slug: string): Promise<OrganizationContext | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("organization_members")
@@ -45,7 +46,7 @@ export async function getOrganizationContext(slug: string): Promise<Organization
 
   const org = data.organization as unknown as OrganizationSummary;
   return { ...org, role: data.role as OrganizationRole };
-}
+});
 
 export async function listTeam(organizationId: string): Promise<TeamMember[]> {
   const supabase = await createSupabaseServerClient();

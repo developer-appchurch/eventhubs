@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { FormField } from "@/modules/forms/fields";
 import type { EventFormat, EventStatus } from "./status";
@@ -101,7 +102,7 @@ export async function countEvents(organizationId: string) {
   return { total: all.count ?? 0, published: published.count ?? 0 };
 }
 
-export async function getEvent(organizationId: string, eventId: string): Promise<EventRecord | null> {
+export const getEvent = cache(async function getEvent(organizationId: string, eventId: string): Promise<EventRecord | null> {
   if (!isUuid(eventId)) return null;
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -113,7 +114,7 @@ export async function getEvent(organizationId: string, eventId: string): Promise
 
   if (error) throw new Error("Não foi possível carregar o evento.");
   return data as EventRecord | null;
-}
+});
 
 export async function listTicketTypes(eventId: string): Promise<TicketType[]> {
   const supabase = await createSupabaseServerClient();
