@@ -36,6 +36,7 @@ export type EventRecord = EventListItem & {
   participant_terms: string;
   published_at: string | null;
   is_paid: boolean;
+  sales_start_at: string | null;
 };
 
 export type TicketType = {
@@ -61,7 +62,7 @@ export type PublicTicket = Pick<
 export type PublicEventPayload = {
   organization: { name: string; slug: string };
   payments_enabled: boolean;
-  event: Omit<EventRecord, "organization_id" | "online_url" | "published_at" | "is_paid"> & { remaining: number };
+  event: Omit<EventRecord, "organization_id" | "online_url" | "published_at" | "is_paid" | "sales_start_at"> & { remaining: number };
   tickets: PublicTicket[];
   form: { version: number; fields: Omit<FormField, "is_active">[] } | null;
 };

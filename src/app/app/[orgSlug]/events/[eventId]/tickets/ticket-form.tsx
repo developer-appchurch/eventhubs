@@ -80,7 +80,7 @@ export function TicketForm({
               label="Vendas começam"
               type="datetime-local"
               defaultValue={utcToZonedLocal(ticket?.sales_start_at, timezone)}
-              hint="Em branco: já à venda"
+              hint="Em branco: segue a data do evento"
               error={errors.salesStartAt}
             />
             <TextInput

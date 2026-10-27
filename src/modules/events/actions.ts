@@ -38,6 +38,7 @@ function eventFields(formData: FormData) {
     contactPhone: text(formData, "contactPhone"),
     participantTerms: text(formData, "participantTerms"),
     isPaid: text(formData, "isPaid") === "true",
+    salesStartAt: text(formData, "salesStartAt"),
   };
 }
 

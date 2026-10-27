@@ -55,6 +55,7 @@ export const eventInputSchema = z
     contactPhone: optionalText(40),
     participantTerms: z.string().trim().max(20000, "Texto muito longo."),
     isPaid: z.boolean(),
+    salesStartAt: z.string().trim(),
   })
   .transform((input, ctx) => {
     const toUtc = (field: "startsAt" | "endsAt", time: string) => {
@@ -68,6 +69,12 @@ export const eventInputSchema = z
 
     if (endsAt <= startsAt) {
       ctx.addIssue({ code: "custom", path: ["endsAt"], message: "O término não pode ser antes do início." });
+    }
+    let salesStartAt: Date | null = null;
+    if (input.salesStartAt !== "") {
+      salesStartAt = zonedLocalToUtc(input.salesStartAt, input.timezone);
+      if (!salesStartAt) ctx.addIssue({ code: "custom", path: ["salesStartAt"], message: "Data ou hora inválida." });
+      else if (salesStartAt >= endsAt) ctx.addIssue({ code: "custom", path: ["salesStartAt"], message: "As vendas precisam começar antes do fim do evento." });
     }
     if (input.format !== "online" && input.venueName === "") {
       ctx.addIssue({ code: "custom", path: ["venueName"], message: "Informe o local do evento presencial ou híbrido." });
@@ -89,6 +96,7 @@ export const eventInputSchema = z
       contact_phone: input.contactPhone,
       participant_terms: input.participantTerms,
       is_paid: input.isPaid,
+      sales_start_at: salesStartAt?.toISOString() ?? null,
     };
   });
 
