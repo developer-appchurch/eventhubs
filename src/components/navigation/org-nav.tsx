@@ -6,6 +6,24 @@ import { useState } from "react";
 import type { OrganizationSummary } from "@/modules/organizations/queries";
 
 export type NavItem = { label: string; href: string };
+export type NavOrganization = OrganizationSummary & { showRegistrations: boolean; showFinance: boolean };
+
+// Seções de um evento: abas na tela do evento e submenu de Eventos na sidebar.
+export function eventSections(base: string, showRegistrations: boolean, showFinance: boolean): NavItem[] {
+  return [
+    { label: "Detalhes", href: base },
+    { label: "Ingressos", href: `${base}/tickets` },
+    { label: "Formulário", href: `${base}/form` },
+    { label: "Pré-visualizar", href: `${base}/preview` },
+    ...(showRegistrations
+      ? [
+          { label: "Inscrições", href: `${base}/registrations` },
+          { label: "Check-in", href: `${base}/checkin` },
+        ]
+      : []),
+    ...(showFinance ? [{ label: "Pagamentos", href: `${base}/payments` }, { label: "Relatório", href: `${base}/report` }] : []),
+  ];
+}
 
 // Inscrições, check-in, pagamentos e relatório são por evento: ficam nas abas do evento.
 export function buildOrgNav(orgSlug: string): NavItem[] {
@@ -21,10 +39,10 @@ export function buildOrgNav(orgSlug: string): NavItem[] {
 // Seletor de organização + seções da organização ativa, na sidebar.
 // A lista vem do servidor (RLS: só organizações em que o usuário é membro ativo); trocar
 // apenas navega para /app/<slug>, e o layout da organização revalida o vínculo no servidor.
-export function OrgNav({ organizations }: { organizations: OrganizationSummary[] }) {
+export function OrgNav({ organizations }: { organizations: NavOrganization[] }) {
   const pathname = usePathname();
   const router = useRouter();
-  const params = useParams<{ orgSlug?: string }>();
+  const params = useParams<{ orgSlug?: string; eventId?: string }>();
   const [open, setOpen] = useState(false);
   const active = organizations.find((org) => org.slug === params.orgSlug);
 
@@ -89,6 +107,24 @@ export function OrgNav({ organizations }: { organizations: OrganizationSummary[]
                   >
                     {item.label}
                   </Link>
+                  {item.label === "Eventos" && params.eventId ? (
+                    <ul aria-label="Seções do evento" className="ml-3 grid gap-0.5 border-l border-line pl-2">
+                      {eventSections(`${item.href}/${params.eventId}`, active.showRegistrations, active.showFinance).map((sub) => (
+                        <li key={sub.href}>
+                          <Link
+                            href={sub.href}
+                            onClick={() => setOpen(false)}
+                            aria-current={pathname === sub.href ? "page" : undefined}
+                            className={`flex min-h-9 items-center rounded-(--radius-control) px-3 text-sm ${
+                              pathname === sub.href ? "bg-brand-100 font-medium text-brand-900" : "text-ink-muted hover:bg-brand-50 hover:text-ink"
+                            }`}
+                          >
+                            {sub.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </li>
               );
             })}

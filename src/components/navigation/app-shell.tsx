@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/modules/auth/actions";
-import type { OrganizationSummary } from "@/modules/organizations/queries";
+import type { OrganizationContext } from "@/modules/organizations/queries";
+import { canReadPayments } from "@/modules/payments/queries";
+import { canReadRegistrations } from "@/modules/registrations/roles";
 import { Brand } from "./brand";
 import { OrgNav } from "./org-nav";
 
@@ -12,7 +14,7 @@ export function AppShell({
   userName,
 }: {
   children: React.ReactNode;
-  organizations: OrganizationSummary[];
+  organizations: OrganizationContext[];
   userName: string;
 }) {
   return (
@@ -22,7 +24,13 @@ export function AppShell({
           <Brand href="/app" />
         </div>
 
-        <OrgNav organizations={organizations} />
+        <OrgNav
+          organizations={organizations.map(({ role, ...org }) => ({
+            ...org,
+            showRegistrations: canReadRegistrations(role),
+            showFinance: canReadPayments(role),
+          }))}
+        />
 
         <div className="hidden border-t border-line px-5 py-5 lg:block">
           <Link href="/app/account" className="block truncate text-sm font-medium text-ink hover:underline">

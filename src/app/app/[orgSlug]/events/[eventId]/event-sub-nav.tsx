@@ -2,22 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { eventSections } from "@/components/navigation/org-nav";
 
 export function EventSubNav({ base, showRegistrations, showFinance }: { base: string; showRegistrations: boolean; showFinance: boolean }) {
   const pathname = usePathname();
-  const items = [
-    { label: "Detalhes", href: base },
-    { label: "Ingressos", href: `${base}/tickets` },
-    { label: "Formulário", href: `${base}/form` },
-    { label: "Pré-visualizar", href: `${base}/preview` },
-    ...(showRegistrations
-      ? [
-          { label: "Inscrições", href: `${base}/registrations` },
-          { label: "Check-in", href: `${base}/checkin` },
-        ]
-      : []),
-    ...(showFinance ? [{ label: "Pagamentos", href: `${base}/payments` }, { label: "Relatório", href: `${base}/report` }] : []),
-  ];
+  const items = eventSections(base, showRegistrations, showFinance);
   return (
     <nav aria-label="Seções do evento">
       <ul className="flex flex-wrap gap-2">
