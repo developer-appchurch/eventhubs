@@ -19,7 +19,7 @@ export default async function NewEventPage({ params }: { params: Promise<{ orgSl
         O evento nasce como rascunho, com os campos Nome e E-mail no formulário. Depois você cadastra ingressos e publica.
       </p>
       <div className="mt-6">
-        <EventForm organizationSlug={org.slug} />
+        <EventForm organizationSlug={org.slug} organizationName={org.name} />
       </div>
     </Card>
   );
