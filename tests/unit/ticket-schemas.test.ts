@@ -4,7 +4,6 @@ import { ticketTypeInputSchema } from "@/modules/ticket-types/schemas";
 const schema = ticketTypeInputSchema("America/Sao_Paulo");
 const valid = {
   name: "Geral",
-  description: "",
   price: "",
   salesStartAt: "",
   salesEndAt: "",

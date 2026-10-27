@@ -47,7 +47,7 @@ export default async function TicketsPage({ params }: { params: Promise<{ orgSlu
                     {editable ? (
                       <TicketForm {...formProps} ticket={ticket} />
                     ) : (
-                      <p className="text-sm text-ink-muted">{ticket.description || "Sem descrição."}</p>
+                      <p className="text-sm text-ink-muted">Eventos encerrados ou cancelados não podem mais ter ingressos alterados.</p>
                     )}
                   </div>
                 </details>
