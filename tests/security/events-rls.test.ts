@@ -302,6 +302,17 @@ describe("ciclo de status", () => {
     ).rejects.toThrow("NO_ACTIVE_TICKET");
   });
 
+  it("publicar exige ingresso que dá para vender (pago sem Mercado Pago)", async () => {
+    await expect(
+      asCaller(manager, async (c) => {
+        await c.query("insert into public.ticket_types (organization_id, event_id, name, price_cents) values ($1, $2, 'Pago', 5000)", [
+          orgA, draftEvent,
+        ]);
+        return c.query("select public.change_event_status($1, 'published')", [draftEvent]);
+      }),
+    ).rejects.toThrow("PAYMENTS_NOT_CONNECTED");
+  });
+
   it("transição inválida é recusada (rascunho -> encerrado)", async () => {
     await expect(
       asCaller(manager, async (c) => c.query("select public.change_event_status($1, 'ended')", [draftEvent])),
