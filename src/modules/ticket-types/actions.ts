@@ -25,7 +25,6 @@ export async function saveTicketType(_prev: ActionState, formData: FormData): Pr
 
   const parsed = ticketTypeInputSchema(ctx.event.timezone).safeParse({
     name: text(formData, "name"),
-    description: text(formData, "description"),
     price: text(formData, "price"),
     salesStartAt: text(formData, "salesStartAt"),
     salesEndAt: text(formData, "salesEndAt"),

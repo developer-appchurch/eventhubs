@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { TextArea, TextInput } from "@/components/ui/field";
+import { TextInput } from "@/components/ui/field";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { utcToZonedLocal } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
@@ -41,59 +41,68 @@ export function TicketForm({
 
   return (
     <div className="grid gap-4">
-      <form action={action} className="grid gap-5" noValidate>
+      <form action={action} className="grid gap-4" noValidate>
         {hidden}
         {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextInput id={`${p}-name`} name="name" label="Nome" defaultValue={ticket?.name} required maxLength={80} error={errors.name} />
+        <div className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr]">
+          <TextInput id={`${p}-name`} name="name" label="Nome" placeholder="Ex.: Inteira, Meia, Lote 1" defaultValue={ticket?.name} required maxLength={80} error={errors.name} />
           <TextInput
             id={`${p}-price`}
             name="price"
             label="Preço (R$)"
             inputMode="decimal"
             defaultValue={ticket ? centsToInput(ticket.price_cents) : "0,00"}
-            hint="Use 0,00 para gratuito. Pagamentos online chegam numa próxima etapa."
+            hint="0,00 = gratuito"
             error={errors.price}
-          />
-        </div>
-        <TextArea id={`${p}-description`} name="description" label="Descrição" defaultValue={ticket?.description} maxLength={1000} error={errors.description} />
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextInput
-            id={`${p}-salesStartAt`}
-            name="salesStartAt"
-            label="Início das vendas (opcional)"
-            type="datetime-local"
-            defaultValue={utcToZonedLocal(ticket?.sales_start_at, timezone)}
-            error={errors.salesStartAt}
-          />
-          <TextInput
-            id={`${p}-salesEndAt`}
-            name="salesEndAt"
-            label="Fim das vendas (opcional)"
-            type="datetime-local"
-            defaultValue={utcToZonedLocal(ticket?.sales_end_at, timezone)}
-            error={errors.salesEndAt}
           />
           <TextInput
             id={`${p}-quantityLimit`}
             name="quantityLimit"
-            label="Limite deste ingresso (opcional)"
+            label="Vagas"
             type="number"
             min={1}
+            placeholder="Sem limite"
             defaultValue={ticket?.quantity_limit ?? ""}
-            hint="Teto próprio deste tipo. A capacidade total do evento continua valendo para todos."
+            hint="Dentro da capacidade do evento"
             error={errors.quantityLimit}
           />
-          <div className="grid grid-cols-2 gap-3">
-            <TextInput id={`${p}-min`} name="minPerOrder" label="Mín. por pedido" type="number" min={1} defaultValue={ticket?.min_per_order ?? 1} error={errors.minPerOrder} />
-            <TextInput id={`${p}-max`} name="maxPerOrder" label="Máx. por pedido" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} error={errors.maxPerOrder} />
-          </div>
         </div>
-        <label className="flex items-center gap-3 text-sm font-medium">
-          <input type="checkbox" name="isActive" defaultChecked={ticket?.is_active ?? true} className="size-4" />
-          Ativo (aparece na página pública)
-        </label>
-        <SubmitButton pendingLabel="Salvando…">{ticket ? "Salvar ingresso" : "Adicionar ingresso"}</SubmitButton>
+        {/* Aberto quando já há valor ou erro nesses campos, para nada ficar escondido. */}
+        <details
+          open={Boolean(ticket?.sales_start_at || ticket?.sales_end_at || errors.salesStartAt || errors.salesEndAt || errors.minPerOrder || errors.maxPerOrder) || undefined}
+          className="rounded-(--radius-control) border border-line px-3 py-2"
+        >
+          <summary className="flex min-h-7 cursor-pointer items-center text-sm font-semibold">Período de vendas e limite por pedido</summary>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            <TextInput
+              id={`${p}-salesStartAt`}
+              name="salesStartAt"
+              label="Vendas começam"
+              type="datetime-local"
+              defaultValue={utcToZonedLocal(ticket?.sales_start_at, timezone)}
+              hint="Em branco: já à venda"
+              error={errors.salesStartAt}
+            />
+            <TextInput
+              id={`${p}-salesEndAt`}
+              name="salesEndAt"
+              label="Vendas terminam"
+              type="datetime-local"
+              defaultValue={utcToZonedLocal(ticket?.sales_end_at, timezone)}
+              hint="Em branco: até o fim do evento"
+              error={errors.salesEndAt}
+            />
+            <TextInput id={`${p}-min`} name="minPerOrder" label="Mínimo por pedido" type="number" min={1} defaultValue={ticket?.min_per_order ?? 1} error={errors.minPerOrder} />
+            <TextInput id={`${p}-max`} name="maxPerOrder" label="Máximo por pedido" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} error={errors.maxPerOrder} />
+          </div>
+        </details>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <label className="flex items-center gap-3 text-sm font-medium">
+            <input type="checkbox" name="isActive" defaultChecked={ticket?.is_active ?? true} className="size-4" />
+            Ativo (aparece na página pública)
+          </label>
+          <SubmitButton pendingLabel="Salvando…">{ticket ? "Salvar ingresso" : "Adicionar ingresso"}</SubmitButton>
+        </div>
       </form>
 
       {ticket ? (

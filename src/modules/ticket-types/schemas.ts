@@ -9,7 +9,6 @@ export function ticketTypeInputSchema(timeZone: string) {
   return z
     .object({
       name: z.string().trim().min(2, "Informe o nome do ingresso.").max(80, "Use no máximo 80 caracteres."),
-      description: z.string().trim().max(1000, "Use no máximo 1000 caracteres."),
       price: z.string().trim(),
       salesStartAt: optionalLocal,
       salesEndAt: optionalLocal,
@@ -50,7 +49,6 @@ export function ticketTypeInputSchema(timeZone: string) {
 
       return {
         name: input.name,
-        description: input.description,
         price_cents: priceCents ?? 0,
         sales_start_at: start?.toISOString() ?? null,
         sales_end_at: end?.toISOString() ?? null,
