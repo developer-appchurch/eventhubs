@@ -1,13 +1,12 @@
 import type { ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardTitle } from "@/components/ui/card";
-import { formatCents, formatDateTime } from "@/lib/datetime";
+import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
 import type { PublicEventPayload } from "@/modules/events/queries";
 import { FORMAT_LABELS, publicAvailability, type Availability } from "@/modules/events/status";
 
 const AVAILABILITY_MESSAGES: Record<Availability, { tone: "info" | "warning" | "danger" | "success"; text: string }> = {
   draft: { tone: "info", text: "Rascunho: esta página ainda não está disponível ao público." },
-  upcoming: { tone: "info", text: "As inscrições ainda não abriram." },
   open: { tone: "success", text: "Inscrições abertas." },
   closed: { tone: "warning", text: "As inscrições para este evento estão encerradas." },
   ended: { tone: "warning", text: "Este evento já foi encerrado." },
@@ -39,7 +38,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
         <p className="text-sm font-semibold text-brand-700">{organization.name}</p>
         <h1 className="text-3xl font-bold sm:text-4xl">{event.title}</h1>
         <p className="text-ink-muted">
-          {formatDateTime(event.starts_at, tz)} · {FORMAT_LABELS[event.format]}
+          {formatDate(event.starts_at, tz)} · {FORMAT_LABELS[event.format]}
         </p>
       </header>
 
@@ -102,17 +101,11 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
             <dl className="mt-3 grid gap-2 text-sm">
               <div>
                 <dt className="text-ink-muted">Início</dt>
-                <dd className="font-medium">{formatDateTime(event.starts_at, tz)}</dd>
+                <dd className="font-medium">{formatDate(event.starts_at, tz)}</dd>
               </div>
               <div>
                 <dt className="text-ink-muted">Término</dt>
-                <dd className="font-medium">{formatDateTime(event.ends_at, tz)}</dd>
-              </div>
-              <div>
-                <dt className="text-ink-muted">Inscrições</dt>
-                <dd className="font-medium">
-                  {formatDateTime(event.registration_opens_at, tz)} até {formatDateTime(event.registration_closes_at, tz)}
-                </dd>
+                <dd className="font-medium">{formatDate(event.ends_at, tz)}</dd>
               </div>
             </dl>
           </Card>

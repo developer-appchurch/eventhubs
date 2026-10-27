@@ -47,9 +47,9 @@ const future = (days: number) => new Date(Date.now() + days * 86_400_000).toISOS
 async function createEvent(slug: string, capacity: number): Promise<{ id: string; paid: string }> {
   const [ev] = await as<{ id: string }>(
     manager,
-    `insert into public.events (organization_id, slug, title, starts_at, ends_at, registration_opens_at, registration_closes_at, capacity, venue_name)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 'Auditório') returning id`,
-    [orgA, slug, `Evento ${slug}`, future(30), future(31), future(-1), future(29), capacity],
+    `insert into public.events (organization_id, slug, title, starts_at, ends_at, capacity, venue_name)
+     values ($1, $2, $3, $4, $5, $6, 'Auditório') returning id`,
+    [orgA, slug, `Evento ${slug}`, future(30), future(31), capacity],
   );
   const [t] = await as<{ id: string }>(
     manager,

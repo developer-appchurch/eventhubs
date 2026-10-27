@@ -10,8 +10,8 @@ const valid = {
   address: "Rua A, 1",
   onlineUrl: "",
   timezone: "America/Sao_Paulo",
-  startsAt: "2026-11-20T19:00",
-  endsAt: "2026-11-20T22:00",
+  startsAt: "2026-11-20",
+  endsAt: "2026-11-22",
   capacity: "100",
   contactEmail: "",
   contactPhone: "",
@@ -31,9 +31,8 @@ describe("eventInputSchema", () => {
     if (!r.success) return;
     expect(r.data).toMatchObject({
       venue_name: "Auditório",
-      starts_at: "2026-11-20T22:00:00.000Z",
-      ends_at: "2026-11-21T01:00:00.000Z",
-      registration_closes_at: "2026-11-21T01:00:00.000Z",
+      starts_at: "2026-11-20T03:00:00.000Z",
+      ends_at: "2026-11-23T02:59:00.000Z",
       is_paid: false,
       capacity: 100,
       contact_email: null,
@@ -42,7 +41,9 @@ describe("eventInputSchema", () => {
   });
 
   it("recusa término antes do início", () => {
-    expect(paths({ ...valid, endsAt: "2026-11-20T18:00" })).toContain("endsAt");
+    expect(paths({ ...valid, endsAt: "2026-11-19" })).toContain("endsAt");
+    expect(eventInputSchema.safeParse({ ...valid, endsAt: "2026-11-20" }).success).toBe(true);
+    expect(paths({ ...valid, startsAt: "2026-11-20T19:00" })).toContain("startsAt");
   });
 
 

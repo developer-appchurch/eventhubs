@@ -54,9 +54,9 @@ beforeAll(async () => {
   await pool.query("insert into public.organization_members (organization_id, user_id, role) values ($1, $2, 'owner'), ($1, $3, 'report_viewer')", [org, owner, viewer]);
   const [ev] = await as<{ id: string }>(
     "authenticated",
-    `insert into public.events (organization_id, slug, title, starts_at, ends_at, registration_opens_at, registration_closes_at, capacity, venue_name)
-     values ($1, 'email', 'Evento', $2, $3, $4, $5, 10, 'Auditório') returning id`,
-    [org, future(30), future(31), future(-1), future(29)],
+    `insert into public.events (organization_id, slug, title, starts_at, ends_at, capacity, venue_name)
+     values ($1, 'email', 'Evento', $2, $3, 10, 'Auditório') returning id`,
+    [org, future(30), future(31)],
     owner,
   );
   eventId = ev.id;

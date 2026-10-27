@@ -3,8 +3,6 @@ import { canManageEvents, EVENT_TRANSITIONS, publicAvailability, type EventStatu
 
 const ev = (status: EventStatus) => ({
   status,
-  registration_opens_at: "2026-10-01T00:00:00Z",
-  registration_closes_at: "2026-11-01T00:00:00Z",
   ends_at: "2026-11-02T00:00:00Z",
 });
 const at = (s: string) => new Date(s);
@@ -19,13 +17,7 @@ describe("publicAvailability", () => {
     expect(publicAvailability(ev("published"), at("2026-10-15T00:00:00Z"))).toBe("open");
   });
 
-  it("publicado antes da abertura está por vir", () => {
-    expect(publicAvailability(ev("published"), at("2026-09-15T00:00:00Z"))).toBe("upcoming");
-  });
 
-  it("publicado após o prazo de inscrição está encerrado para inscrições", () => {
-    expect(publicAvailability(ev("published"), at("2026-11-01T12:00:00Z"))).toBe("closed");
-  });
 
   it("publicado após o fim do evento está encerrado", () => {
     expect(publicAvailability(ev("published"), at("2026-11-03T00:00:00Z"))).toBe("ended");

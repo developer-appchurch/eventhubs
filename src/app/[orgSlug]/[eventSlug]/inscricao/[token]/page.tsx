@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import { Alert } from "@/components/ui/alert";
 import { PayButton } from "@/components/events/pay-button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { formatCents, formatDateTime } from "@/lib/datetime";
+import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
 import { getEnv } from "@/lib/env";
 import { checkinUrl } from "@/modules/checkins/code";
 import { FORMAT_LABELS } from "@/modules/events/status";
@@ -107,7 +107,7 @@ export default async function RegistrationStatusPage({ params }: Props) {
           <div>
             <dt className="text-ink-muted">Quando</dt>
             <dd className="font-medium">
-              {formatDateTime(event.starts_at, tz)} até {formatDateTime(event.ends_at, tz)}
+              {formatDate(event.starts_at, tz)} até {formatDate(event.ends_at, tz)}
             </dd>
           </div>
           <div>

@@ -1,6 +1,6 @@
 import "server-only";
 import QRCode from "qrcode";
-import { formatCents, formatDateTime } from "@/lib/datetime";
+import { formatCents, formatDate } from "@/lib/datetime";
 import { getEmailEnv, getEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { checkinUrl } from "@/modules/checkins/code";
@@ -64,7 +64,7 @@ export async function buildEmail(ctx: Context) {
   const { event } = ctx;
   const statusUrl = `${appUrl}/${ctx.organization.slug}/${event.slug}/inscricao/${ctx.public_token}`;
   const qr = await QRCode.toBuffer(checkinUrl(appUrl, ctx.organization.slug, event.id, ctx.checkin_code), { type: "png", width: 320, margin: 1 });
-  const when = `${formatDateTime(event.starts_at, event.timezone)} até ${formatDateTime(event.ends_at, event.timezone)}`;
+  const when = `${formatDate(event.starts_at, event.timezone)} até ${formatDate(event.ends_at, event.timezone)}`;
   const where = event.format === "online" ? FORMAT_LABELS.online : [event.venue_name, event.address].filter(Boolean).join(" · ");
   const rows: [string, string][] = [
     ["Participante", ctx.attendee_name],

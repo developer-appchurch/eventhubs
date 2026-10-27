@@ -64,6 +64,15 @@ export function formatDateTime(iso: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone, dateStyle: "full", timeStyle: "short" }).format(new Date(iso));
 }
 
+// Evento tem só data: começa às 00:00 do primeiro dia e termina às 23:59 do último.
+export function formatDate(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone, dateStyle: "full" }).format(new Date(iso));
+}
+
+export function formatShortDate(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("pt-BR", { timeZone, dateStyle: "short" }).format(new Date(iso));
+}
+
 export function formatShortDateTime(iso: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone, dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
 }

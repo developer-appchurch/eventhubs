@@ -17,11 +17,11 @@ const httpsUrl = z
   .refine((v) => v === "" || /^https:\/\/[^\s]+$/.test(v), "Use um endereço completo começando com https://.")
   .transform((v) => v || null);
 
-const localDateTime = z.string().min(1, "Informe data e hora.");
+const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data.");
 
-// Entrada do formulário de evento (strings do FormData). As datas chegam no fuso do evento
-// e saem em UTC, já no formato das colunas da tabela events. As inscrições fecham no término
-// do evento; a abertura e a capa (arquivo) são gravadas pela action.
+// Entrada do formulário de evento (strings do FormData). Só datas, sem hora: o evento vai das
+// 00:00 do início às 23:59 do término, no fuso do evento, e sai em UTC no formato da tabela
+// events. A capa (arquivo) é gravada pela action.
 export const eventInputSchema = z
   .object({
     title: z.string().trim().min(3, "Informe o nome do evento (mínimo 3 caracteres).").max(140, "Use no máximo 140 caracteres."),
@@ -39,8 +39,8 @@ export const eventInputSchema = z
     address: z.string().trim().max(300, "Use no máximo 300 caracteres."),
     onlineUrl: httpsUrl,
     timezone: z.string().refine(isEventTimezone, "Escolha um fuso horário da lista."),
-    startsAt: localDateTime,
-    endsAt: localDateTime,
+    startsAt: localDate,
+    endsAt: localDate,
     capacity: z.coerce
       .number("Informe a capacidade.")
       .int("Use um número inteiro.")
@@ -57,17 +57,17 @@ export const eventInputSchema = z
     isPaid: z.boolean(),
   })
   .transform((input, ctx) => {
-    const toUtc = (field: "startsAt" | "endsAt") => {
-      const date = zonedLocalToUtc(input[field], input.timezone);
+    const toUtc = (field: "startsAt" | "endsAt", time: string) => {
+      const date = zonedLocalToUtc(`${input[field]}T${time}`, input.timezone);
       if (!date) ctx.addIssue({ code: "custom", path: [field], message: "Data ou hora inválida." });
       return date;
     };
-    const startsAt = toUtc("startsAt");
-    const endsAt = toUtc("endsAt");
+    const startsAt = toUtc("startsAt", "00:00");
+    const endsAt = toUtc("endsAt", "23:59");
     if (!startsAt || !endsAt) return z.NEVER;
 
     if (endsAt <= startsAt) {
-      ctx.addIssue({ code: "custom", path: ["endsAt"], message: "O término deve ser depois do início." });
+      ctx.addIssue({ code: "custom", path: ["endsAt"], message: "O término não pode ser antes do início." });
     }
     if (input.format !== "online" && input.venueName === "") {
       ctx.addIssue({ code: "custom", path: ["venueName"], message: "Informe o local do evento presencial ou híbrido." });
@@ -84,7 +84,6 @@ export const eventInputSchema = z
       timezone: input.timezone,
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
-      registration_closes_at: endsAt.toISOString(),
       capacity: input.capacity,
       contact_email: input.contactEmail,
       contact_phone: input.contactPhone,

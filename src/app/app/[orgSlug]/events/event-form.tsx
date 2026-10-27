@@ -4,7 +4,7 @@ import { useActionState, useState, type ChangeEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { FieldWrapper, inputClass, TextArea, TextInput, useFieldIds } from "@/components/ui/field";
 import { SubmitButton } from "@/components/forms/submit-button";
-import { DEFAULT_TIMEZONE, formatDateTime, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
+import { DEFAULT_TIMEZONE, formatDate, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
 import { createEvent, updateEvent } from "@/modules/events/actions";
 import type { EventRecord } from "@/modules/events/queries";
@@ -12,9 +12,9 @@ import { EVENT_FORMATS, FORMAT_LABELS, type EventFormat } from "@/modules/events
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
-// Formulário de criação e edição, com a pré-visualização da página ao lado. Datas são
-// digitadas no fuso do evento (o de São Paulo, para eventos novos); o servidor converte para
-// UTC. slugLocked: depois de publicado, o endereço não muda.
+// Formulário de criação e edição, com a pré-visualização da página ao lado. Só datas (sem
+// hora), no fuso do evento (o de São Paulo, para eventos novos); o servidor converte para UTC.
+// slugLocked: depois de publicado, o endereço não muda.
 export function EventForm({
   organizationSlug,
   event,
@@ -29,14 +29,14 @@ export function EventForm({
   const [isPaid, setIsPaid] = useState(event?.is_paid ?? false);
   const [cover, setCover] = useState(event?.cover_image_url ?? "");
   const tz = event?.timezone ?? DEFAULT_TIMEZONE;
-  const local = (iso?: string) => utcToZonedLocal(iso, tz);
+  const localDate = (iso?: string) => utcToZonedLocal(iso, tz).slice(0, 10);
   const [values, setValues] = useState<Record<string, string>>({
     title: event?.title ?? "",
     slug: event?.slug ?? "",
     description: event?.description ?? "",
     venueName: event?.venue_name ?? "",
     address: event?.address ?? "",
-    startsAt: local(event?.starts_at),
+    startsAt: localDate(event?.starts_at),
   });
   const errors = state.fieldErrors ?? {};
   const prefix = `${APP_URL}/${organizationSlug}/`;
@@ -125,8 +125,8 @@ export function EventForm({
         ) : null}
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextInput name="startsAt" label="Início" type="datetime-local" defaultValue={local(event?.starts_at)} required error={errors.startsAt} />
-          <TextInput name="endsAt" label="Término" type="datetime-local" defaultValue={local(event?.ends_at)} required error={errors.endsAt} />
+          <TextInput name="startsAt" label="Data de início" type="date" defaultValue={localDate(event?.starts_at)} required error={errors.startsAt} />
+          <TextInput name="endsAt" label="Data de término" type="date" defaultValue={localDate(event?.ends_at)} required error={errors.endsAt} />
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -257,7 +257,7 @@ function EventPreview({
   url: string;
   tz: string;
 }) {
-  const starts = zonedLocalToUtc(values.startsAt, tz);
+  const starts = zonedLocalToUtc(`${values.startsAt}T00:00`, tz);
   const place = format === "online" ? "Online" : [values.venueName, values.address].filter(Boolean).join(" · ");
   return (
     <aside className="hidden self-start lg:sticky lg:top-6 lg:block" aria-label="Pré-visualização da página do evento">
@@ -274,7 +274,7 @@ function EventPreview({
             {FORMAT_LABELS[format]} · {isPaid ? "Pago" : "Gratuito"}
           </p>
           <p className="text-lg font-bold leading-tight">{values.title || "Nome do evento"}</p>
-          {starts ? <p className="text-sm text-ink-muted">{formatDateTime(starts.toISOString(), tz)}</p> : null}
+          {starts ? <p className="text-sm text-ink-muted">{formatDate(starts.toISOString(), tz)}</p> : null}
           {place ? <p className="text-sm text-ink">{place}</p> : null}
           {values.description ? <p className="line-clamp-4 whitespace-pre-line text-sm text-ink">{values.description}</p> : null}
           <p className="mt-2 truncate text-xs text-brand-700">{url}</p>

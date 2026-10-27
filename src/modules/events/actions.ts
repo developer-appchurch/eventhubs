@@ -75,8 +75,7 @@ export async function createEvent(_prev: ActionState, formData: FormData): Promi
 
   const parsed = eventInputSchema.safeParse(eventFields(formData));
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
-  // As inscrições abrem na criação e fecham no término, então o término precisa ser futuro.
-  if (new Date(parsed.data.ends_at) <= new Date()) return { ok: false, fieldErrors: { endsAt: "O término deve ser uma data futura." } };
+  if (new Date(parsed.data.ends_at) <= new Date()) return { ok: false, fieldErrors: { endsAt: "O término deve ser hoje ou uma data futura." } };
 
   const supabase = await createSupabaseServerClient();
   const cover = await uploadCover(supabase, org.id, formData);
@@ -87,7 +86,6 @@ export async function createEvent(_prev: ActionState, formData: FormData): Promi
     .insert({
       ...parsed.data,
       cover_image_url: cover.url ?? null,
-      registration_opens_at: new Date().toISOString(),
       organization_id: org.id,
     })
     .select("id")

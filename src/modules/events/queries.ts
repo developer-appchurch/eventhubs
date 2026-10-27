@@ -30,8 +30,6 @@ export type EventRecord = EventListItem & {
   address: string;
   online_url: string | null;
   ends_at: string;
-  registration_opens_at: string;
-  registration_closes_at: string;
   contact_email: string | null;
   contact_phone: string | null;
   participant_terms: string;
