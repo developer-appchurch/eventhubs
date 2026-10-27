@@ -95,6 +95,8 @@ export function OrgNav({ organizations }: { organizations: NavOrganization[] }) 
             {buildOrgNav(active.slug).map((item) => {
               const current =
                 pathname === item.href || (item.href !== `/app/${active.slug}` && pathname.startsWith(`${item.href}/`));
+              // Dentro de um evento o destaque fica no submenu; o item pai só fica em negrito.
+              const inEvent = item.label === "Eventos" && Boolean(params.eventId);
               return (
                 <li key={item.label}>
                   <Link
@@ -102,21 +104,27 @@ export function OrgNav({ organizations }: { organizations: NavOrganization[] }) 
                     onClick={() => setOpen(false)}
                     aria-current={current ? "page" : undefined}
                     className={`flex min-h-10 items-center rounded-(--radius-control) px-3 text-sm font-medium ${
-                      current ? "bg-brand-100 text-brand-900" : "text-ink-muted hover:bg-brand-50 hover:text-ink"
+                      inEvent
+                        ? "font-semibold text-ink hover:bg-brand-50"
+                        : current
+                          ? "bg-brand-100 text-brand-900"
+                          : "text-ink-muted hover:bg-brand-50 hover:text-ink"
                     }`}
                   >
                     {item.label}
                   </Link>
                   {item.label === "Eventos" && params.eventId ? (
-                    <ul aria-label="Seções do evento" className="ml-3 grid gap-0.5 border-l border-line pl-2">
+                    <ul aria-label="Seções do evento" className="mt-0.5 ml-4 grid gap-0.5 border-l border-line">
                       {eventSections(`${item.href}/${params.eventId}`, active.showRegistrations, active.showFinance).map((sub) => (
                         <li key={sub.href}>
                           <Link
                             href={sub.href}
                             onClick={() => setOpen(false)}
                             aria-current={pathname === sub.href ? "page" : undefined}
-                            className={`flex min-h-9 items-center rounded-(--radius-control) px-3 text-sm ${
-                              pathname === sub.href ? "bg-brand-100 font-medium text-brand-900" : "text-ink-muted hover:bg-brand-50 hover:text-ink"
+                            className={`-ml-px flex min-h-9 items-center border-l-2 pr-3 pl-3 text-sm ${
+                              pathname === sub.href
+                                ? "border-brand-600 bg-brand-50 font-medium text-brand-900"
+                                : "border-transparent text-ink-muted hover:border-line-strong hover:text-ink"
                             }`}
                           >
                             {sub.label}
