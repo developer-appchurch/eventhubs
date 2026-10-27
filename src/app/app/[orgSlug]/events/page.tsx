@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { formatShortDateTime } from "@/lib/datetime";
+import { formatShortDate } from "@/lib/datetime";
 import { EVENTS_PAGE_SIZE, listEvents } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
@@ -67,7 +67,7 @@ export default async function EventsPage({
                     </Link>
                     <p className="text-xs text-ink-muted">/{org.slug}/{event.slug}</p>
                   </td>
-                  <td className="px-4 py-3 tabular-nums">{formatShortDateTime(event.starts_at, event.timezone)}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatShortDate(event.starts_at, event.timezone)}</td>
                   <td className="px-4 py-3">{FORMAT_LABELS[event.format]}</td>
                   <td className="px-4 py-3 tabular-nums">{event.capacity.toLocaleString("pt-BR")}</td>
                   <td className="px-4 py-3">

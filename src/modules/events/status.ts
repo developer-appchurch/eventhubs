@@ -44,18 +44,17 @@ export function canManageEvents(role: OrganizationRole): boolean {
   return role === "owner" || role === "admin" || role === "event_manager";
 }
 
-export type Availability = "draft" | "upcoming" | "open" | "closed" | "ended" | "cancelled";
+export type Availability = "draft" | "open" | "closed" | "ended" | "cancelled";
 
 // Situação vista pelo público. O status é a decisão do organizador; as datas completam:
 // um evento publicado cujo prazo passou aparece como inscrições encerradas, sem job agendado.
 export function publicAvailability(
-  event: { status: EventStatus; registration_opens_at: string; registration_closes_at: string; ends_at: string },
+  event: { status: EventStatus; ends_at: string },
   now: Date = new Date(),
 ): Availability {
   if (event.status === "draft") return "draft";
   if (event.status === "cancelled") return "cancelled";
   if (event.status === "ended" || now >= new Date(event.ends_at)) return "ended";
-  if (event.status === "registration_closed" || now >= new Date(event.registration_closes_at)) return "closed";
-  if (now < new Date(event.registration_opens_at)) return "upcoming";
+  if (event.status === "registration_closed") return "closed";
   return "open";
 }

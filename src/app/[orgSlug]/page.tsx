@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDate } from "@/lib/datetime";
 import { listPublicEvents } from "@/modules/events/queries";
 import { FORMAT_LABELS } from "@/modules/events/status";
 
@@ -33,7 +33,7 @@ export default async function PublicOrganizationPage({ params }: Props) {
                 className="grid h-full gap-2 rounded-(--radius-card) border border-line bg-surface p-5 shadow-(--shadow-card) hover:border-brand-500"
               >
                 <span className="text-lg font-semibold">{event.title}</span>
-                <span className="text-sm text-ink-muted">{formatDateTime(event.starts_at, event.timezone)}</span>
+                <span className="text-sm text-ink-muted">{formatDate(event.starts_at, event.timezone)}</span>
                 <span className="text-sm text-ink-muted">
                   {FORMAT_LABELS[event.format]}
                   {event.venue_name && event.format !== "online" ? ` · ${event.venue_name}` : ""}

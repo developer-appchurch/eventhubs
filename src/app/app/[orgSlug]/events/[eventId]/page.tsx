@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDate } from "@/lib/datetime";
 import { getEvent } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
@@ -25,11 +25,11 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-ink-muted">Início</dt>
-            <dd className="font-medium">{formatDateTime(event.starts_at, event.timezone)}</dd>
+            <dd className="font-medium">{formatDate(event.starts_at, event.timezone)}</dd>
           </div>
           <div>
             <dt className="text-ink-muted">Término</dt>
-            <dd className="font-medium">{formatDateTime(event.ends_at, event.timezone)}</dd>
+            <dd className="font-medium">{formatDate(event.ends_at, event.timezone)}</dd>
           </div>
           <div>
             <dt className="text-ink-muted">Formato</dt>

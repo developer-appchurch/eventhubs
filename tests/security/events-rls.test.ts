@@ -66,11 +66,11 @@ const future = (days: number) => new Date(Date.now() + days * 86_400_000).toISOS
 // Insere evento como o próprio usuário (passa pela RLS e pelos triggers de criação).
 const insertEventSql = `
   insert into public.events (organization_id, slug, title, starts_at, ends_at,
-    registration_opens_at, registration_closes_at, capacity, venue_name)
-  values ($1, $2, $3, $4, $5, $6, $7, $8, 'Auditório') returning id`;
+    capacity, venue_name)
+  values ($1, $2, $3, $4, $5, $6, 'Auditório') returning id`;
 
 function eventValues(org: string, slug: string, capacity = 100) {
-  return [org, slug, `Evento ${slug}`, future(30), future(31), future(-1), future(29), capacity];
+  return [org, slug, `Evento ${slug}`, future(30), future(31), capacity];
 }
 
 async function createEventAs(userId: string, org: string, slug: string): Promise<string> {
@@ -341,7 +341,7 @@ describe("ciclo de status", () => {
 
   it("datas e capacidade inconsistentes são recusadas pelo banco", async () => {
     await asCaller(owner, async (c) => {
-      for (const set of ["ends_at = starts_at - interval '1 hour'", "capacity = 0", "registration_closes_at = ends_at + interval '1 day'"]) {
+      for (const set of ["ends_at = starts_at - interval '1 hour'", "capacity = 0"]) {
         await c.query("savepoint s");
         await expect(c.query(`update public.events set ${set} where id = $1`, [draftEvent]), set).rejects.toMatchObject({ code: "23514" });
         await c.query("rollback to savepoint s");

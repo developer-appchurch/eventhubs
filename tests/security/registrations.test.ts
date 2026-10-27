@@ -74,9 +74,9 @@ async function asManagerCommit(sql: string, params: unknown[]) {
 
 async function createEvent(slug: string, capacity: number, publish = true): Promise<Ev> {
   const { rows } = await asManagerCommit(
-    `insert into public.events (organization_id, slug, title, starts_at, ends_at, registration_opens_at, registration_closes_at, capacity, venue_name)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 'Auditório') returning id`,
-    [orgA, slug, `Evento ${slug}`, future(30), future(31), future(-1), future(29), capacity],
+    `insert into public.events (organization_id, slug, title, starts_at, ends_at, capacity, venue_name)
+     values ($1, $2, $3, $4, $5, $6, 'Auditório') returning id`,
+    [orgA, slug, `Evento ${slug}`, future(30), future(31), capacity],
   );
   const id = rows[0].id as string;
   const t = await asManagerCommit(

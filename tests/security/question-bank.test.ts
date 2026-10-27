@@ -124,9 +124,9 @@ describe("perguntas 'sempre' em novos eventos", () => {
   it("evento novo nasce com as perguntas 'sempre' da própria organização, na versão 1", async () => {
     await as(ids.managerA, async (c) => {
       const { rows } = await c.query(
-        `insert into public.events (organization_id, slug, title, starts_at, ends_at, registration_opens_at, registration_closes_at, capacity)
-         values ($1, 'com-banco', 'Evento com banco', $2, $3, $4, $5, 10) returning id`,
-        [orgA, future(30), future(31), future(-1), future(29)],
+        `insert into public.events (organization_id, slug, title, starts_at, ends_at, capacity)
+         values ($1, 'com-banco', 'Evento com banco', $2, $3, 10) returning id`,
+        [orgA, future(30), future(31)],
       );
       const fields = await c.query("select key, required, is_active from public.form_fields where event_id = $1 order by position", [rows[0].id]);
       expect(fields.rows.map((r) => r.key)).toEqual(["full_name", "email", `q_${qAlways.replace(/-/g, "")}`]);
@@ -140,9 +140,9 @@ describe("perguntas 'sempre' em novos eventos", () => {
   it("organização sem banco mantém o formulário padrão", async () => {
     await as(ids.ownerB, async (c) => {
       const { rows } = await c.query(
-        `insert into public.events (organization_id, slug, title, starts_at, ends_at, registration_opens_at, registration_closes_at, capacity)
-         values ($1, 'sem-sempre', 'Evento B', $2, $3, $4, $5, 10) returning id`,
-        [orgB, future(30), future(31), future(-1), future(29)],
+        `insert into public.events (organization_id, slug, title, starts_at, ends_at, capacity)
+         values ($1, 'sem-sempre', 'Evento B', $2, $3, 10) returning id`,
+        [orgB, future(30), future(31)],
       );
       const fields = await c.query("select key from public.form_fields where event_id = $1 order by position", [rows[0].id]);
       expect(fields.rows.map((r) => r.key)).toEqual(["full_name", "email"]);

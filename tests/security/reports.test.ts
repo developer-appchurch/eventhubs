@@ -76,9 +76,9 @@ beforeAll(async () => {
   }
   const [ev] = await as<{ id: string }[]>(
     user(ids.managerA),
-    `insert into public.events (organization_id, slug, title, starts_at, ends_at, registration_opens_at, registration_closes_at, capacity, venue_name)
-     values ($1, 'relatorio', 'Relatório', $2, $3, $4, $5, 50, 'Auditório') returning id`,
-    [orgA, future(30), future(31), future(-1), future(29)],
+    `insert into public.events (organization_id, slug, title, starts_at, ends_at, capacity, venue_name)
+     values ($1, 'relatorio', 'Relatório', $2, $3, 50, 'Auditório') returning id`,
+    [orgA, future(30), future(31)],
   );
   eventId = ev.id;
   const [t] = await as<{ id: string }[]>(
