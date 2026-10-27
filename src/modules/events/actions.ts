@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import sharp from "sharp";
 import { firstErrors, formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { slugify } from "@/lib/slug";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -25,7 +26,6 @@ function eventFields(formData: FormData) {
     title,
     slug: text(formData, "slug").trim() || slugify(title).slice(0, 60),
     description: text(formData, "description"),
-    coverImageUrl: text(formData, "coverImageUrl"),
     format: text(formData, "format"),
     venueName: text(formData, "venueName"),
     address: text(formData, "address"),
@@ -33,13 +33,40 @@ function eventFields(formData: FormData) {
     timezone: text(formData, "timezone"),
     startsAt: text(formData, "startsAt"),
     endsAt: text(formData, "endsAt"),
-    registrationOpensAt: text(formData, "registrationOpensAt"),
-    registrationClosesAt: text(formData, "registrationClosesAt"),
     capacity: text(formData, "capacity"),
     contactEmail: text(formData, "contactEmail"),
     contactPhone: text(formData, "contactPhone"),
     participantTerms: text(formData, "participantTerms"),
+    isPaid: text(formData, "isPaid") === "true",
   };
+}
+
+type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+const COVER_TYPES = ["image/webp", "image/jpeg", "image/png"];
+
+// Capa enviada como arquivo. O navegador já reduz a foto; aqui ela é sempre regravada em
+// WebP, o que também garante que o arquivo é mesmo uma imagem.
+async function uploadCover(supabase: Supabase, organizationId: string, formData: FormData): Promise<{ url?: string; error?: string }> {
+  const file = formData.get("coverImage");
+  if (!(file instanceof File) || file.size === 0) return {};
+  if (!COVER_TYPES.includes(file.type) || file.size > 1_000_000) return { error: "Envie uma foto JPG, PNG ou WebP de até 1 MB." };
+
+  let webp: Buffer;
+  try {
+    webp = await sharp(Buffer.from(await file.arrayBuffer()))
+      .rotate()
+      .resize({ width: 1600, withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+  } catch {
+    return { error: "Não foi possível ler esta imagem." };
+  }
+
+  const path = `${organizationId}/${crypto.randomUUID()}.webp`;
+  const { error } = await supabase.storage.from("event-covers").upload(path, webp, { contentType: "image/webp" });
+  if (error) return { error: "Não foi possível enviar a imagem de capa." };
+  return { url: supabase.storage.from("event-covers").getPublicUrl(path).data.publicUrl };
 }
 
 export async function createEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -48,11 +75,21 @@ export async function createEvent(_prev: ActionState, formData: FormData): Promi
 
   const parsed = eventInputSchema.safeParse(eventFields(formData));
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
+  // As inscrições abrem na criação e fecham no término, então o término precisa ser futuro.
+  if (new Date(parsed.data.ends_at) <= new Date()) return { ok: false, fieldErrors: { endsAt: "O término deve ser uma data futura." } };
 
   const supabase = await createSupabaseServerClient();
+  const cover = await uploadCover(supabase, org.id, formData);
+  if (cover.error) return { ok: false, fieldErrors: { coverImage: cover.error } };
+
   const { data, error } = await supabase
     .from("events")
-    .insert({ ...parsed.data, organization_id: org.id })
+    .insert({
+      ...parsed.data,
+      cover_image_url: cover.url ?? null,
+      registration_opens_at: new Date().toISOString(),
+      organization_id: org.id,
+    })
     .select("id")
     .single();
 
@@ -69,9 +106,12 @@ export async function updateEvent(_prev: ActionState, formData: FormData): Promi
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
 
   const supabase = await createSupabaseServerClient();
+  const cover = await uploadCover(supabase, org.id, formData);
+  if (cover.error) return { ok: false, fieldErrors: { coverImage: cover.error } };
+
   const { data, error } = await supabase
     .from("events")
-    .update(parsed.data)
+    .update(cover.url ? { ...parsed.data, cover_image_url: cover.url } : parsed.data)
     .eq("id", eventId)
     .eq("organization_id", org.id)
     .select("id");

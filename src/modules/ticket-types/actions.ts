@@ -35,6 +35,9 @@ export async function saveTicketType(_prev: ActionState, formData: FormData): Pr
     isActive: formData.get("isActive") === "on",
   });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
+  if (!ctx.event.is_paid && parsed.data.price_cents > 0) {
+    return { ok: false, fieldErrors: { price: "Este evento está marcado como gratuito. Use 0,00 ou marque o evento como pago." } };
+  }
   if (parsed.data.quantity_limit !== null && parsed.data.quantity_limit > ctx.event.capacity) {
     return { ok: false, fieldErrors: { quantityLimit: `O limite não pode passar da capacidade do evento (${ctx.event.capacity}).` } };
   }

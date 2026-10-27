@@ -20,7 +20,8 @@ const httpsUrl = z
 const localDateTime = z.string().min(1, "Informe data e hora.");
 
 // Entrada do formulário de evento (strings do FormData). As datas chegam no fuso do evento
-// e saem em UTC, já no formato das colunas da tabela events.
+// e saem em UTC, já no formato das colunas da tabela events. As inscrições fecham no término
+// do evento; a abertura e a capa (arquivo) são gravadas pela action.
 export const eventInputSchema = z
   .object({
     title: z.string().trim().min(3, "Informe o nome do evento (mínimo 3 caracteres).").max(140, "Use no máximo 140 caracteres."),
@@ -33,7 +34,6 @@ export const eventInputSchema = z
         if (message) ctx.addIssue({ code: "custom", message });
       }),
     description: z.string().trim().max(20000, "Descrição muito longa."),
-    coverImageUrl: httpsUrl,
     format: z.enum(EVENT_FORMATS, "Escolha o formato do evento."),
     venueName: z.string().trim().max(160, "Use no máximo 160 caracteres."),
     address: z.string().trim().max(300, "Use no máximo 300 caracteres."),
@@ -41,8 +41,6 @@ export const eventInputSchema = z
     timezone: z.string().refine(isEventTimezone, "Escolha um fuso horário da lista."),
     startsAt: localDateTime,
     endsAt: localDateTime,
-    registrationOpensAt: localDateTime,
-    registrationClosesAt: localDateTime,
     capacity: z.coerce
       .number("Informe a capacidade.")
       .int("Use um número inteiro.")
@@ -56,27 +54,20 @@ export const eventInputSchema = z
       .transform((v) => v || null),
     contactPhone: optionalText(40),
     participantTerms: z.string().trim().max(20000, "Texto muito longo."),
+    isPaid: z.boolean(),
   })
   .transform((input, ctx) => {
-    const toUtc = (field: "startsAt" | "endsAt" | "registrationOpensAt" | "registrationClosesAt") => {
+    const toUtc = (field: "startsAt" | "endsAt") => {
       const date = zonedLocalToUtc(input[field], input.timezone);
       if (!date) ctx.addIssue({ code: "custom", path: [field], message: "Data ou hora inválida." });
       return date;
     };
     const startsAt = toUtc("startsAt");
     const endsAt = toUtc("endsAt");
-    const opensAt = toUtc("registrationOpensAt");
-    const closesAt = toUtc("registrationClosesAt");
-    if (!startsAt || !endsAt || !opensAt || !closesAt) return z.NEVER;
+    if (!startsAt || !endsAt) return z.NEVER;
 
     if (endsAt <= startsAt) {
       ctx.addIssue({ code: "custom", path: ["endsAt"], message: "O término deve ser depois do início." });
-    }
-    if (closesAt <= opensAt) {
-      ctx.addIssue({ code: "custom", path: ["registrationClosesAt"], message: "O encerramento deve ser depois da abertura das inscrições." });
-    }
-    if (closesAt > endsAt) {
-      ctx.addIssue({ code: "custom", path: ["registrationClosesAt"], message: "As inscrições devem encerrar até o fim do evento." });
     }
     if (input.format !== "online" && input.venueName === "") {
       ctx.addIssue({ code: "custom", path: ["venueName"], message: "Informe o local do evento presencial ou híbrido." });
@@ -86,7 +77,6 @@ export const eventInputSchema = z
       title: input.title,
       slug: input.slug,
       description: input.description,
-      cover_image_url: input.coverImageUrl,
       format: input.format,
       venue_name: input.venueName,
       address: input.address,
@@ -94,12 +84,12 @@ export const eventInputSchema = z
       timezone: input.timezone,
       starts_at: startsAt.toISOString(),
       ends_at: endsAt.toISOString(),
-      registration_opens_at: opensAt.toISOString(),
-      registration_closes_at: closesAt.toISOString(),
+      registration_closes_at: endsAt.toISOString(),
       capacity: input.capacity,
       contact_email: input.contactEmail,
       contact_phone: input.contactPhone,
       participant_terms: input.participantTerms,
+      is_paid: input.isPaid,
     };
   });
 

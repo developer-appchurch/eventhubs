@@ -27,6 +27,7 @@ try {
   await client.query("drop schema if exists public cascade; create schema public;");
   await client.query("drop schema if exists private cascade;");
   await client.query("drop schema if exists auth cascade;");
+  await client.query("drop schema if exists storage cascade;");
   await client.query("grant all on schema public to postgres; grant all on schema public to public;");
   await client.query(readFileSync(join(root, "supabase/tests/local_auth_stub.sql"), "utf8"));
 
