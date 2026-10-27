@@ -82,5 +82,8 @@ export function getPaymentEnv(): PaymentEnv | null {
     PAYMENT_TOKEN_KEY: process.env.PAYMENT_TOKEN_KEY,
     PLATFORM_FEE_BPS: process.env.PLATFORM_FEE_BPS || undefined,
   });
-  return parsed.success ? parsed.data : null;
+  if (parsed.success) return parsed.data;
+  // Só os nomes das variáveis inválidas, nunca os valores: sem isso o botão do Mercado Pago some sem pista.
+  console.warn(`Pagamentos desativados; variáveis inválidas: ${[...new Set(parsed.error.issues.map((i) => i.path.join(".")))].join(", ")}`);
+  return null;
 }
