@@ -5,18 +5,14 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { OrganizationSummary } from "@/modules/organizations/queries";
 
-export type NavItem = { label: string; href?: string };
+export type NavItem = { label: string; href: string };
 
-// Itens sem href são recursos planejados: aparecem como indisponíveis, nunca como links.
+// Inscrições, check-in, pagamentos e relatório são por evento: ficam nas abas do evento.
 export function buildOrgNav(orgSlug: string): NavItem[] {
   const base = `/app/${orgSlug}`;
   return [
     { label: "Visão geral", href: base },
     { label: "Eventos", href: `${base}/events` },
-    { label: "Inscrições" },
-    { label: "Participantes" },
-    { label: "Check-in" },
-    { label: "Relatórios" },
     { label: "Equipe", href: `${base}/team` },
     { label: "Configurações", href: `${base}/settings` },
   ];
@@ -79,21 +75,6 @@ export function OrgNav({ organizations }: { organizations: OrganizationSummary[]
           </button>
           <ul className={`${open ? "grid" : "hidden"} gap-0.5 lg:grid`}>
             {buildOrgNav(active.slug).map((item) => {
-              if (!item.href) {
-                return (
-                  <li key={item.label}>
-                    <span
-                      aria-disabled="true"
-                      className="flex min-h-10 cursor-not-allowed items-center justify-between gap-2 px-3 text-sm text-ink-muted/70"
-                    >
-                      {item.label}
-                      <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
-                        Em breve
-                      </span>
-                    </span>
-                  </li>
-                );
-              }
               const current =
                 pathname === item.href || (item.href !== `/app/${active.slug}` && pathname.startsWith(`${item.href}/`));
               return (

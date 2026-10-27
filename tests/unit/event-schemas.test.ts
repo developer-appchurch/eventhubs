@@ -17,6 +17,7 @@ const valid = {
   contactPhone: "",
   participantTerms: "",
   isPaid: false,
+  salesStartAt: "",
 };
 
 const paths = (input: typeof valid) => {
@@ -37,7 +38,14 @@ describe("eventInputSchema", () => {
       capacity: 100,
       contact_email: null,
       contact_phone: null,
+      sales_start_at: null,
     });
+  });
+
+  it("converte o início das vendas e recusa depois do fim do evento", () => {
+    const r = eventInputSchema.safeParse({ ...valid, salesStartAt: "2026-11-01T09:00" });
+    expect(r.success && r.data.sales_start_at).toBe("2026-11-01T12:00:00.000Z");
+    expect(paths({ ...valid, salesStartAt: "2026-11-23T00:00" })).toContain("salesStartAt");
   });
 
   it("recusa término antes do início", () => {

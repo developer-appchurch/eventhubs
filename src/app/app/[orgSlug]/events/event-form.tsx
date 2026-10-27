@@ -166,6 +166,15 @@ export function EventForm({
           />
         </div>
 
+        <TextInput
+          name="salesStartAt"
+          label="Vendas a partir de (opcional)"
+          type="datetime-local"
+          defaultValue={utcToZonedLocal(event?.sales_start_at, tz)}
+          hint="Vale para todos os ingressos. Em branco, as vendas abrem assim que o evento for publicado. Cada lote pode ter a sua própria data."
+          error={errors.salesStartAt}
+        />
+
         <TextArea
           name="participantTerms"
           label="Termos e orientações ao participante (opcional)"
