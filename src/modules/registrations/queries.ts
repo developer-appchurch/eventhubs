@@ -44,6 +44,9 @@ export async function getRegistrationByToken(token: string): Promise<PublicRegis
   return data as PublicRegistration | null;
 }
 
+// Cookie do aparelho que fez a inscrição: a página do evento oferece voltar a ela.
+export const registrationCookie = (eventId: string) => `eh_inscricao_${eventId}`;
+
 export const REGISTRATIONS_PAGE_SIZE = 50;
 
 export type RegistrationListItem = {

@@ -28,7 +28,8 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   PAID_TICKET: "Ingressos pagos ainda não estão disponíveis para inscrição online.",
   FORM_OUTDATED: "O formulário deste evento foi atualizado. Recarregue a página e preencha novamente.",
   INVALID_ANSWERS: "Há respostas inválidas. Revise o formulário e tente novamente.",
-  ALREADY_REGISTERED: "Já existe uma inscrição ativa com este e-mail para este evento.",
+  ALREADY_REGISTERED:
+    "Já existe uma inscrição ativa com este e-mail para este evento. Para ver a inscrição ou concluir o pagamento, use o link que enviamos para o seu e-mail.",
   SOLD_OUT: "As vagas deste evento se esgotaram.",
   TICKET_SOLD_OUT: "Este ingresso esgotou. Escolha outro, se houver.",
   CHECKIN_NOT_FOUND: "Código não encontrado neste evento. Confira se o QR é deste evento.",
