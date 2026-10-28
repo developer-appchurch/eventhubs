@@ -34,6 +34,9 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   TICKET_SOLD_OUT: "Este ingresso esgotou. Escolha outro, se houver.",
   CHECKIN_NOT_FOUND: "Código não encontrado neste evento. Confira se o QR é deste evento.",
   CHECKIN_UNAVAILABLE: "Check-in indisponível: o evento está em rascunho ou foi cancelado.",
+  REGISTRATION_NOT_ACTIVE: "Só inscrições confirmadas ou aguardando pagamento podem ser canceladas.",
+  REGISTRATION_HAS_PAYMENT: "Esta inscrição tem pagamento registrado e não pode ser apagada, para não perder o histórico financeiro. Cancele a inscrição; se houver valor pago, faça o reembolso no Mercado Pago.",
+  REGISTRATION_RESERVED: "A reserva desta inscrição ainda vale e a pessoa pode estar pagando agora. Cancele a inscrição ou aguarde a reserva vencer para apagar.",
   REGISTRATION_NOT_CONFIRMED: "Esta inscrição não está confirmada. Não é possível registrar presença.",
 };
 

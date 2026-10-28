@@ -1,15 +1,17 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPublicEvent, isUuid } from "@/modules/events/queries";
-import { publicAvailability } from "@/modules/events/status";
+import { canManageEvents, publicAvailability } from "@/modules/events/status";
 import { answersFromFormData, validateAnswers } from "@/modules/forms/answers";
 import type { FormField } from "@/modules/forms/fields";
 import { sendConfirmationEmail, sendPendingPaymentEmail } from "@/modules/notifications/confirmation";
+import { getOrganizationContext } from "@/modules/organizations/queries";
 import { checkoutUrlFor } from "@/modules/payments/service";
 import { registrationCookie } from "./queries";
 import { ticketAvailability } from "./tickets";
@@ -86,4 +88,24 @@ async function safeCheckoutUrl(token: string): Promise<string | null> {
     console.error("[pagamentos] falha ao criar checkout", { error: error instanceof Error ? error.message : "erro" });
     return null;
   }
+}
+
+// Cancelar ou apagar pelo organizador. O banco repete papel, status e pagamento; daqui só sai
+// a mensagem. Cancelar libera vaga e e-mail sem perder o histórico de pagamento.
+export async function manageRegistration(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const org = await getOrganizationContext(text(formData, "organizationSlug"));
+  const registrationId = text(formData, "registrationId");
+  const op = text(formData, "op");
+  if (!org || !canManageEvents(org.role) || !isUuid(registrationId) || (op !== "cancel" && op !== "delete")) {
+    return { ok: false, message: "Você não tem permissão para gerenciar inscrições desta organização." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc(op === "cancel" ? "cancel_registration" : "delete_registration", { p_registration_id: registrationId });
+  if (error) return mapDatabaseError(error);
+
+  revalidatePath(`/app/${org.slug}`, "layout");
+  return op === "cancel"
+    ? { ok: true, message: "Inscrição cancelada. A vaga foi liberada e o e-mail pode se inscrever de novo." }
+    : { ok: true, message: "Inscrição apagada. A vaga foi liberada e o e-mail pode se inscrever de novo." };
 }

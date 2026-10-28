@@ -266,3 +266,46 @@ describe("notificações e leitura", () => {
     await expect(as(user(ids.ownerA), "select 1 from public.payment_events")).rejects.toThrow(/permission denied/);
   });
 });
+
+describe("cancelar e apagar inscrição pelo organizador", () => {
+  const cancel = (caller: Caller, id: string) => as(caller, "select public.cancel_registration($1)", [id]);
+  const remove = (caller: Caller, id: string) => as(caller, "select public.delete_registration($1)", [id]);
+
+  it("só quem gerencia eventos da organização cancela ou apaga", async () => {
+    const event = await createEvent("gestao-papeis", 10);
+    const reg = await reserve(event, "papeis@exemplo.com");
+    await expire(reg.id);
+    for (const caller of [user(ids.checkinA), user(ids.viewerA), user(ids.ownerB)]) {
+      await expect(cancel(caller, reg.id)).rejects.toMatchObject({ code: "42501" });
+      await expect(remove(caller, reg.id)).rejects.toMatchObject({ code: "42501" });
+    }
+    await expect(remove(anon, reg.id)).rejects.toThrow(/permission denied/);
+    expect(await registrationStatus(reg.id)).toBe("pending_payment");
+  });
+
+  it("apaga reserva vencida sem pagamento e o mesmo e-mail pode se inscrever de novo", async () => {
+    const event = await createEvent("gestao-apagar", 10);
+    const reg = await reserve(event, "apagar@exemplo.com");
+    await expect(remove(manager, reg.id)).rejects.toMatchObject({ message: "REGISTRATION_RESERVED" });
+    await expire(reg.id);
+    await remove(manager, reg.id);
+    expect((await pool.query("select 1 from public.registrations where id = $1", [reg.id])).rows).toHaveLength(0);
+    const audit = await pool.query("select 1 from public.audit_logs where action = 'registration.deleted' and target_id = $1", [reg.id]);
+    expect(audit.rows).toHaveLength(1);
+    expect((await reserve(event, "apagar@exemplo.com")).status).toBe("pending_payment");
+  });
+
+  it("inscrição paga não é apagada; cancelar libera a vaga e mantém o pagamento", async () => {
+    const event = await createEvent("gestao-paga", 1);
+    const reg = await reserve(event, "paga@exemplo.com");
+    expect(await record(reg.id, "approved")).toBe("confirmed");
+    await expect(remove(manager, reg.id)).rejects.toMatchObject({ message: "REGISTRATION_HAS_PAYMENT" });
+    await cancel(manager, reg.id);
+    expect(await registrationStatus(reg.id)).toBe("cancelled");
+    expect((await pool.query("select status from public.payments where registration_id = $1", [reg.id])).rows).toEqual([{ status: "approved" }]);
+    await expect(cancel(manager, reg.id)).rejects.toMatchObject({ message: "REGISTRATION_NOT_ACTIVE" });
+    await expect(remove(manager, reg.id)).rejects.toMatchObject({ message: "REGISTRATION_HAS_PAYMENT" });
+    // Capacidade 1: a vaga voltou e o mesmo e-mail se inscreve de novo.
+    expect((await reserve(event, "paga@exemplo.com")).status).toBe("pending_payment");
+  });
+});
