@@ -37,6 +37,7 @@ export async function createOrganization(_prev: ActionState, formData: FormData)
 export async function updateOrganization(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = updateOrganizationSchema.safeParse({
     name: text(formData, "name"),
+    slug: text(formData, "slug"),
     organizationSlug: text(formData, "organizationSlug"),
   });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
@@ -57,7 +58,7 @@ export async function updateOrganization(_prev: ActionState, formData: FormData)
 
   const { data, error } = await supabase
     .from("organizations")
-    .update({ name: parsed.data.name })
+    .update({ name: parsed.data.name, slug: parsed.data.slug })
     .eq("id", org.id)
     .select("id");
 
@@ -65,6 +66,8 @@ export async function updateOrganization(_prev: ActionState, formData: FormData)
   if (!data?.length) return { ok: false, message: "Você não tem permissão para alterar esta organização." };
 
   // Re-renderiza o layout da organização (sidebar, seletor, título) na própria resposta da action.
-  revalidatePath(`/app/${parsed.data.organizationSlug}`, "layout");
+  revalidatePath(`/app/${parsed.data.slug}`, "layout");
+  // Endereço novo: navega sem recarregar a página; o antigo passa a redirecionar para ele.
+  if (parsed.data.slug !== parsed.data.organizationSlug) redirect(`/app/${parsed.data.slug}/settings`);
   return { ok: true, message: "Organização atualizada." };
 }

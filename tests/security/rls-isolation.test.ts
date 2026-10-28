@@ -133,6 +133,45 @@ describe("isolamento entre organizações", () => {
   });
 });
 
+describe("troca do endereço público", () => {
+  const novo = `${slugA}-novo`;
+  const asUser = (c: pg.PoolClient, userId: string) =>
+    c.query("select set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: userId, role: "authenticated" })]);
+
+  it("owner troca o slug e o antigo passa a resolver para o novo, inclusive para anon", async () => {
+    const resolved = await asCaller(owner, async (c) => {
+      expect((await c.query("update public.organizations set slug = $1 where id = $2", [novo, orgA])).rowCount).toBe(1);
+      await c.query("set local role anon");
+      return (await c.query("select public.resolve_organization_slug($1) as slug", [slugA.toUpperCase()])).rows[0].slug;
+    });
+    expect(resolved).toBe(novo);
+  });
+
+  it("outra organização não pode assumir o endereço antigo", async () => {
+    await expect(
+      asCaller(owner, async (c) => {
+        await c.query("update public.organizations set slug = $1 where id = $2", [novo, orgA]);
+        await asUser(c, ids.ownerB);
+        await c.query("update public.organizations set slug = $1 where id = $2", [slugA, orgB]);
+      }),
+    ).rejects.toMatchObject({ code: "23505" });
+  });
+
+  it("a própria organização pode voltar ao endereço antigo", async () => {
+    const resolved = await asCaller(owner, async (c) => {
+      await c.query("update public.organizations set slug = $1 where id = $2", [novo, orgA]);
+      await c.query("update public.organizations set slug = $1 where id = $2", [slugA, orgA]);
+      return (await c.query("select public.resolve_organization_slug($1) as slug", [novo])).rows[0].slug;
+    });
+    expect(resolved).toBe(slugA);
+  });
+
+  it("event_manager não troca o slug", async () => {
+    const result = await asCaller(eventManager, async (c) => c.query("update public.organizations set slug = $1 where id = $2", [novo, orgA]));
+    expect(result.rowCount).toBe(0);
+  });
+});
+
 describe("permissões por papel", () => {
   it.each([
     ["owner", owner],

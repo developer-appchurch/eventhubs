@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getOrganizationContext } from "@/modules/organizations/queries";
+import { getOrganizationContext, redirectIfOrganizationRenamed } from "@/modules/organizations/queries";
 import { ROLE_LABELS } from "@/modules/organizations/roles";
 import { Badge } from "@/components/ui/badge";
 
@@ -13,7 +13,10 @@ export default async function OrganizationLayout({
   const { orgSlug } = await params;
   // Slug inexistente ou sem vínculo ativo responde igual: não revela se a organização existe.
   const org = await getOrganizationContext(orgSlug);
-  if (!org) notFound();
+  if (!org) {
+    await redirectIfOrganizationRenamed(orgSlug);
+    notFound();
+  }
 
   return (
     <div className="grid gap-6">

@@ -10,6 +10,7 @@ import { getEnv } from "@/lib/env";
 import { checkinUrl } from "@/modules/checkins/code";
 import { FORMAT_LABELS } from "@/modules/events/status";
 import { getRegistrationByToken, REGISTRATION_STATUS_LABELS } from "@/modules/registrations/queries";
+import { redirectIfOrganizationRenamed } from "@/modules/organizations/queries";
 
 type Props = { params: Promise<{ orgSlug: string; eventSlug: string; token: string }> };
 
@@ -20,6 +21,7 @@ export default async function RegistrationStatusPage({ params }: Props) {
   const { orgSlug, eventSlug, token } = await params;
   const registration = await getRegistrationByToken(token);
   if (!registration || registration.organization.slug !== orgSlug.toLowerCase() || registration.event.slug !== eventSlug.toLowerCase()) {
+    await redirectIfOrganizationRenamed(orgSlug);
     notFound();
   }
 

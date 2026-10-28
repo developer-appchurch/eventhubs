@@ -14,6 +14,15 @@ export function OrganizationSettingsForm({ organizationSlug, initialName }: { or
       <input type="hidden" name="organizationSlug" value={organizationSlug} />
       {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
       <TextInput name="name" label="Nome da organização" defaultValue={initialName} required error={state.fieldErrors?.name} />
+      <TextInput
+        name="slug"
+        label="Endereço público"
+        defaultValue={organizationSlug}
+        required
+        hint="Aparece nos links dos seus eventos. Links com o endereço antigo continuam funcionando e levam ao novo."
+        error={state.fieldErrors?.slug}
+        spellCheck={false}
+      />
       <SubmitButton pendingLabel="Salvando…">Salvar alterações</SubmitButton>
     </form>
   );

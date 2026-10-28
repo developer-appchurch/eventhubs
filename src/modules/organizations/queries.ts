@@ -1,5 +1,9 @@
 import "server-only";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { cache } from "react";
+import { safeNextPath } from "@/lib/safe-redirect";
+import { PATHNAME_HEADER, replaceOrganizationSlug } from "@/lib/slug";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { OrganizationRole } from "./roles";
 
@@ -56,4 +60,15 @@ export async function listTeam(organizationId: string): Promise<TeamMember[]> {
 
   if (error) throw new Error("Não foi possível carregar a equipe.");
   return (data ?? []) as TeamMember[];
+}
+
+// Slug que não existe mais: se for um endereço antigo de uma organização, redireciona para o
+// mesmo caminho com o endereço atual. Chamado só antes de um notFound(), nunca no caminho feliz.
+export async function redirectIfOrganizationRenamed(slug: string): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.rpc("resolve_organization_slug", { p_slug: slug });
+  if (typeof data !== "string" || !data) return;
+  const path = (await headers()).get(PATHNAME_HEADER) ?? `/${slug}`;
+  // Temporário (307): um 308 ficaria em cache no navegador e criaria laço se o endereço antigo voltar a ser usado.
+  redirect(safeNextPath(replaceOrganizationSlug(path, slug, data), `/${data}`));
 }

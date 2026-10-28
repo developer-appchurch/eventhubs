@@ -6,6 +6,7 @@ import { PublicEventView } from "@/components/events/public-event-view";
 import { RegistrationForm } from "@/components/events/registration-form";
 import { getPublicEvent } from "@/modules/events/queries";
 import { publicAvailability } from "@/modules/events/status";
+import { redirectIfOrganizationRenamed } from "@/modules/organizations/queries";
 
 type Props = { params: Promise<{ orgSlug: string; eventSlug: string }> };
 
@@ -23,7 +24,10 @@ export default async function PublicEventPage({ params }: Props) {
   const { orgSlug, eventSlug } = await params;
   // Rascunho e inexistente respondem igual (404): a função do banco não devolve rascunhos.
   const data = await getPublicEvent(orgSlug, eventSlug);
-  if (!data) notFound();
+  if (!data) {
+    await redirectIfOrganizationRenamed(orgSlug);
+    notFound();
+  }
 
   return (
     <div className="grid gap-4">

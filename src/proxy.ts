@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { PATHNAME_HEADER } from "@/lib/slug";
 
 const PRIVATE_PREFIXES = ["/app", "/onboarding"];
 
@@ -7,6 +8,7 @@ const PRIVATE_PREFIXES = ["/app", "/onboarding"];
 // rotas privadas. Isto é uma barreira de navegação; a autorização real é feita no servidor
 // (módulos) e no banco (RLS). Não confie apenas neste arquivo.
 export async function proxy(request: NextRequest) {
+  request.headers.set(PATHNAME_HEADER, request.nextUrl.pathname + request.nextUrl.search);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -15,7 +17,7 @@ export async function proxy(request: NextRequest) {
     if (isPrivate(request.nextUrl.pathname)) {
       return new NextResponse("Serviço indisponível: configuração ausente.", { status: 503 });
     }
-    return NextResponse.next();
+    return NextResponse.next({ request });
   }
 
   let response = NextResponse.next({ request });
