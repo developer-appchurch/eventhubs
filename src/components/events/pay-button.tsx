@@ -12,8 +12,8 @@ export function PayButton({ token }: { token: string }) {
     <form action={action} className="grid gap-2">
       <input type="hidden" name="token" value={token} />
       {state.message ? <Alert tone="danger">{state.message}</Alert> : null}
-      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-        {pending ? "Abrindo o Mercado Pago…" : "Pagar com Mercado Pago"}
+      <Button type="submit" variant="secondary" disabled={pending} className="w-full sm:w-auto">
+        {pending ? "Abrindo o Mercado Pago…" : "Pagar com cartão (Mercado Pago)"}
       </Button>
     </form>
   );

@@ -151,6 +151,38 @@ export async function createCheckout(sellerToken: string, input: CheckoutInput):
   return { id: data.id, url: data.init_point };
 }
 
+// O Pix vence no mínimo 30 minutos depois de criado (regra do Mercado Pago). Prazo fixo a partir da
+// reserva para a mesma chave de idempotência sempre mandar o mesmo corpo; pagamento depois da
+// reserva cai na regra de reserva vencida do record_payment.
+const PIX_GRACE_MS = 31 * 60_000;
+
+export type PixInput = Omit<CheckoutInput, "returnUrl">;
+
+// Pix criado direto na API de pagamentos, com o token do vendedor. A chave de idempotência por
+// inscrição faz o Mercado Pago devolver o mesmo Pix enquanto ele vale, sem guardar nada aqui.
+export async function createPix(sellerToken: string, input: PixInput): Promise<{ id: string; code: string }> {
+  const data = await call("pix", "/v1/payments", {
+    method: "POST",
+    token: sellerToken,
+    headers: { "X-Idempotency-Key": `pix-${input.registrationId}` },
+    body: JSON.stringify({
+      transaction_amount: input.priceCents / 100,
+      description: input.title.slice(0, 250),
+      payment_method_id: "pix",
+      payer: { email: input.payer.email, first_name: input.payer.name.slice(0, 100) },
+      external_reference: input.registrationId,
+      metadata: { organization_id: input.organization.id, organization_name: input.organization.name },
+      notification_url: input.notificationUrl,
+      application_fee: input.platformFeeCents / 100,
+      date_of_expiration: new Date(input.expiresAt.getTime() + PIX_GRACE_MS).toISOString(),
+      statement_descriptor: "EVENTHUBS",
+    }),
+  });
+  const code = (data.point_of_interaction as { transaction_data?: { qr_code?: unknown } } | undefined)?.transaction_data?.qr_code;
+  if (data.id == null || typeof code !== "string" || !code) throw new PaymentProviderError("pix (resposta incompleta)");
+  return { id: String(data.id), code };
+}
+
 export type ProviderPayment = {
   id: string;
   status: PaymentStatus;
