@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/datetime";
 import { listPublicEvents } from "@/modules/events/queries";
 import { FORMAT_LABELS } from "@/modules/events/status";
+import { redirectIfOrganizationRenamed } from "@/modules/organizations/queries";
 
 type Props = { params: Promise<{ orgSlug: string }> };
 
@@ -17,7 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PublicOrganizationPage({ params }: Props) {
   const { orgSlug } = await params;
   const data = await listPublicEvents(orgSlug);
-  if (!data) notFound();
+  if (!data) {
+    await redirectIfOrganizationRenamed(orgSlug);
+    notFound();
+  }
 
   return (
     <div className="grid gap-6">

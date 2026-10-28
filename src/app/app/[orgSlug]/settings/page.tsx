@@ -46,6 +46,10 @@ export default async function SettingsPage({
                 <dt className="font-medium text-ink-muted">Nome</dt>
                 <dd className="font-semibold">{org.name}</dd>
               </div>
+              <div>
+                <dt className="font-medium text-ink-muted">Endereço público</dt>
+                <dd className="font-semibold">/{org.slug}</dd>
+              </div>
               <p className="text-ink-muted">Apenas proprietários e administradores podem alterar estes dados.</p>
             </dl>
           )}
@@ -85,13 +89,6 @@ export default async function SettingsPage({
           </div>
         </Card>
       ) : null}
-      <Card>
-        <CardTitle>Endereço público</CardTitle>
-        <p className="mt-2 text-sm text-ink-muted">
-          Seu endereço é <span className="font-semibold text-ink">/{org.slug}</span>. A alteração do endereço
-          depende de redirecionamentos e chega em uma próxima etapa, para não quebrar links já publicados.
-        </p>
-      </Card>
     </div>
   );
 }

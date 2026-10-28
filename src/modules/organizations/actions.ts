@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { firstErrors, formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { slugify } from "@/lib/slug";
@@ -36,9 +37,11 @@ export async function createOrganization(_prev: ActionState, formData: FormData)
 export async function updateOrganization(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = updateOrganizationSchema.safeParse({
     name: text(formData, "name"),
+    slug: text(formData, "slug"),
     organizationSlug: text(formData, "organizationSlug"),
   });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
+  const slugChanged = parsed.data.slug !== parsed.data.organizationSlug;
 
   const supabase = await createSupabaseServerClient();
   const { data: membership } = await supabase
@@ -56,12 +59,17 @@ export async function updateOrganization(_prev: ActionState, formData: FormData)
 
   const { data, error } = await supabase
     .from("organizations")
-    .update({ name: parsed.data.name })
+    // Só envia o slug quando ele muda: salvar apenas o nome não depende do grant de slug.
+    .update(slugChanged ? { name: parsed.data.name, slug: parsed.data.slug } : { name: parsed.data.name })
     .eq("id", org.id)
     .select("id");
 
   if (error) return mapDatabaseError(error);
   if (!data?.length) return { ok: false, message: "Você não tem permissão para alterar esta organização." };
 
+  // Re-renderiza o layout da organização (sidebar, seletor, título) na própria resposta da action.
+  revalidatePath(`/app/${parsed.data.slug}`, "layout");
+  // Endereço novo: navega sem recarregar a página; o antigo passa a redirecionar para ele.
+  if (slugChanged) redirect(`/app/${parsed.data.slug}/settings`);
   return { ok: true, message: "Organização atualizada." };
 }

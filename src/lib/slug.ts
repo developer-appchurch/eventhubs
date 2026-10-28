@@ -31,3 +31,19 @@ export function validateSlug(slug: string): string | null {
   }
   return null;
 }
+
+// Cabeçalho com caminho + query da requisição, definido pelo proxy (layouts não recebem a URL).
+export const PATHNAME_HEADER = "x-eventhubs-path";
+
+// Troca o segmento do slug antigo da organização pelo atual, mantendo o resto do caminho e
+// a query (ex.: /app/antigo/events/1/checkin?code=x). O primeiro segmento igual é o da org.
+export function replaceOrganizationSlug(path: string, oldSlug: string, newSlug: string): string {
+  const q = path.indexOf("?");
+  const pathname = q === -1 ? path : path.slice(0, q);
+  const query = q === -1 ? "" : path.slice(q);
+  const segments = pathname.split("/");
+  const index = segments.findIndex((segment) => segment.toLowerCase() === oldSlug.toLowerCase());
+  if (index === -1) return `/${newSlug}`;
+  segments[index] = newSlug;
+  return segments.join("/") + query;
+}
