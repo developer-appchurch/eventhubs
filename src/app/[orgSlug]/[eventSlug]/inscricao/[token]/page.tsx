@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { Alert } from "@/components/ui/alert";
 import { PayButton } from "@/components/events/pay-button";
 import { PixPayment } from "@/components/events/pix-payment";
+import { RefreshWhilePending } from "@/components/events/refresh-while-pending";
 import { WhatsAppLink } from "@/components/events/whatsapp-link";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
@@ -54,7 +55,10 @@ export default async function RegistrationStatusPage({ params }: Props) {
       {cancelledEvent ? (
         <Alert tone="danger">Este evento foi cancelado pelo organizador.</Alert>
       ) : confirmed ? (
-        <Alert tone="success">Inscrição confirmada. Guarde este link: é por ele que você consulta sua inscrição.</Alert>
+        <Alert tone="success">
+          {registration.price_cents > 0 ? "Pagamento aprovado! " : null}Sua inscrição em {event.title} está confirmada. Enviamos o QR Code do
+          check-in para {registration.attendee_email}. Guarde este link: é por ele que você consulta sua inscrição.
+        </Alert>
       ) : registration.status === "pending_payment" && registration.expires_at ? (
         <Card>
           <CardTitle>Pagamento pendente</CardTitle>
@@ -152,6 +156,7 @@ export default async function RegistrationStatusPage({ params }: Props) {
           ) : null}
         </dl>
       </Card>
+      {registration.status === "pending_payment" && registration.expires_at && !cancelledEvent ? <RefreshWhilePending until={registration.expires_at} /> : null}
     </div>
   );
 }

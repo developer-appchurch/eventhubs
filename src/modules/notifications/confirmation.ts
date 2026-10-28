@@ -1,10 +1,11 @@
 import "server-only";
 import QRCode from "qrcode";
-import { formatCents, formatDate } from "@/lib/datetime";
+import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
 import { getEmailEnv, getEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { checkinUrl } from "@/modules/checkins/code";
 import { FORMAT_LABELS, type EventFormat } from "@/modules/events/status";
+import { getRegistrationByToken, type PublicRegistration } from "@/modules/registrations/queries";
 import { sendEmail } from "./resend";
 
 type Context = {
@@ -57,6 +58,41 @@ export async function sendConfirmationEmail(by: { registrationId?: string; token
   } catch (e) {
     console.error("[e-mail] falha ao preparar confirmação", { error: e instanceof Error ? e.message : "erro" });
   }
+}
+
+// Link da inscrição pendente, para quem fechar a página voltar e pagar. Nunca lança.
+// Sem registro em notifications: sai uma vez na criação, e a chave de idempotência do
+// provedor segura um reenvio da mesma requisição.
+export async function sendPendingPaymentEmail(token: string): Promise<void> {
+  const env = getEmailEnv();
+  if (!env) return;
+  try {
+    const registration = await getRegistrationByToken(token);
+    if (registration?.status !== "pending_payment" || !registration.expires_at) return;
+    await sendEmail(env, buildPendingEmail(registration, token));
+  } catch (e) {
+    console.error("[e-mail] pagamento pendente não enviado", { error: e instanceof Error ? e.message : "erro" });
+  }
+}
+
+export function buildPendingEmail(registration: PublicRegistration, token: string) {
+  const { event } = registration;
+  const statusUrl = `${getEnv().NEXT_PUBLIC_APP_URL}/${registration.organization.slug}/${event.slug}/inscricao/${token}`;
+  const until = formatDateTime(registration.expires_at as string, event.timezone);
+  const subject = `Finalize o pagamento: ${event.title}`;
+  const intro = `Olá, ${registration.attendee_name}. Sua vaga no ingresso ${registration.ticket.name} está reservada até ${until}. Pague ${formatCents(registration.price_cents)} para confirmar a inscrição.`;
+  const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2933">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;padding:28px">
+<tr><td>
+<p style="margin:0 0 4px;font-size:14px;color:#52606d">${escape(registration.organization.name)}</p>
+<h1 style="margin:0 0 16px;font-size:22px">${escape(subject)}</h1>
+<p style="margin:0 0 20px;font-size:15px">${escape(intro)}</p>
+<p style="margin:0 0 20px"><a href="${escape(statusUrl)}" style="display:inline-block;background:#2f54eb;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 18px;border-radius:8px">Continuar o pagamento</a></p>
+<p style="margin:0;font-size:12px;color:#7b8794">Se você já pagou, ignore este e-mail: a confirmação com o QR Code chega assim que o Mercado Pago aprovar. Este link é pessoal: não compartilhe.</p>
+</td></tr></table></td></tr></table></body></html>`;
+  const text = [subject, "", intro, "", `Continuar o pagamento: ${statusUrl}`, "", "Se você já pagou, ignore este e-mail."].join("\n");
+  return { to: registration.attendee_email, subject, html, text, idempotencyKey: `pendente-${token.slice(0, 32)}` };
 }
 
 export async function buildEmail(ctx: Context) {

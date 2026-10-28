@@ -28,11 +28,15 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   PAID_TICKET: "Ingressos pagos ainda não estão disponíveis para inscrição online.",
   FORM_OUTDATED: "O formulário deste evento foi atualizado. Recarregue a página e preencha novamente.",
   INVALID_ANSWERS: "Há respostas inválidas. Revise o formulário e tente novamente.",
-  ALREADY_REGISTERED: "Já existe uma inscrição ativa com este e-mail para este evento.",
+  ALREADY_REGISTERED:
+    "Já existe uma inscrição ativa com este e-mail para este evento. Para ver a inscrição ou concluir o pagamento, use o link que enviamos para o seu e-mail.",
   SOLD_OUT: "As vagas deste evento se esgotaram.",
   TICKET_SOLD_OUT: "Este ingresso esgotou. Escolha outro, se houver.",
   CHECKIN_NOT_FOUND: "Código não encontrado neste evento. Confira se o QR é deste evento.",
   CHECKIN_UNAVAILABLE: "Check-in indisponível: o evento está em rascunho ou foi cancelado.",
+  REGISTRATION_NOT_ACTIVE: "Só inscrições confirmadas ou aguardando pagamento podem ser canceladas.",
+  REGISTRATION_HAS_PAYMENT: "Esta inscrição tem pagamento registrado e não pode ser apagada, para não perder o histórico financeiro. Cancele a inscrição; se houver valor pago, faça o reembolso no Mercado Pago.",
+  REGISTRATION_RESERVED: "A reserva desta inscrição ainda vale e a pessoa pode estar pagando agora. Cancele a inscrição ou aguarde a reserva vencer para apagar.",
   REGISTRATION_NOT_CONFIRMED: "Esta inscrição não está confirmada. Não é possível registrar presença.",
 };
 
