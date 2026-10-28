@@ -43,11 +43,11 @@ export default async function PaymentsPage({
         líquido ficam no painel da sua conta Mercado Pago.
       </p>
       {payments.length === 0 ? (
-        <EmptyState title="Nenhum pagamento ainda">Os pagamentos de ingressos pagos aparecem aqui assim que o Mercado Pago avisa.</EmptyState>
+        <EmptyState icon="card" title="Nenhum pagamento ainda">Os pagamentos de ingressos pagos aparecem aqui assim que o Mercado Pago avisa.</EmptyState>
       ) : (
         <ul className="grid gap-2">
           {payments.map((p) => (
-            <li key={p.id} className="grid gap-2 rounded-(--radius-card) border border-line bg-surface px-4 py-3 text-sm">
+            <li key={p.id} className="grid gap-2 rounded-(--radius-card) border border-line bg-surface px-4 py-3 text-sm shadow-(--shadow-card)">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span>
                   <span className="block font-semibold">{p.registrations?.attendee_name ?? "Participante"}</span>

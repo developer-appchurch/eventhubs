@@ -31,7 +31,7 @@ export default async function TeamPage({ params }: { params: Promise<{ orgSlug: 
 
         {members.length === 0 ? (
           <div className="mt-6">
-            <EmptyState title="Nenhum membro encontrado">Verifique se a organização tem vínculos ativos.</EmptyState>
+            <EmptyState icon="users" title="Nenhum membro encontrado">Verifique se a organização tem vínculos ativos.</EmptyState>
           </div>
         ) : (
           <div className="mt-6 overflow-x-auto">

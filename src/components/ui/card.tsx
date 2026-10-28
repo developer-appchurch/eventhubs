@@ -10,7 +10,7 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 
 export function CardTitle({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <h2 id={id} className="text-lg font-semibold tracking-tight text-ink">
+    <h2 id={id} className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-ink before:h-5 before:w-1 before:shrink-0 before:rounded-full before:bg-brand-600">
       {children}
     </h2>
   );
