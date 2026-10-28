@@ -33,24 +33,9 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
         <Card>
           <CardTitle>Próximos passos</CardTitle>
           <ol className="mt-4 grid gap-3 text-sm">
-            <li className="flex gap-3">
-              <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-full bg-success-bg text-xs font-bold text-success-ink">✓</span>
-              <span>Organização criada e você é o proprietário.</span>
-            </li>
-            <li className="flex gap-3">
-              <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">2</span>
-              <span className="text-ink-muted">
-                {canManage
-                  ? "Revise o nome da organização em Configurações."
-                  : "Aguarde a equipe configurar a organização."}
-              </span>
-            </li>
-            <li className="flex gap-3">
-              <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">3</span>
-              <span className="text-ink-muted">
-                {events.total > 0 ? "Cadastre ingressos e publique seus eventos." : "Crie o primeiro evento em Eventos."}
-              </span>
-            </li>
+            <Step n={1} done>Organização criada.</Step>
+            <Step n={2} done={events.total > 0}>Crie o primeiro evento em Eventos.</Step>
+            <Step n={3} done={events.published > 0}>Cadastre ingressos e publique seus eventos.</Step>
           </ol>
         </Card>
 
@@ -71,6 +56,23 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
         </section>
       </div>
     </div>
+  );
+}
+
+function Step({ n, done, children }: { n: number; done: boolean; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span
+        aria-hidden="true"
+        className={`grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold ${done ? "bg-success-bg text-success-ink" : "bg-brand-100 text-brand-700"}`}
+      >
+        {done ? "✓" : n}
+      </span>
+      <span className={done ? undefined : "text-ink-muted"}>
+        {children}
+        <span className="sr-only">{done ? " (concluído)" : " (pendente)"}</span>
+      </span>
+    </li>
   );
 }
 
