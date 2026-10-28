@@ -6,7 +6,7 @@ import { canManageEvents } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { canReadPayments } from "@/modules/payments/queries";
 import { canReadRegistrations } from "@/modules/registrations/roles";
-import { EventSubNav } from "./event-sub-nav";
+import { EventStepNav, EventSubNav } from "./event-sub-nav";
 import { StatusActions } from "./status-actions";
 
 export default async function EventLayout({
@@ -23,6 +23,8 @@ export default async function EventLayout({
   if (!org || !event) notFound();
 
   const base = `/app/${org.slug}/events/${event.id}`;
+  const showRegistrations = canReadRegistrations(org.role);
+  const showFinance = canReadPayments(org.role);
 
   return (
     <div className="grid gap-6">
@@ -40,9 +42,10 @@ export default async function EventLayout({
           ) : null}
         </div>
         {canManageEvents(org.role) ? <StatusActions organizationSlug={org.slug} eventId={event.id} status={event.status} /> : null}
-        <EventSubNav base={base} showRegistrations={canReadRegistrations(org.role)} showFinance={canReadPayments(org.role)} />
+        <EventSubNav base={base} showRegistrations={showRegistrations} showFinance={showFinance} />
       </div>
       {children}
+      <EventStepNav base={base} showRegistrations={showRegistrations} showFinance={showFinance} />
     </div>
   );
 }
