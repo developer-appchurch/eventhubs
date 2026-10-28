@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { firstErrors, formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { slugify } from "@/lib/slug";
@@ -63,5 +64,7 @@ export async function updateOrganization(_prev: ActionState, formData: FormData)
   if (error) return mapDatabaseError(error);
   if (!data?.length) return { ok: false, message: "Você não tem permissão para alterar esta organização." };
 
+  // Re-renderiza o layout da organização (sidebar, seletor, título) na própria resposta da action.
+  revalidatePath(`/app/${parsed.data.organizationSlug}`, "layout");
   return { ok: true, message: "Organização atualizada." };
 }
