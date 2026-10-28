@@ -41,6 +41,7 @@ export async function updateOrganization(_prev: ActionState, formData: FormData)
     organizationSlug: text(formData, "organizationSlug"),
   });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
+  const slugChanged = parsed.data.slug !== parsed.data.organizationSlug;
 
   const supabase = await createSupabaseServerClient();
   const { data: membership } = await supabase
@@ -58,7 +59,8 @@ export async function updateOrganization(_prev: ActionState, formData: FormData)
 
   const { data, error } = await supabase
     .from("organizations")
-    .update({ name: parsed.data.name, slug: parsed.data.slug })
+    // Só envia o slug quando ele muda: salvar apenas o nome não depende do grant de slug.
+    .update(slugChanged ? { name: parsed.data.name, slug: parsed.data.slug } : { name: parsed.data.name })
     .eq("id", org.id)
     .select("id");
 
@@ -68,6 +70,6 @@ export async function updateOrganization(_prev: ActionState, formData: FormData)
   // Re-renderiza o layout da organização (sidebar, seletor, título) na própria resposta da action.
   revalidatePath(`/app/${parsed.data.slug}`, "layout");
   // Endereço novo: navega sem recarregar a página; o antigo passa a redirecionar para ele.
-  if (parsed.data.slug !== parsed.data.organizationSlug) redirect(`/app/${parsed.data.slug}/settings`);
+  if (slugChanged) redirect(`/app/${parsed.data.slug}/settings`);
   return { ok: true, message: "Organização atualizada." };
 }
