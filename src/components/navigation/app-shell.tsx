@@ -21,51 +21,34 @@ export function AppShell({
     "inline-flex min-h-9 items-center gap-2 rounded-md px-2 text-sm font-medium text-brand-200 hover:bg-white/10 hover:text-white";
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr]">
-      <aside
-        data-surface="dark"
-        className="bg-sidebar text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col"
-      >
-        <div className="flex items-center justify-between gap-4 px-4 py-4 lg:px-5 lg:py-6">
-          <Brand href="/app" tone="dark" />
-          {/* No celular o nome da conta e a saída ficam na barra superior da sidebar. */}
-          <form action={signOut} className="lg:hidden">
-            <button type="submit" className={signOutButton}>
-              <Icon name="logout" className="size-4" />
-              Sair
-            </button>
-          </form>
-        </div>
-
+      {/* No celular fica só a barra com o botão Menu; a sidebar desliza da esquerda por cima do conteúdo. */}
+      <aside data-surface="dark" className="sticky top-0 z-30 bg-sidebar text-white lg:flex lg:h-dvh lg:flex-col">
         <OrgNav
+          brand={<Brand href="/app" tone="dark" />}
           organizations={organizations.map(({ role, ...org }) => ({
             ...org,
             showRegistrations: canReadRegistrations(role),
             showFinance: canReadPayments(role),
           }))}
-        />
-
-        <div className="hidden border-t border-white/10 px-5 py-5 lg:block">
-          <Link href="/app/account" className="flex items-center gap-3 rounded-md text-sm font-medium text-white hover:text-brand-200">
-            <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold uppercase">
-              {userName.trim().charAt(0) || "?"}
-            </span>
-            <span className="truncate">{userName}</span>
-          </Link>
-          <form action={signOut} className="mt-2">
-            <button type="submit" className={signOutButton}>
-              <Icon name="logout" className="size-4" />
-              Sair
-            </button>
-          </form>
-        </div>
+        >
+          <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3 lg:block lg:px-5 lg:py-5">
+            <Link href="/app/account" className="flex min-w-0 items-center gap-3 rounded-md text-sm font-medium text-white hover:text-brand-200">
+              <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold uppercase">
+                {userName.trim().charAt(0) || "?"}
+              </span>
+              <span className="truncate">{userName}</span>
+            </Link>
+            <form action={signOut} className="shrink-0 lg:mt-2">
+              <button type="submit" className={signOutButton}>
+                <Icon name="logout" className="size-4" />
+                Sair
+              </button>
+            </form>
+          </div>
+        </OrgNav>
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="border-b border-line bg-surface px-4 py-2 lg:hidden">
-          <Link href="/app/account" className="block truncate text-sm font-medium text-ink-muted hover:text-ink">
-            {userName}
-          </Link>
-        </header>
         <main id="conteudo" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           {children}
         </main>
