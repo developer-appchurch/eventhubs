@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "brand" | "success" | "warning" | "danger" }) {
   const styles = {
-    neutral: "bg-surface-muted text-ink-muted",
-    brand: "bg-brand-100 text-brand-900",
+    neutral: "bg-surface-muted text-ink-muted ring-1 ring-inset ring-line",
+    brand: "bg-brand-100 text-brand-700",
     success: "bg-success-bg text-success-ink",
     warning: "bg-warning-bg text-warning-ink",
     danger: "bg-danger-bg text-danger-ink",

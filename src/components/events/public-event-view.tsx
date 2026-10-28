@@ -52,7 +52,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
     // Medidas pelo contêiner (@), não pela tela: a mesma página cabe no celular da pré-visualização.
     <article className="@container grid gap-6">
       {/* Capa como fundo do topo, escurecida para o texto branco manter contraste; sem capa, degradê da marca. */}
-      <header className="relative isolate overflow-hidden rounded-(--radius-card) bg-gradient-to-br from-brand-600 to-brand-900 text-center text-white">
+      <header data-surface="dark" className="bg-hero relative isolate overflow-hidden rounded-(--radius-card) text-center text-white shadow-(--shadow-overlay)">
         {event.cover_image_url ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element -- URL externa definida pelo organizador; sem otimizador. */}
@@ -69,7 +69,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
           </p>
           <a
             href="#inscricao"
-            className="mt-2 inline-flex min-h-11 items-center rounded-full bg-white px-6 text-sm font-bold tracking-wide text-brand-900 uppercase shadow-(--shadow-overlay) hover:bg-brand-50"
+            className="mt-2 inline-flex min-h-11 items-center rounded-full bg-white px-6 text-sm font-bold tracking-wide text-brand-900 uppercase shadow-(--shadow-overlay) hover:bg-brand-100"
           >
             {availability === "open" ? "Inscreva-se" : "Ver inscrições"}
           </a>
@@ -122,10 +122,10 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
           )}
         </Card>
 
-        <section id="inscricao" className="scroll-mt-4 rounded-(--radius-card) bg-ink px-4 py-8 @xl:px-8">
+        <section id="inscricao" data-surface="dark" className="bg-hero scroll-mt-4 rounded-(--radius-card) px-4 py-8 @xl:px-8">
           <h2 className="text-center text-2xl font-bold text-white">Inscrições</h2>
           <span className="mx-auto mt-3 block h-1 w-12 rounded-full bg-accent-400" aria-hidden />
-          <div className="mt-6 rounded-(--radius-card) bg-surface p-5 shadow-(--shadow-overlay)">{registration}</div>
+          <div data-surface="light" className="mt-6 rounded-(--radius-card) bg-surface p-5 text-ink shadow-(--shadow-overlay) @xl:p-8">{registration}</div>
         </section>
 
         {event.participant_terms ? (

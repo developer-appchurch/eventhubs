@@ -75,18 +75,49 @@ export type PublicEventList = {
   })[];
 };
 
-export async function listEvents(organizationId: string, page = 1) {
+export const EVENT_TABS = ["andamento", "futuros", "encerrados"] as const;
+export type EventTab = (typeof EVENT_TABS)[number];
+
+// Encerrado: status final ou data de término passada. Futuro: ainda não começou. Em andamento: o resto.
+interface TabQuery<T> {
+  or(filters: string): T;
+  not(column: string, operator: string, value: string): T;
+  gte(column: string, value: string): T;
+  gt(column: string, value: string): T;
+  lte(column: string, value: string): T;
+}
+
+function tabFilter<T extends TabQuery<T>>(q: T, tab: EventTab, now: string): T {
+  if (tab === "encerrados") return q.or(`status.in.(ended,cancelled),ends_at.lt.${now}`);
+  const active = q.not("status", "in", "(ended,cancelled)").gte("ends_at", now);
+  return tab === "futuros" ? active.gt("starts_at", now) : active.lte("starts_at", now);
+}
+
+export async function listEvents(organizationId: string, page = 1, tab: EventTab = "andamento") {
   const supabase = await createSupabaseServerClient();
   const from = (page - 1) * EVENTS_PAGE_SIZE;
-  const { data, error, count } = await supabase
+  const base = supabase
     .from("events")
-    .select("id, slug, title, status, format, starts_at, timezone, capacity", { count: "exact" })
-    .eq("organization_id", organizationId)
-    .order("starts_at", { ascending: false })
+    .select("id, slug, title, status, format, starts_at, ends_at, timezone, capacity", { count: "exact" })
+    .eq("organization_id", organizationId);
+  const { data, error, count } = await tabFilter(base, tab, new Date().toISOString())
+    .order("starts_at", { ascending: tab === "encerrados" ? false : true })
     .range(from, from + EVENTS_PAGE_SIZE - 1);
 
   if (error) throw new Error("Não foi possível carregar os eventos.");
-  return { events: (data ?? []) as EventListItem[], total: count ?? 0 };
+  return { events: (data ?? []) as (EventListItem & { ends_at: string })[], total: count ?? 0 };
+}
+
+export async function countEventsByTab(organizationId: string): Promise<Record<EventTab, number>> {
+  const supabase = await createSupabaseServerClient();
+  const now = new Date().toISOString();
+  const results = await Promise.all(
+    EVENT_TABS.map((tab) =>
+      tabFilter(supabase.from("events").select("id", { count: "exact", head: true }).eq("organization_id", organizationId), tab, now),
+    ),
+  );
+  if (results.some((r) => r.error)) throw new Error("Não foi possível carregar os eventos.");
+  return Object.fromEntries(EVENT_TABS.map((tab, i) => [tab, results[i]!.count ?? 0])) as Record<EventTab, number>;
 }
 
 export async function countEvents(organizationId: string) {

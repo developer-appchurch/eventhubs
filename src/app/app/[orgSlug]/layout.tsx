@@ -17,11 +17,15 @@ export default async function OrganizationLayout({
 
   return (
     <div className="grid gap-6">
-      <header>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold sm:text-3xl">{org.name}</h1>
-          <Badge tone="brand">{ROLE_LABELS[org.role]}</Badge>
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line pb-5">
+        <span aria-hidden="true" className="grid size-12 place-items-center rounded-xl bg-brand-gradient text-lg font-bold text-white shadow-(--shadow-card)">
+          {org.name.trim().charAt(0).toUpperCase()}
+        </span>
+        <div className="grid gap-0.5">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{org.name}</h1>
+          <p className="text-sm text-ink-muted">/{org.slug}</p>
         </div>
+        <Badge tone="brand">{ROLE_LABELS[org.role]}</Badge>
       </header>
       {children}
     </div>

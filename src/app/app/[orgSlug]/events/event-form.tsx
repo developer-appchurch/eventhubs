@@ -3,6 +3,7 @@
 import { useActionState, useState, type ChangeEvent } from "react";
 import { PublicEventView } from "@/components/events/public-event-view";
 import { Alert } from "@/components/ui/alert";
+import { FormSection } from "@/components/ui/card";
 import { FieldWrapper, inputClass, TextArea, TextInput, useFieldIds } from "@/components/ui/field";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { DEFAULT_TIMEZONE, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
@@ -72,7 +73,7 @@ export function EventForm({
     <div className="grid gap-8 xl:grid-cols-[1fr_auto]">
       <form
         action={action}
-        className="grid content-start gap-6"
+        className="grid content-start gap-8"
         noValidate
         onInput={(e) => {
           const t = e.target as HTMLInputElement;
@@ -84,6 +85,7 @@ export function EventForm({
         {event ? <input type="hidden" name="eventId" value={event.id} /> : null}
         {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
 
+        <FormSection title="Informações principais" description="Como o evento aparece para o público.">
         <SlugField
           prefix={prefix}
           defaultValue={event?.slug}
@@ -107,6 +109,14 @@ export function EventForm({
           hint={event?.cover_image_url ? "Escolha outra foto para trocar a capa atual." : "Proporção recomendada 3:1. A foto é convertida para WebP."}
           error={errors.coverImage}
         />
+
+        </FormSection>
+
+        <FormSection title="Data e local" description="Quando e onde o evento acontece.">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <TextInput name="startsAt" label="Data de início" type="date" defaultValue={localDate(event?.starts_at)} required error={errors.startsAt} />
+          <TextInput name="endsAt" label="Data de término" type="date" defaultValue={localDate(event?.ends_at)} required error={errors.endsAt} />
+        </div>
 
         <Segmented
           legend="Local"
@@ -134,24 +144,9 @@ export function EventForm({
           />
         ) : null}
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextInput name="startsAt" label="Data de início" type="date" defaultValue={localDate(event?.starts_at)} required error={errors.startsAt} />
-          <TextInput name="endsAt" label="Data de término" type="date" defaultValue={localDate(event?.ends_at)} required error={errors.endsAt} />
-        </div>
+        </FormSection>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <TextInput name="contactEmail" label="E-mail do organizador" type="email" defaultValue={event?.contact_email ?? ""} error={errors.contactEmail} />
-          <TextInput
-            name="contactPhone"
-            label="WhatsApp do organizador"
-            type="tel"
-            placeholder="(00) 00000-0000"
-            defaultValue={event?.contact_phone ?? ""}
-            maxLength={40}
-            error={errors.contactPhone}
-          />
-        </div>
-
+        <FormSection title="Inscrições e vagas" description="Tipo de inscrição, capacidade e abertura das vendas.">
         <div className="grid gap-5 sm:grid-cols-2">
           <Segmented
             legend="Inscrição"
@@ -185,6 +180,25 @@ export function EventForm({
           error={errors.salesStartAt}
         />
 
+        </FormSection>
+
+        <FormSection title="Contato do organizador" description="Exibido na página pública do evento.">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <TextInput name="contactEmail" label="E-mail do organizador" type="email" defaultValue={event?.contact_email ?? ""} error={errors.contactEmail} />
+          <TextInput
+            name="contactPhone"
+            label="WhatsApp do organizador"
+            type="tel"
+            placeholder="(00) 00000-0000"
+            defaultValue={event?.contact_phone ?? ""}
+            maxLength={40}
+            error={errors.contactPhone}
+          />
+        </div>
+
+        </FormSection>
+
+        <FormSection title="Termos" description="Orientações que o participante lê antes de se inscrever.">
         <TextArea
           name="participantTerms"
           label="Termos e orientações ao participante (opcional)"
@@ -194,7 +208,11 @@ export function EventForm({
           error={errors.participantTerms}
         />
 
-        <SubmitButton pendingLabel="Salvando…">{event ? "Salvar alterações" : "Criar rascunho"}</SubmitButton>
+        </FormSection>
+
+        <div className="sticky bottom-0 -mx-5 border-t border-line bg-surface/95 px-5 py-4 backdrop-blur-sm sm:-mx-6 sm:px-6">
+          <SubmitButton pendingLabel="Salvando…">{event ? "Salvar alterações" : "Criar rascunho"}</SubmitButton>
+        </div>
       </form>
 
       <PhonePreview

@@ -29,7 +29,7 @@ export default async function TicketsPage({ params }: { params: Promise<{ orgSlu
       </p>
 
       {tickets.length === 0 ? (
-        <EmptyState title="Nenhum ingresso cadastrado">Cadastre ao menos um tipo de ingresso, por exemplo &quot;Gratuito&quot; ou &quot;Inteira&quot;.</EmptyState>
+        <EmptyState icon="ticket" title="Nenhum ingresso cadastrado">Cadastre ao menos um tipo de ingresso, por exemplo &quot;Gratuito&quot; ou &quot;Inteira&quot;.</EmptyState>
       ) : (
         <ul className="grid gap-3">
           {tickets.map((ticket) => (

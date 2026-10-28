@@ -1,12 +1,17 @@
 import Link from "next/link";
 
-export function Brand({ href = "/" }: { href?: string }) {
+// `tone="dark"` para fundos roxos escuros (sidebar, hero, autenticação).
+export function Brand({ href = "/", tone = "light" }: { href?: string; tone?: "light" | "dark" }) {
   return (
-    <Link href={href} className="inline-flex items-center gap-2 rounded-md font-semibold text-ink">
-      <span aria-hidden="true" className="grid size-8 place-items-center rounded-lg bg-brand-600 text-sm font-bold text-white">
+    <Link href={href} className={`inline-flex items-center gap-2.5 rounded-md font-semibold ${tone === "dark" ? "text-white" : "text-ink"}`}>
+      <span
+        aria-hidden="true"
+        className="relative grid size-9 place-items-center overflow-hidden rounded-xl bg-brand-gradient text-sm font-extrabold text-white shadow-(--shadow-glow) ring-1 ring-white/20"
+      >
         EH
+        <span className="absolute -right-2 -top-2 size-5 rounded-full border border-white/30" />
       </span>
-      <span className="text-lg tracking-tight">EventHubs</span>
+      <span className="text-lg font-bold tracking-tight">EventHubs</span>
     </Link>
   );
 }

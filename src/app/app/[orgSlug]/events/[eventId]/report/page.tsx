@@ -35,11 +35,15 @@ export default async function ReportPage({ params }: { params: Promise<{ orgSlug
       ) : null}
 
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-(--radius-card) border border-line bg-surface px-4 py-3">
-            <dt className="text-sm text-ink-muted">{s.label}</dt>
-            <dd className="text-2xl font-semibold tabular-nums">{s.value}</dd>
-            {s.hint ? <dd className="text-xs text-ink-muted">{s.hint}</dd> : null}
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            data-surface={i === 0 ? "dark" : undefined}
+            className={`rounded-(--radius-card) border p-5 shadow-(--shadow-card) ${i === 0 ? "bg-hero border-transparent text-white" : "border-line bg-surface"}`}
+          >
+            <dt className={`text-sm ${i === 0 ? "text-brand-200" : "text-ink-muted"}`}>{s.label}</dt>
+            <dd className="mt-1 text-3xl font-extrabold tracking-tight tabular-nums">{s.value}</dd>
+            {s.hint ? <dd className={`text-xs ${i === 0 ? "text-brand-200" : "text-ink-muted"}`}>{s.hint}</dd> : null}
           </div>
         ))}
       </dl>
@@ -47,16 +51,16 @@ export default async function ReportPage({ params }: { params: Promise<{ orgSlug
       <Card>
         <CardTitle>Por ingresso</CardTitle>
         <table className="mt-3 w-full text-sm">
-          <thead>
-            <tr className="text-left text-ink-muted">
-              <th className="py-1 font-medium">Ingresso</th>
-              <th className="py-1 text-right font-medium">Preço</th>
-              <th className="py-1 text-right font-medium">Confirmadas</th>
+          <thead className="border-b border-line bg-brand-100 text-xs uppercase tracking-wide text-brand-900">
+            <tr className="text-left">
+              <th className="py-1 font-semibold">Ingresso</th>
+              <th className="py-1 text-right font-semibold">Preço</th>
+              <th className="py-1 text-right font-semibold">Confirmadas</th>
             </tr>
           </thead>
           <tbody>
             {r.by_ticket.map((t) => (
-              <tr key={t.name} className="border-t border-line">
+              <tr key={t.name} className="border-t border-line hover:bg-brand-50">
                 <td className="py-1.5">{t.name}</td>
                 <td className="py-1.5 text-right tabular-nums">{t.price_cents === 0 ? "Gratuito" : formatCents(t.price_cents)}</td>
                 <td className="py-1.5 text-right tabular-nums">{t.confirmed}</td>
@@ -72,9 +76,9 @@ export default async function ReportPage({ params }: { params: Promise<{ orgSlug
           Valores brutos, como registrados pelo Mercado Pago. Tarifas do Mercado Pago e valor líquido ficam no painel da conta dele.
         </p>
         <dl className="mt-3 grid gap-3 sm:grid-cols-3">
-          <div><dt className="text-sm text-ink-muted">Aprovado</dt><dd className="text-xl font-semibold tabular-nums">{formatCents(r.finance.approved_cents)}</dd></div>
-          <div><dt className="text-sm text-ink-muted">Taxa do EventHubs</dt><dd className="text-xl font-semibold tabular-nums">{formatCents(r.finance.platform_fee_cents)}</dd></div>
-          <div><dt className="text-sm text-ink-muted">Reembolsado ou contestado</dt><dd className="text-xl font-semibold tabular-nums">{formatCents(r.finance.refunded_cents)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">Aprovado</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.approved_cents)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">Taxa do EventHubs</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.platform_fee_cents)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">Reembolsado ou contestado</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.refunded_cents)}</dd></div>
         </dl>
       </Card>
 
@@ -87,8 +91,8 @@ export default async function ReportPage({ params }: { params: Promise<{ orgSlug
             {r.daily.map((d) => (
               <li key={d.day} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-3">
                 <span className="tabular-nums text-ink-muted">{d.day.split("-").reverse().join("/")}</span>
-                <span className="h-3 rounded-full bg-brand-50">
-                  <span className="block h-3 rounded-full bg-brand-600" style={{ width: `${(d.n / max) * 100}%` }} />
+                <span className="h-3 rounded-full bg-brand-100">
+                  <span className="block h-3 rounded-full bg-brand-gradient" style={{ width: `${(d.n / max) * 100}%` }} />
                 </span>
                 <span className="text-right tabular-nums">{d.n}</span>
               </li>

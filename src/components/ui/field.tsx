@@ -29,7 +29,7 @@ export function FieldWrapper({
 }) {
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={name} className="text-sm font-medium text-ink">
+      <label htmlFor={name} className="text-sm font-semibold text-ink">
         {label}
       </label>
       {children}
@@ -49,7 +49,7 @@ export function FieldWrapper({
 
 export function inputClass(hasError?: boolean): string {
   return `min-h-11 w-full rounded-(--radius-control) border bg-surface px-3 text-base text-ink placeholder:text-ink-muted/70 ${
-    hasError ? "border-danger-ink" : "border-line-strong focus:border-brand-500"
+    hasError ? "border-danger-ink" : "border-line-strong hover:border-brand-500 focus:border-brand-600 disabled:bg-surface-muted disabled:text-ink-muted"
   }`;
 }
 

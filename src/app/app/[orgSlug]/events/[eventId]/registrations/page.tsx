@@ -113,7 +113,7 @@ export default async function RegistrationsPage({
       </form>
 
       {registrations.length === 0 ? (
-        <EmptyState title={filtered ? "Nenhuma inscrição encontrada" : "Nenhuma inscrição ainda"}>
+        <EmptyState icon="users" title={filtered ? "Nenhuma inscrição encontrada" : "Nenhuma inscrição ainda"}>
           {filtered ? "Ajuste a busca ou os filtros." : "As inscrições feitas na página pública aparecem aqui."}
         </EmptyState>
       ) : (

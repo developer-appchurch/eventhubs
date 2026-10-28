@@ -27,7 +27,7 @@ export default async function QuestionBankPage({ params }: { params: Promise<{ o
       </p>
 
       {questions.length === 0 ? (
-        <EmptyState title="Nenhuma pergunta no banco">Adicione perguntas que você usa com frequência, como CPF, telefone ou célula.</EmptyState>
+        <EmptyState icon="form" title="Nenhuma pergunta no banco">Adicione perguntas que você usa com frequência, como CPF, telefone ou célula.</EmptyState>
       ) : (
         <ul className="grid gap-3">
           {questions.map((q) => (
