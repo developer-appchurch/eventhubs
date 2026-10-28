@@ -70,7 +70,7 @@ export function TicketForm({
         {/* Aberto quando já há valor ou erro nesses campos, para nada ficar escondido. */}
         <details
           open={Boolean(ticket?.sales_start_at || ticket?.sales_end_at || errors.salesStartAt || errors.salesEndAt || errors.minPerOrder || errors.maxPerOrder) || undefined}
-          className="rounded-(--radius-control) border border-line px-3 py-2"
+          className="rounded-(--radius-control) border border-line bg-brand-50 px-4 py-2 open:bg-surface"
         >
           <summary className="flex min-h-7 cursor-pointer items-center text-sm font-semibold">Período de vendas e limite por pedido</summary>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
@@ -96,9 +96,9 @@ export function TicketForm({
             <TextInput id={`${p}-max`} name="maxPerOrder" label="Máximo por pedido" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} error={errors.maxPerOrder} />
           </div>
         </details>
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-4">
           <label className="flex items-center gap-3 text-sm font-medium">
-            <input type="checkbox" name="isActive" defaultChecked={ticket?.is_active ?? true} className="size-4" />
+            <input type="checkbox" name="isActive" defaultChecked={ticket?.is_active ?? true} className="size-5 accent-brand-600" />
             Ativo (aparece na página pública)
           </label>
           <SubmitButton pendingLabel="Salvando…">{ticket ? "Salvar ingresso" : "Adicionar ingresso"}</SubmitButton>
