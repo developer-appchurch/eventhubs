@@ -119,3 +119,55 @@ describe("chamadas ao Mercado Pago", () => {
     expect(Object.fromEntries(url.searchParams)).toMatchObject({ code_challenge_method: "S256", code_challenge: challenge, state: "s", platform_id: "mp" });
   });
 });
+
+describe("Pix", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("cria Pix com taxa, referência, idempotência por inscrição e prazo de 31 min após a reserva", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({ id: 99, status: "pending", point_of_interaction: { transaction_data: { qr_code: "00020126PIX", qr_code_base64: "x" } } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const expiresAt = new Date("2026-11-01T12:30:00Z");
+    const result = await mp.createPix("TOKEN-VENDEDOR", {
+      registrationId: "reg-1",
+      title: "Congresso · Inteira",
+      priceCents: 5000,
+      platformFeeCents: 250,
+      payer: { name: "Maria", email: "maria@exemplo.com" },
+      expiresAt,
+      notificationUrl: "https://app.test/api/v1/webhooks/mercadopago",
+      organization: { id: "org-1", name: "Ministério Jovem" },
+    });
+    expect(result).toEqual({ id: "99", code: "00020126PIX" });
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.mercadopago.com/v1/payments");
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer TOKEN-VENDEDOR");
+    expect(headers["X-Idempotency-Key"]).toBe("pix-reg-1");
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      payment_method_id: "pix",
+      transaction_amount: 50,
+      application_fee: 2.5,
+      external_reference: "reg-1",
+      payer: { email: "maria@exemplo.com" },
+      date_of_expiration: "2026-11-01T13:01:00.000Z",
+    });
+  });
+
+  it("resposta sem código Pix vira erro do provedor", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ id: 99 })));
+    await expect(
+      mp.createPix("T", {
+        registrationId: "r",
+        title: "t",
+        priceCents: 100,
+        platformFeeCents: 0,
+        payer: { name: "a", email: "a@b.c" },
+        expiresAt: new Date(),
+        notificationUrl: "https://x.test",
+        organization: { id: "o", name: "o" },
+      }),
+    ).rejects.toBeInstanceOf(mp.PaymentProviderError);
+  });
+});

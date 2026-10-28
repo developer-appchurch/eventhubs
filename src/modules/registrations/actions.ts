@@ -2,6 +2,7 @@
 
 import { after } from "next/server";
 import { redirect } from "next/navigation";
+import QRCode from "qrcode";
 import { formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPublicEvent, isUuid } from "@/modules/events/queries";
@@ -9,7 +10,7 @@ import { publicAvailability } from "@/modules/events/status";
 import { answersFromFormData, validateAnswers } from "@/modules/forms/answers";
 import type { FormField } from "@/modules/forms/fields";
 import { sendConfirmationEmail } from "@/modules/notifications/confirmation";
-import { checkoutUrlFor } from "@/modules/payments/service";
+import { checkoutUrlFor, pixCodeFor } from "@/modules/payments/service";
 import { ticketAvailability } from "./tickets";
 
 // Inscrição pública. Tudo que vem do navegador é revalidado aqui (respostas pela versão
@@ -67,6 +68,23 @@ export async function payRegistration(_prev: ActionState, formData: FormData): P
   const url = await safeCheckoutUrl(token);
   if (!url) return { ok: false, message: "Não foi possível abrir o pagamento agora. Tente novamente em instantes." };
   redirect(url);
+}
+
+export type PixState = ActionState & { code?: string; qrSvg?: string };
+
+// Pix dentro do app: QR Code e "copia e cola" na própria página da inscrição, que cabe no celular.
+export async function payWithPix(_prev: PixState, formData: FormData): Promise<PixState> {
+  const token = text(formData, "token");
+  if (!/^[0-9a-f]{64}$/.test(token)) return { ok: false, message: "Inscrição não encontrada." };
+  try {
+    const code = await pixCodeFor(token);
+    if (!code) return { ok: false, message: "Não foi possível gerar o Pix agora. Tente novamente ou pague com cartão." };
+    const qrSvg = await QRCode.toString(code, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
+    return { ok: true, code, qrSvg };
+  } catch (error) {
+    console.error("[pagamentos] falha ao gerar Pix", { error: error instanceof Error ? error.message : "erro" });
+    return { ok: false, message: "Não foi possível gerar o Pix agora. Tente novamente ou pague com cartão." };
+  }
 }
 
 async function safeCheckoutUrl(token: string): Promise<string | null> {

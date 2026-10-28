@@ -2,7 +2,7 @@ import "server-only";
 import { getEnv, getPaymentEnv, type PaymentEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { decryptToken, encryptToken } from "./crypto";
-import { createCheckout, platformFeeCents, refreshTokens, type OAuthTokens } from "./mercadopago";
+import { createCheckout, createPix, platformFeeCents, refreshTokens, type OAuthTokens } from "./mercadopago";
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
 
@@ -69,42 +69,79 @@ type CheckoutContext = {
   organization: { slug: string; name: string };
 };
 
-// Link de pagamento de uma inscrição pendente: reaproveita o checkout já criado ou cria um.
-// Sem configuração, reserva vencida ou falha no Mercado Pago, devolve null e a página da
-// inscrição oferece tentar de novo; a inscrição pendente nunca fica órfã de um jeito que ocupe
-// vaga para sempre, porque a reserva vence sozinha.
-export async function checkoutUrlFor(publicToken: string): Promise<string | null> {
+async function payableContext(publicToken: string) {
   const env = getPaymentEnv();
   if (!env) return null;
   const admin = createSupabaseAdminClient(env.SUPABASE_SECRET_KEY);
   const { data, error } = await admin.rpc("checkout_context", { p_token: publicToken });
   if (error) throw new Error("Não foi possível carregar a inscrição.");
   const ctx = data as CheckoutContext | null;
-  if (!ctx?.payable) return null;
-  if (ctx.checkout_url) return ctx.checkout_url;
+  return ctx?.payable ? { env, admin, ctx } : null;
+}
 
+type Payable = NonNullable<Awaited<ReturnType<typeof payableContext>>>;
+
+// Vendedor e dados da cobrança, iguais para checkout e Pix.
+async function prepareCharge({ env, admin, ctx }: Payable) {
   const seller = await sellerAccess(env, admin, { organizationId: ctx.organization_id });
   if (!seller) return null;
-
-  const appUrl = getEnv().NEXT_PUBLIC_APP_URL;
   const fee = platformFeeCents(ctx.price_cents, env.PLATFORM_FEE_BPS);
-  const checkout = await createCheckout(seller.token, {
-    registrationId: ctx.registration_id,
-    title: `${ctx.organization.name} · ${ctx.event.title} · ${ctx.ticket.name}`,
-    priceCents: ctx.price_cents,
-    platformFeeCents: fee,
-    payer: { name: ctx.attendee_name, email: ctx.attendee_email },
-    expiresAt: new Date(ctx.expires_at),
-    notificationUrl: `${appUrl}/api/v1/webhooks/mercadopago`,
-    returnUrl: `${appUrl}/${ctx.organization.slug}/${ctx.event.slug}/inscricao/${ctx.public_token}`,
-    organization: { id: ctx.organization_id, name: ctx.organization.name },
-  });
+  const appUrl = getEnv().NEXT_PUBLIC_APP_URL;
+  return {
+    seller,
+    appUrl,
+    input: {
+      registrationId: ctx.registration_id,
+      title: `${ctx.organization.name} · ${ctx.event.title} · ${ctx.ticket.name}`,
+      priceCents: ctx.price_cents,
+      platformFeeCents: fee,
+      payer: { name: ctx.attendee_name, email: ctx.attendee_email },
+      expiresAt: new Date(ctx.expires_at),
+      notificationUrl: `${appUrl}/api/v1/webhooks/mercadopago`,
+      organization: { id: ctx.organization_id, name: ctx.organization.name },
+    },
+  };
+}
+
+// O webhook só aceita pagamento da conta gravada aqui, com a taxa gravada aqui.
+async function saveCharge({ admin, ctx }: Payable, checkoutUrl: string | null, fee: number, sellerId: string) {
   const saved = await admin.rpc("set_checkout", {
     p_registration_id: ctx.registration_id,
-    p_checkout_url: checkout.url,
+    p_checkout_url: checkoutUrl,
     p_platform_fee_cents: fee,
-    p_seller_id: seller.sellerId,
+    p_seller_id: sellerId,
   });
   if (saved.error) throw new Error("Não foi possível salvar o checkout.");
+}
+
+// Link de pagamento de uma inscrição pendente: reaproveita o checkout já criado ou cria um.
+// Sem configuração, reserva vencida ou falha no Mercado Pago, devolve null e a página da
+// inscrição oferece tentar de novo; a inscrição pendente nunca fica órfã de um jeito que ocupe
+// vaga para sempre, porque a reserva vence sozinha.
+export async function checkoutUrlFor(publicToken: string): Promise<string | null> {
+  const payable = await payableContext(publicToken);
+  if (!payable) return null;
+  if (payable.ctx.checkout_url) return payable.ctx.checkout_url;
+
+  const charge = await prepareCharge(payable);
+  if (!charge) return null;
+  const { ctx } = payable;
+  const checkout = await createCheckout(charge.seller.token, {
+    ...charge.input,
+    returnUrl: `${charge.appUrl}/${ctx.organization.slug}/${ctx.event.slug}/inscricao/${ctx.public_token}`,
+  });
+  await saveCharge(payable, checkout.url, charge.input.platformFeeCents, charge.seller.sellerId);
   return checkout.url;
+}
+
+// Código Pix "copia e cola" de uma inscrição pendente, com as mesmas regras do checkout.
+export async function pixCodeFor(publicToken: string): Promise<string | null> {
+  const payable = await payableContext(publicToken);
+  if (!payable) return null;
+  const charge = await prepareCharge(payable);
+  if (!charge) return null;
+  const pix = await createPix(charge.seller.token, charge.input);
+  // Mantém o link do checkout, se já houver: a pessoa pode voltar a pagar com cartão.
+  await saveCharge(payable, payable.ctx.checkout_url, charge.input.platformFeeCents, charge.seller.sellerId);
+  return pix.code;
 }

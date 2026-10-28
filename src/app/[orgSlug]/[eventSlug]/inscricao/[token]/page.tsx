@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { Alert } from "@/components/ui/alert";
 import { PayButton } from "@/components/events/pay-button";
+import { PixPayment } from "@/components/events/pix-payment";
 import { WhatsAppLink } from "@/components/events/whatsapp-link";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
@@ -61,7 +62,10 @@ export default async function RegistrationStatusPage({ params }: Props) {
             Sua vaga está reservada até {formatDateTime(registration.expires_at, tz)}. Pague {formatCents(registration.price_cents)} para confirmar a
             inscrição. Se você já pagou, a confirmação aparece aqui assim que o Mercado Pago aprovar.
           </p>
-          <PayButton token={token} />
+          <div className="grid gap-3">
+            <PixPayment token={token} />
+            <PayButton token={token} />
+          </div>
         </Card>
       ) : registration.status === "expired" ? (
         <Alert tone="warning">A reserva expirou sem pagamento aprovado e a vaga foi liberada. Faça uma nova inscrição, se ainda houver vagas.</Alert>
