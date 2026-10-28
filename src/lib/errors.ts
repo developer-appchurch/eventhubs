@@ -16,6 +16,7 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   LOCATION_REQUIRED: "Informe o local antes de publicar um evento presencial ou híbrido.",
   NO_ACTIVE_TICKET: "Cadastre pelo menos um tipo de ingresso ativo antes de publicar.",
   PAYMENTS_NOT_CONNECTED: "Os ingressos deste evento são pagos: conecte o Mercado Pago em Configurações › Pagamentos (ou crie um ingresso gratuito) antes de publicar.",
+  EVENT_HAS_REGISTRATIONS: "Este evento já tem inscrições e não pode ser excluído. Cancele o evento.",
   EVENT_LOCKED: "Eventos encerrados ou cancelados não podem mais ser alterados.",
   SLUG_LOCKED: "O endereço do evento não pode mudar depois da publicação, para não quebrar links já divulgados.",
   IDENTITY_FIELDS_REQUIRED: "O formulário precisa dos campos Nome e E-mail, ativos e obrigatórios.",

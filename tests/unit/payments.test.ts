@@ -81,6 +81,7 @@ describe("chamadas ao Mercado Pago", () => {
       expiresAt,
       notificationUrl: "https://app.test/api/v1/webhooks/mercadopago",
       returnUrl: "https://app.test/org/ev/inscricao/x",
+      organization: { id: "org-1", name: "Ministério Jovem" },
     });
     expect(result).toEqual({ id: "pref-1", url: expect.stringMatching(/^https:\/\//) });
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
@@ -89,6 +90,7 @@ describe("chamadas ao Mercado Pago", () => {
     const body = JSON.parse(String(init.body));
     expect(body).toMatchObject({
       external_reference: "reg-1",
+      metadata: { organization_id: "org-1", organization_name: "Ministério Jovem" },
       marketplace_fee: 2.5,
       items: [{ unit_price: 50, quantity: 1, currency_id: "BRL" }],
       expiration_date_to: expiresAt.toISOString(),

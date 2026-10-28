@@ -27,11 +27,8 @@ export async function saveAccount(env: PaymentEnv, organizationId: string, token
     p_live_mode: tokens.liveMode,
     p_connected_by: connectedBy,
   });
-  // 23505: esta conta Mercado Pago já está ligada a outra organização.
-  if (error) throw new Error(error.code === "23505" ? ACCOUNT_IN_USE : "Não foi possível salvar a conta de pagamento.");
+  if (error) throw new Error("Não foi possível salvar a conta de pagamento.");
 }
-
-export const ACCOUNT_IN_USE = "ACCOUNT_IN_USE";
 
 // Token do vendedor, renovado quando falta menos de uma semana para vencer (vale 180 dias).
 export async function sellerAccess(
@@ -69,7 +66,7 @@ type CheckoutContext = {
   attendee_email: string;
   ticket: { name: string };
   event: { title: string; slug: string };
-  organization: { slug: string };
+  organization: { slug: string; name: string };
 };
 
 // Link de pagamento de uma inscrição pendente: reaproveita o checkout já criado ou cria um.
@@ -93,13 +90,14 @@ export async function checkoutUrlFor(publicToken: string): Promise<string | null
   const fee = platformFeeCents(ctx.price_cents, env.PLATFORM_FEE_BPS);
   const checkout = await createCheckout(seller.token, {
     registrationId: ctx.registration_id,
-    title: `${ctx.event.title} · ${ctx.ticket.name}`,
+    title: `${ctx.organization.name} · ${ctx.event.title} · ${ctx.ticket.name}`,
     priceCents: ctx.price_cents,
     platformFeeCents: fee,
     payer: { name: ctx.attendee_name, email: ctx.attendee_email },
     expiresAt: new Date(ctx.expires_at),
     notificationUrl: `${appUrl}/api/v1/webhooks/mercadopago`,
     returnUrl: `${appUrl}/${ctx.organization.slug}/${ctx.event.slug}/inscricao/${ctx.public_token}`,
+    organization: { id: ctx.organization_id, name: ctx.organization.name },
   });
   const saved = await admin.rpc("set_checkout", {
     p_registration_id: ctx.registration_id,

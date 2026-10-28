@@ -152,8 +152,9 @@ describe("isolamento de eventos entre organizações", () => {
   it("proprietário de B não altera nem apaga evento de A", async () => {
     await asCaller(ownerB, async (c) => {
       expect((await c.query("update public.events set title = 'Invadido' where id = $1", [draftEvent])).rowCount).toBe(0);
-      expect((await c.query("delete from public.events where id = $1", [draftEvent])).rowCount).toBe(0);
     });
+    await expect(asCaller(ownerB, async (c) => c.query("select public.delete_event($1)", [draftEvent]))).rejects.toMatchObject({ code: "42501" });
+    await expect(asCaller(ownerB, async (c) => c.query("select public.duplicate_event($1)", [draftEvent]))).rejects.toMatchObject({ code: "42501" });
   });
 
   it("não cria evento em outra organização manipulando organization_id", async () => {
@@ -230,10 +231,48 @@ describe("permissões por papel em eventos", () => {
     ).rejects.toMatchObject({ code: "42501" });
   });
 
-  it("evento já publicado não pode ser apagado (só cancelado); rascunho pode", async () => {
+  it("evento sem inscrições é excluído só pela função, em qualquer status; delete direto é negado", async () => {
+    await expect(asCaller(owner, async (c) => c.query("delete from public.events where id = $1", [draftEvent]))).rejects.toMatchObject({ code: "42501" });
     await asCaller(owner, async (c) => {
-      expect((await c.query("delete from public.events where id = $1", [publishedEvent])).rowCount).toBe(0);
-      expect((await c.query("delete from public.events where id = $1", [draftEvent])).rowCount).toBe(1);
+      await c.query("select public.delete_event($1)", [publishedEvent]);
+      expect((await c.query("select 1 from public.events where id = $1", [publishedEvent])).rows).toHaveLength(0);
+    });
+  });
+
+  it("evento com inscrição não pode ser excluído", async () => {
+    await expect(
+      asCaller(owner, async (c) => {
+        const { rows } = await c.query("select organization_id from public.events where id = $1", [publishedEvent]);
+        const form = await c.query("select id from public.event_forms where event_id = $1 order by version desc limit 1", [publishedEvent]);
+        const ticket = await c.query("select id from public.ticket_types where event_id = $1 limit 1", [publishedEvent]);
+        await c.query("reset role");
+        await c.query(
+          `insert into public.registrations (organization_id, event_id, ticket_type_id, form_id, status, attendee_name, attendee_email, answers, price_cents, public_token, idempotency_key, confirmed_at)
+           values ($1, $2, $3, $4, 'confirmed', 'Ana', 'ana@exemplo.com', '{}', 0, repeat('a', 64), gen_random_uuid(), now())`,
+          [rows[0].organization_id, publishedEvent, ticket.rows[0].id, form.rows[0].id],
+        );
+        await c.query("set local role authenticated");
+        return c.query("select public.delete_event($1)", [publishedEvent]);
+      }),
+    ).rejects.toMatchObject({ message: "EVENT_HAS_REGISTRATIONS" });
+  });
+
+  it("duplicar copia ingressos e formulário em rascunho, sem inscrições", async () => {
+    await asCaller(manager, async (c) => {
+      const copy = (await c.query("select public.duplicate_event($1) as id", [publishedEvent])).rows[0].id;
+      const { rows } = await c.query("select title, slug, status, published_at from public.events where id = $1", [copy]);
+      expect(rows[0]).toMatchObject({ status: "draft", published_at: null });
+      expect(rows[0].title).toMatch(/\(cópia\)$/);
+      expect(rows[0].slug).toMatch(/-copia$/);
+      const count = async (sql: string, id: string) => Number((await c.query(sql, [id])).rows[0].n);
+      const tickets = "select count(*) n from public.ticket_types where event_id = $1";
+      const fields = "select count(*) n from public.form_fields where event_id = $1";
+      expect(await count(tickets, copy)).toBe(await count(tickets, publishedEvent));
+      expect(await count(fields, copy)).toBe(await count(fields, publishedEvent));
+      expect((await c.query("select version from public.event_forms where event_id = $1", [copy])).rows).toEqual([{ version: 1 }]);
+      expect(await count("select count(*) n from public.registrations where event_id = $1", copy)).toBe(0);
+      const again = (await c.query("select public.duplicate_event($1) as id", [publishedEvent])).rows[0].id;
+      expect((await c.query("select slug from public.events where id = $1", [again])).rows[0].slug).toMatch(/-copia-2$/);
     });
   });
 });

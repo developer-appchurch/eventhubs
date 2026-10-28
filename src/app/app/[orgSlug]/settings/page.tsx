@@ -13,7 +13,6 @@ export const metadata: Metadata = { title: "Configurações da organização" };
 
 const CONNECT_RESULTS = {
   conectado: { tone: "success", text: "Conta Mercado Pago conectada. Os ingressos pagos já podem receber inscrições." },
-  "em-uso": { tone: "danger", text: "Esta conta Mercado Pago já está ligada a outra organização do EventHubs." },
   erro: { tone: "danger", text: "Não foi possível conectar a conta Mercado Pago. Tente novamente." },
 } as const;
 
