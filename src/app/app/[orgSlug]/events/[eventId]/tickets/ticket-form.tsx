@@ -5,7 +5,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/ui/field";
 import { SubmitButton } from "@/components/forms/submit-button";
-import { utcToZonedLocal } from "@/lib/datetime";
+import { maskPriceInput, utcToZonedLocal } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
 import type { TicketType } from "@/modules/events/queries";
 import { deleteTicketType, saveTicketType } from "@/modules/ticket-types/actions";
@@ -18,11 +18,13 @@ export function TicketForm({
   organizationSlug,
   eventId,
   timezone,
+  capacity,
   ticket,
 }: {
   organizationSlug: string;
   eventId: string;
   timezone: string;
+  capacity: number;
   ticket?: TicketType;
 }) {
   const [state, action] = useActionState(saveTicketType, INITIAL_STATE);
@@ -50,8 +52,11 @@ export function TicketForm({
             id={`${p}-price`}
             name="price"
             label="Preço (R$)"
-            inputMode="decimal"
-            defaultValue={ticket ? centsToInput(ticket.price_cents) : "0,00"}
+            inputMode="numeric"
+            defaultValue={maskPriceInput(ticket ? centsToInput(ticket.price_cents) : "")}
+            onInput={(e) => {
+              e.currentTarget.value = maskPriceInput(e.currentTarget.value);
+            }}
             hint="0,00 = gratuito"
             error={errors.price}
           />
@@ -61,9 +66,14 @@ export function TicketForm({
             label="Vagas"
             type="number"
             min={1}
+            max={capacity}
             placeholder="Sem limite"
             defaultValue={ticket?.quantity_limit ?? ""}
-            hint="Dentro da capacidade do evento"
+            onInput={(e) => {
+              // Não deixa digitar acima da capacidade; o servidor confere de novo ao salvar.
+              if (Number(e.currentTarget.value) > capacity) e.currentTarget.value = String(capacity);
+            }}
+            hint={`Até ${capacity.toLocaleString("pt-BR")} (capacidade do evento)`}
             error={errors.quantityLimit}
           />
         </div>

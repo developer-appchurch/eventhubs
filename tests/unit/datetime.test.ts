@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isEventTimezone, parsePriceToCents, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
+import { isEventTimezone, maskPriceInput, parsePriceToCents, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
 
 describe("zonedLocalToUtc", () => {
   it("converte Brasília (UTC-3)", () => {
@@ -55,5 +55,16 @@ describe("isEventTimezone", () => {
   it("aceita só fusos da lista", () => {
     expect(isEventTimezone("America/Sao_Paulo")).toBe(true);
     expect(isEventTimezone("Europe/Paris")).toBe(false);
+  });
+});
+
+describe("maskPriceInput", () => {
+  it("preenche pelos centavos e volta para o mesmo valor", () => {
+    expect(maskPriceInput("")).toBe("0,00");
+    expect(maskPriceInput("5")).toBe("0,05");
+    expect(maskPriceInput("0,051")).toBe("0,51");
+    expect(maskPriceInput("123456")).toBe("1.234,56");
+    expect(maskPriceInput("50,00")).toBe("50,00");
+    expect(parsePriceToCents(maskPriceInput("123456"))).toBe(123456);
   });
 });

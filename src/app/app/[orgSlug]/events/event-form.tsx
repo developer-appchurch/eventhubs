@@ -8,6 +8,7 @@ import { FieldWrapper, inputClass, TextArea, TextInput, useFieldIds } from "@/co
 import { SubmitButton } from "@/components/forms/submit-button";
 import { DEFAULT_TIMEZONE, utcToZonedLocal, zonedLocalToUtc } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
+import { maskPhone } from "@/lib/phone";
 import { createEvent, updateEvent } from "@/modules/events/actions";
 import type { EventRecord, PublicTicket } from "@/modules/events/queries";
 import { EVENT_FORMATS, FORMAT_LABELS, type EventFormat } from "@/modules/events/status";
@@ -23,12 +24,14 @@ export function EventForm({
   event,
   tickets = [],
   slugLocked = false,
+  defaultContactEmail = "",
 }: {
   organizationSlug: string;
   organizationName: string;
   event?: EventRecord;
   tickets?: PublicTicket[];
   slugLocked?: boolean;
+  defaultContactEmail?: string;
 }) {
   const [state, action] = useActionState(event ? updateEvent : createEvent, INITIAL_STATE);
   const [format, setFormat] = useState<EventFormat>(event?.format ?? "in_person");
@@ -45,8 +48,8 @@ export function EventForm({
     startsAt: localDate(event?.starts_at),
     endsAt: localDate(event?.ends_at),
     capacity: String(event?.capacity ?? ""),
-    contactEmail: event?.contact_email ?? "",
-    contactPhone: event?.contact_phone ?? "",
+    contactEmail: event ? (event.contact_email ?? "") : defaultContactEmail,
+    contactPhone: maskPhone(event?.contact_phone ?? ""),
     participantTerms: event?.participant_terms ?? "",
   });
   const errors = state.fieldErrors ?? {};
@@ -77,7 +80,7 @@ export function EventForm({
         noValidate
         onInput={(e) => {
           const t = e.target as HTMLInputElement;
-          if (t.name in values) setValues((v) => ({ ...v, [t.name]: t.value }));
+          if (t.name in values) setValues((v) => ({ ...v, [t.name]: t.name === "contactPhone" ? maskPhone(t.value) : t.value }));
         }}
       >
         <input type="hidden" name="organizationSlug" value={organizationSlug} />
@@ -184,14 +187,17 @@ export function EventForm({
 
         <FormSection title="Contato do organizador" description="Exibido na página pública do evento.">
         <div className="grid gap-5 sm:grid-cols-2">
-          <TextInput name="contactEmail" label="E-mail do organizador" type="email" defaultValue={event?.contact_email ?? ""} error={errors.contactEmail} />
+          <TextInput name="contactEmail" label="E-mail do organizador" type="email" defaultValue={values.contactEmail} error={errors.contactEmail} />
           <TextInput
             name="contactPhone"
             label="WhatsApp do organizador"
             type="tel"
-            placeholder="(00) 00000-0000"
-            defaultValue={event?.contact_phone ?? ""}
-            maxLength={40}
+            inputMode="numeric"
+            autoComplete="tel-national"
+            placeholder="(11) 91234-5678"
+            value={values.contactPhone}
+            onChange={() => {}} // a máscara é aplicada no onInput do formulário
+            maxLength={15}
             error={errors.contactPhone}
           />
         </div>

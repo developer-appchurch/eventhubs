@@ -19,7 +19,7 @@ export default async function TicketsPage({ params }: { params: Promise<{ orgSlu
 
   const tickets = await listTicketTypes(event.id);
   const editable = canManageEvents(org.role) && event.status !== "ended" && event.status !== "cancelled";
-  const formProps = { organizationSlug: org.slug, eventId: event.id, timezone: event.timezone };
+  const formProps = { organizationSlug: org.slug, eventId: event.id, timezone: event.timezone, capacity: event.capacity };
 
   return (
     <div className="grid gap-6">
