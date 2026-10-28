@@ -5,8 +5,9 @@ import { formatDate } from "@/lib/datetime";
 import { getEvent, listTicketTypes } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EventForm } from "../event-form";
-import { DeleteEventForm } from "./delete-event-form";
+import { DeleteEventForm, DuplicateEventForm } from "./delete-event-form";
 
 export const metadata: Metadata = { title: "Evento" };
 
@@ -16,10 +17,22 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
   const event = org ? await getEvent(org.id, eventId) : null;
   if (!org || !event) notFound();
 
-  const editable = canManageEvents(org.role) && event.status !== "ended" && event.status !== "cancelled";
+  const manager = canManageEvents(org.role);
+  const editable = manager && event.status !== "ended" && event.status !== "cancelled";
+
+  // Excluir só aparece sem nenhuma inscrição; a função delete_event confere de novo sob trava.
+  const supabase = await createSupabaseServerClient();
+  const { count } = manager ? await supabase.from("registrations").select("id", { count: "exact", head: true }).eq("event_id", event.id) : { count: null };
+  const actions = manager ? (
+    <>
+      <DuplicateEventForm organizationSlug={org.slug} eventId={event.id} />
+      {count === 0 ? <DeleteEventForm organizationSlug={org.slug} eventId={event.id} /> : null}
+    </>
+  ) : null;
 
   if (!editable) {
     return (
+      <div className="grid gap-6">
       <Card>
         <CardTitle>Detalhes</CardTitle>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
@@ -44,6 +57,8 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
           {canManageEvents(org.role) ? "Eventos encerrados ou cancelados não podem mais ser editados." : "Somente proprietários, administradores e gestores de eventos editam eventos."}
         </p>
       </Card>
+      {actions}
+      </div>
     );
   }
 
@@ -57,7 +72,7 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
           <EventForm organizationSlug={org.slug} organizationName={org.name} event={event} tickets={tickets} slugLocked={event.published_at !== null} />
         </div>
       </Card>
-      {event.status === "draft" && event.published_at === null ? <DeleteEventForm organizationSlug={org.slug} eventId={event.id} /> : null}
+      {actions}
     </div>
   );
 }

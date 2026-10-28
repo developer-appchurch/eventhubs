@@ -136,17 +136,30 @@ export async function changeEventStatus(_prev: ActionState, formData: FormData):
   return { ok: true, message: "Status do evento atualizado." };
 }
 
-// Só rascunhos nunca publicados podem ser excluídos (regra da política RLS de DELETE).
+// Só eventos sem nenhuma inscrição podem ser excluídos; os demais são cancelados.
 export async function deleteEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const org = await managedOrganization(formData);
   const eventId = text(formData, "eventId");
   if (!org || !isUuid(eventId)) return FORBIDDEN;
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("events").delete().eq("id", eventId).eq("organization_id", org.id).select("id");
+  const { error } = await supabase.rpc("delete_event", { p_event_id: eventId });
   if (error) return mapDatabaseError(error);
-  if (!data?.length) return { ok: false, message: "Só é possível excluir rascunhos que nunca foram publicados. Cancele o evento." };
 
   revalidatePath(`/app/${org.slug}/events`);
   redirect(`/app/${org.slug}/events`);
+}
+
+// Cópia em rascunho com ingressos e formulário, sem inscrições; abre a cópia para ajustar datas.
+export async function duplicateEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const org = await managedOrganization(formData);
+  const eventId = text(formData, "eventId");
+  if (!org || !isUuid(eventId)) return FORBIDDEN;
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("duplicate_event", { p_event_id: eventId });
+  if (error) return mapDatabaseError(error);
+
+  revalidatePath(`/app/${org.slug}/events`);
+  redirect(`/app/${org.slug}/events/${data}`);
 }

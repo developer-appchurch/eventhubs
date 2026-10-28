@@ -57,13 +57,14 @@ export async function POST(request: Request) {
     if (error) {
       // Referência desconhecida ou de outro vendedor: registrado e encerrado, repetir não muda nada.
       if (error.code === "P0001" || error.code === "22P02") {
-        await finish(error.code === "P0001" ? error.message.slice(0, 60) : "UNKNOWN_REFERENCE", seller.organizationId);
+        await finish(error.code === "P0001" ? error.message.slice(0, 60) : "UNKNOWN_REFERENCE");
         return new Response(null, { status: 200 });
       }
       throw error;
     }
-    const result = (data as { result: string }).result;
-    await finish(result, seller.organizationId);
+    // A conta pode ser compartilhada entre organizações: a dona do pagamento é a da inscrição.
+    const { result, organization_id } = data as { result: string; organization_id: string };
+    await finish(result, organization_id);
     if (result === "confirmed" || result === "confirmed_late") after(() => sendConfirmationEmail({ registrationId: payment.externalReference }));
     return new Response(null, { status: 200 });
   } catch (error) {

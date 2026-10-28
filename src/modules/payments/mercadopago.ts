@@ -118,6 +118,7 @@ export type CheckoutInput = {
   expiresAt: Date;
   notificationUrl: string;
   returnUrl: string;
+  organization: { id: string; name: string };
 };
 
 // Checkout Pro criado com o token do vendedor (a organização). marketplace_fee é a parte do
@@ -131,6 +132,8 @@ export async function createCheckout(sellerToken: string, input: CheckoutInput):
       items: [{ id: input.registrationId, title: input.title.slice(0, 250), quantity: 1, unit_price: input.priceCents / 100, currency_id: "BRL" }],
       payer: { name: input.payer.name, email: input.payer.email },
       external_reference: input.registrationId,
+      // Várias organizações podem usar a mesma conta: a tesouraria identifica a origem por aqui.
+      metadata: { organization_id: input.organization.id, organization_name: input.organization.name },
       notification_url: input.notificationUrl,
       back_urls: { success: input.returnUrl, pending: input.returnUrl, failure: input.returnUrl },
       auto_return: "approved",
