@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
@@ -9,9 +10,10 @@ import { getPublicEvent, isUuid } from "@/modules/events/queries";
 import { canManageEvents, publicAvailability } from "@/modules/events/status";
 import { answersFromFormData, validateAnswers } from "@/modules/forms/answers";
 import type { FormField } from "@/modules/forms/fields";
-import { sendConfirmationEmail } from "@/modules/notifications/confirmation";
+import { sendConfirmationEmail, sendPendingPaymentEmail } from "@/modules/notifications/confirmation";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { checkoutUrlFor } from "@/modules/payments/service";
+import { registrationCookie } from "./queries";
 import { ticketAvailability } from "./tickets";
 
 // Inscrição pública. Tudo que vem do navegador é revalidado aqui (respostas pela versão
@@ -56,8 +58,16 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
 
   const { public_token: token, status } = created as { public_token: string; status: string };
   const statusPage = `/${data.organization.slug}/${data.event.slug}/inscricao/${token}`;
+  (await cookies()).set(registrationCookie(data.event.id), token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: `/${data.organization.slug}/${data.event.slug}`,
+    maxAge: 60 * 86_400,
+  });
   // O e-mail sai depois da resposta: a pessoa não espera o provedor para ver a inscrição.
   if (status === "confirmed") after(() => sendConfirmationEmail({ token }));
+  if (status === "pending_payment") after(() => sendPendingPaymentEmail(token));
   redirect((status === "pending_payment" && (await safeCheckoutUrl(token))) || statusPage);
 }
 

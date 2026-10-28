@@ -10,7 +10,7 @@ export async function sendEmail(
     html: string;
     text: string;
     idempotencyKey: string;
-    inlineImage: { filename: string; contentId: string; content: string };
+    inlineImage?: { filename: string; contentId: string; content: string };
   },
 ): Promise<string> {
   const response = await fetch("https://api.resend.com/emails", {
@@ -22,7 +22,9 @@ export async function sendEmail(
       subject: email.subject.slice(0, 200),
       html: email.html,
       text: email.text,
-      attachments: [{ filename: email.inlineImage.filename, content: email.inlineImage.content, content_id: email.inlineImage.contentId, content_type: "image/png" }],
+      attachments: email.inlineImage
+        ? [{ filename: email.inlineImage.filename, content: email.inlineImage.content, content_id: email.inlineImage.contentId, content_type: "image/png" }]
+        : undefined,
     }),
     signal: AbortSignal.timeout(10_000),
     cache: "no-store",

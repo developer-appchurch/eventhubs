@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { buttonClass } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { getRegistrationByToken, registrationCookie } from "@/modules/registrations/queries";
 import { PublicEventView, soldOutMessage } from "@/components/events/public-event-view";
 import { RegistrationForm } from "@/components/events/registration-form";
 import { getPublicEvent } from "@/modules/events/queries";
@@ -29,11 +33,30 @@ export default async function PublicEventPage({ params }: Props) {
     notFound();
   }
 
+  // Quem já se inscreveu neste aparelho volta para a própria inscrição em vez de criar outra.
+  const token = (await cookies()).get(registrationCookie(data.event.id))?.value ?? "";
+  const mine = token ? await getRegistrationByToken(token).catch(() => null) : null;
+  const ownStatus = mine?.event.id === data.event.id ? mine.status : null;
+  const ownUrl = `/${data.organization.slug}/${data.event.slug}/inscricao/${token}`;
+
   return (
     <div className="grid gap-4">
       <Link href={`/${data.organization.slug}`} className="text-sm font-medium text-brand-700 hover:underline">
         ← Eventos de {data.organization.name}
       </Link>
+      {ownStatus === "pending_payment" || ownStatus === "confirmed" ? (
+        <Card>
+          <CardTitle>{ownStatus === "pending_payment" ? "Sua inscrição está aguardando pagamento" : "Você já está inscrito neste evento"}</CardTitle>
+          <p className="mt-1 mb-4 text-sm text-ink-muted">
+            {ownStatus === "pending_payment"
+              ? "Sua vaga continua reservada por enquanto. Conclua o pagamento para confirmar a inscrição."
+              : "Veja os dados da inscrição e o QR Code do check-in."}
+          </p>
+          <Link href={ownUrl} className={buttonClass()}>
+            {ownStatus === "pending_payment" ? "Continuar o pagamento" : "Ver minha inscrição"}
+          </Link>
+        </Card>
+      ) : null}
       <PublicEventView
         data={data}
         registration={
