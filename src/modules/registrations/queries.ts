@@ -2,16 +2,9 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { EventFormat, EventStatus } from "@/modules/events/status";
 
-export const REGISTRATION_STATUSES = ["pending_payment", "confirmed", "cancelled", "expired", "refunded"] as const;
-export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number];
+import { type OrgRegistrationFilters, REGISTRATION_STATUSES, type RegistrationStatus } from "./filters";
 
-export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
-  pending_payment: "Aguardando pagamento",
-  confirmed: "Confirmada",
-  cancelled: "Cancelada",
-  expired: "Expirada",
-  refunded: "Reembolsada",
-};
+export { REGISTRATION_STATUS_LABELS, REGISTRATION_STATUSES, type RegistrationStatus } from "./filters";
 
 export type PublicRegistration = {
   status: RegistrationStatus;
@@ -91,8 +84,7 @@ export async function listRegistrations(
     .order("id")
     .range((page - 1) * pageSize, page * pageSize - 1);
 
-  // Remove caracteres de sintaxe do filtro do PostgREST e curingas do LIKE.
-  const term = q.replace(/[%_,().*\\]/g, " ").trim().slice(0, 100);
+  const term = searchTerm(q);
   if (term) query = query.or(`attendee_name.ilike.%${term}%,attendee_email.ilike.%${term}%`);
   if (status) query = query.eq("status", status);
   if (ticket) query = query.eq("ticket_type_id", ticket);
@@ -101,6 +93,68 @@ export async function listRegistrations(
   const { data, error, count } = await query;
   if (error) throw new Error("Não foi possível carregar as inscrições.");
   return { registrations: (data ?? []) as unknown as RegistrationListItem[], total: count ?? 0 };
+}
+
+// Remove caracteres de sintaxe do filtro do PostgREST e curingas do LIKE.
+function searchTerm(q: string): string {
+  return q.replace(/[%_,().*\\]/g, " ").trim().slice(0, 100);
+}
+
+export type OrgRegistrationItem = {
+  id: string;
+  status: RegistrationStatus;
+  attendee_name: string;
+  attendee_email: string;
+  created_at: string;
+  event_id: string;
+  event: { title: string; timezone: string };
+  ticket: { name: string };
+  checkins: { checked_in_at: string } | null;
+};
+
+// Inscrições de todos os eventos da organização. A RLS aplica os mesmos papéis da lista do evento.
+export async function listOrgRegistrations(
+  organizationId: string,
+  filters: OrgRegistrationFilters,
+  page = 1,
+  pageSize = REGISTRATIONS_PAGE_SIZE,
+): Promise<{ registrations: OrgRegistrationItem[]; total: number }> {
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from("registrations")
+    .select(
+      "id, status, attendee_name, attendee_email, created_at, event_id, event:events(title, timezone), ticket:ticket_types(name), checkins(checked_in_at)",
+      { count: "exact" },
+    )
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false })
+    .order("id")
+    .range((page - 1) * pageSize, page * pageSize - 1);
+
+  const term = searchTerm(filters.q);
+  if (term) query = query.or(`attendee_name.ilike.%${term}%,attendee_email.ilike.%${term}%`);
+  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.event) query = query.eq("event_id", filters.event);
+  if (filters.since) query = query.gte("created_at", filters.since);
+  if (filters.until) query = query.lt("created_at", filters.until);
+
+  const { data, error, count } = await query;
+  if (error) throw new Error("Não foi possível carregar as inscrições.");
+  return { registrations: (data ?? []) as unknown as OrgRegistrationItem[], total: count ?? 0 };
+}
+
+// Eventos para o filtro, mais recentes primeiro.
+// shortcut: só os 500 eventos mais recentes entram no seletor; acima disso, trocar por busca.
+export async function listEventOptions(organizationId: string): Promise<{ id: string; title: string }[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select("id, title")
+    .eq("organization_id", organizationId)
+    .order("starts_at", { ascending: false })
+    .limit(500);
+  if (error) throw new Error("Não foi possível carregar os eventos.");
+  return data ?? [];
 }
 
 // Contagem por status do evento inteiro (independente de filtros), sem trazer as linhas.
