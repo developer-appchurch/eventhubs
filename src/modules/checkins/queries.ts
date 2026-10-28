@@ -33,3 +33,13 @@ export async function countCheckins(eventId: string): Promise<{ present: number;
   if (present.error || confirmed.error) throw new Error("Não foi possível carregar a presença.");
   return { present: present.count ?? 0, confirmed: confirmed.count ?? 0 };
 }
+
+// Inscrições confirmadas por evento (uma contagem leve por evento, em paralelo; sem baixar linhas).
+export async function countConfirmedByEvent(eventIds: string[]): Promise<Map<string, number>> {
+  const supabase = await createSupabaseServerClient();
+  const results = await Promise.all(
+    eventIds.map((id) => supabase.from("registrations").select("id", { count: "exact", head: true }).eq("event_id", id).eq("status", "confirmed")),
+  );
+  if (results.some((r) => r.error)) throw new Error("Não foi possível carregar as inscrições.");
+  return new Map(eventIds.map((id, i) => [id, results[i]!.count ?? 0]));
+}

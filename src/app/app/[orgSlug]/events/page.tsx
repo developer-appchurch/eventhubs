@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { countConfirmedByEvent } from "@/modules/checkins/queries";
+import { canReadRegistrations } from "@/modules/registrations/roles";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { buttonClass } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/card";
@@ -34,6 +36,8 @@ export default async function EventsPage({
     EVENT_TABS.find((t) => t === sp.tab) ?? EVENT_TABS.find((t) => counts[t] > 0) ?? "andamento";
   const { events, total } = await listEvents(org.id, page, tab);
   const pages = Math.max(1, Math.ceil(total / EVENTS_PAGE_SIZE));
+  // Só quem pode ver inscrições recebe a contagem: para os demais papéis a RLS devolveria 0, o que enganaria.
+  const confirmed = canReadRegistrations(org.role) ? await countConfirmedByEvent(events.map((e) => e.id)) : null;
   const canManage = canManageEvents(org.role);
   const base = `/app/${org.slug}/events`;
   const tabHref = (t: EventTab, p = 1) => `${base}?tab=${t}${p > 1 ? `&page=${p}` : ""}`;
@@ -102,12 +106,20 @@ export default async function EventsPage({
                     <span className="inline-flex items-center gap-1.5">
                       <Icon name="pin" className="size-4 text-brand-600" /> {FORMAT_LABELS[event.format]}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 tabular-nums">
-                      <Icon name="users" className="size-4 text-brand-600" /> {event.capacity.toLocaleString("pt-BR")} vagas
-                    </span>
                   </span>
                 </div>
-                <EventStatusBadge status={event.status} />
+                <div className="flex flex-wrap items-center gap-4 sm:justify-end">
+                  <div className="grid justify-items-start gap-1 sm:justify-items-center">
+                    <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-ink-muted">
+                      {confirmed ? "Inscrições / vagas" : "Vagas"}
+                    </span>
+                    <span className="rounded-full bg-brand-100 px-3 py-1 text-sm font-bold tabular-nums text-brand-700">
+                      {confirmed ? `${(confirmed.get(event.id) ?? 0).toLocaleString("pt-BR")}/` : ""}
+                      {event.capacity.toLocaleString("pt-BR")}
+                    </span>
+                  </div>
+                  <EventStatusBadge status={event.status} />
+                </div>
               </Link>
             </li>
           ))}
