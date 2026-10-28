@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Painel" };
 export default async function AppIndexPage() {
   const organizations = await listMyOrganizations();
   if (organizations.length === 0) redirect("/onboarding");
-  if (organizations.length === 1) redirect(`/app/${organizations[0]!.slug}`);
+  if (organizations.length === 1) redirect(`/app/${organizations[0]!.slug}/events`);
 
   return (
     <div className="grid gap-6">

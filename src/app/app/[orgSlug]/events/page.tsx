@@ -7,9 +7,11 @@ import { PageHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { formatShortDate } from "@/lib/datetime";
-import { EVENTS_PAGE_SIZE, listEvents } from "@/modules/events/queries";
+import { countEventsByTab, EVENT_TABS, EVENTS_PAGE_SIZE, listEvents, type EventTab } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
+
+const TAB_LABELS: Record<EventTab, string> = { andamento: "Em andamento", futuros: "Futuros", encerrados: "Encerrados" };
 
 export const metadata: Metadata = { title: "Eventos" };
 
@@ -18,17 +20,23 @@ export default async function EventsPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; tab?: string }>;
 }) {
   const { orgSlug } = await params;
   const org = await getOrganizationContext(orgSlug);
   if (!org) notFound();
 
-  const page = Math.max(1, Number.parseInt((await searchParams).page ?? "1", 10) || 1);
-  const { events, total } = await listEvents(org.id, page);
+  const sp = await searchParams;
+  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
+  const counts = await countEventsByTab(org.id);
+  // Sem aba escolhida, abre na primeira que tem eventos.
+  const tab: EventTab =
+    EVENT_TABS.find((t) => t === sp.tab) ?? EVENT_TABS.find((t) => counts[t] > 0) ?? "andamento";
+  const { events, total } = await listEvents(org.id, page, tab);
   const pages = Math.max(1, Math.ceil(total / EVENTS_PAGE_SIZE));
   const canManage = canManageEvents(org.role);
   const base = `/app/${org.slug}/events`;
+  const tabHref = (t: EventTab, p = 1) => `${base}?tab=${t}${p > 1 ? `&page=${p}` : ""}`;
 
   return (
     <div className="grid gap-6">
@@ -44,10 +52,26 @@ export default async function EventsPage({
         }
       />
 
+      <nav aria-label="Filtrar eventos" className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 shadow-(--shadow-card)">
+        {EVENT_TABS.map((t) => (
+          <Link
+            key={t}
+            href={tabHref(t)}
+            aria-current={t === tab ? "page" : undefined}
+            className={`inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors ${
+              t === tab ? "bg-brand-600 text-white shadow-sm" : "text-ink-muted hover:bg-brand-100 hover:text-brand-700"
+            }`}
+          >
+            {TAB_LABELS[t]}
+            <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${t === tab ? "bg-white/20" : "bg-brand-100 text-brand-700"}`}>{counts[t]}</span>
+          </Link>
+        ))}
+      </nav>
+
       {events.length === 0 ? (
         <EmptyState
           icon="calendar"
-          title="Nenhum evento ainda"
+          title={counts.andamento + counts.futuros + counts.encerrados === 0 ? "Nenhum evento ainda" : `Nenhum evento em ${TAB_LABELS[tab].toLowerCase()}`}
           action={
             canManage ? (
               <Link href={`${base}/new`} className={buttonClass()}>
@@ -73,7 +97,7 @@ export default async function EventsPage({
                   <span className="text-xs text-ink-muted">/{org.slug}/{event.slug}</span>
                   <span className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
                     <span className="inline-flex items-center gap-1.5 tabular-nums">
-                      <Icon name="calendar" className="size-4 text-brand-600" /> {formatShortDate(event.starts_at, event.timezone)}
+                      <Icon name="calendar" className="size-4 text-brand-600" /> {formatShortDate(event.starts_at, event.timezone)} a {formatShortDate(event.ends_at, event.timezone)}
                     </span>
                     <span className="inline-flex items-center gap-1.5">
                       <Icon name="pin" className="size-4 text-brand-600" /> {FORMAT_LABELS[event.format]}
@@ -92,9 +116,9 @@ export default async function EventsPage({
 
       {pages > 1 ? (
         <nav aria-label="Paginação" className="flex items-center gap-3 text-sm">
-          {page > 1 ? <Link href={`${base}?page=${page - 1}`} className="font-semibold text-brand-700 hover:underline">Anterior</Link> : null}
+          {page > 1 ? <Link href={tabHref(tab, page - 1)} className="font-semibold text-brand-700 hover:underline">Anterior</Link> : null}
           <span className="text-ink-muted">Página {page} de {pages}</span>
-          {page < pages ? <Link href={`${base}?page=${page + 1}`} className="font-semibold text-brand-700 hover:underline">Próxima</Link> : null}
+          {page < pages ? <Link href={tabHref(tab, page + 1)} className="font-semibold text-brand-700 hover:underline">Próxima</Link> : null}
         </nav>
       ) : null}
     </div>
