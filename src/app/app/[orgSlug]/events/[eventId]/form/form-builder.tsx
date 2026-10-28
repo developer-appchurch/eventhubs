@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useActionState, useState, type ReactNode } from "react";
+import { useActionState, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { INITIAL_STATE } from "@/lib/errors";
 import { saveEventForm } from "@/modules/forms/actions";
@@ -99,72 +100,51 @@ export function FormBuilder({
       <input type="hidden" name="newBankIds" value={JSON.stringify(newBankIds)} />
       {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
 
-      <div className="overflow-x-auto rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)">
-        <table className="w-full text-sm">
-          <thead className="border-b border-line bg-brand-100 text-xs uppercase tracking-wide text-brand-900">
-            <tr>
-              <th scope="col" className="px-4 py-3 font-semibold">Campo</th>
-              <th scope="col" className="px-2 py-3 text-center font-semibold">
-                <span className="sm:hidden">Obrig.</span>
-                <span className="hidden sm:inline">Obrigatório</span>
-              </th>
-              <th scope="col" className="px-2 py-3 text-center font-semibold">
-                <span className="sm:hidden">Ativo</span>
-                <span className="hidden sm:inline">Ativado / desativado</span>
-              </th>
-              <th scope="col" className="px-4 py-3 text-right font-semibold">Opções</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {fields.map((field, index) => {
-              const identity = IDENTITY_TYPES.includes(field.type);
-              const locked = identity || lockedKeys.includes(field.key);
-              const open = editing === field.key;
-              const id = (part: string) => `field-${field.key}-${part}`;
-              return (
-                <Fragment key={field.key}>
-                  <tr className={`${field.is_active ? "" : "text-ink-muted"} hover:bg-brand-50`}>
-                    <th scope="row" className="break-words px-3 py-3 sm:px-4 text-left align-top">
-                      <span className="block text-base font-semibold">{field.label || "(sem rótulo)"}</span>
-                      <span className="text-xs font-normal text-ink-muted">
-                        {FIELD_TYPE_LABELS[field.type]}
-                        {field.key.startsWith("q_") ? " · banco de perguntas" : ""}
-                      </span>
-                    </th>
-                    <td className="px-2 py-3 text-center align-top">
-                      <input
-                        type="checkbox"
-                        className="size-5 accent-brand-600"
-                        checked={field.required}
-                        disabled={locked}
-                        onChange={(e) => update(index, { required: e.target.checked })}
-                        aria-label={`${field.label} é obrigatório`}
-                      />
-                    </td>
-                    <td className="px-2 py-3 text-center align-top">
-                      {locked ? (
-                        <span className="text-xs text-ink-muted">Sempre</span>
-                      ) : (
-                        <Switch checked={field.is_active} onChange={(on) => update(index, { is_active: on })} label={`Usar ${field.label} neste formulário`} />
-                      )}
-                    </td>
-                    <td className="px-2 py-3 align-top sm:px-4">
-                      <div className="flex flex-col items-end gap-1 sm:flex-row sm:justify-end">
-                        <IconButton onClick={() => move(index, -1)} disabled={index === 0} label={`Mover ${field.label} para cima`}>↑</IconButton>
-                        <IconButton onClick={() => move(index, 1)} disabled={index === fields.length - 1} label={`Mover ${field.label} para baixo`}>↓</IconButton>
-                        <IconButton onClick={() => setEditing(open ? null : field.key)} label={`${open ? "Fechar edição de" : "Editar"} ${field.label}`} pressed={open}>✎</IconButton>
-                        {locked ? null : (
-                          <IconButton onClick={() => setFields((list) => list.filter((_, i) => i !== index))} label={`Excluir ${field.label}`} danger>
-                            🗑
-                          </IconButton>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                  {open ? (
-                    <tr className="bg-surface-muted/50 hover:bg-brand-50">
-                      <td colSpan={4} className="px-4 py-4">
-                        <div className="grid gap-4">
+      <ul className="grid gap-3">
+        {fields.map((field, index) => {
+          const identity = IDENTITY_TYPES.includes(field.type);
+          const locked = identity || lockedKeys.includes(field.key);
+          const open = editing === field.key;
+          const id = (part: string) => `field-${field.key}-${part}`;
+          return (
+            <li
+              key={field.key}
+              className={`rounded-(--radius-card) border bg-surface shadow-(--shadow-card) transition-colors ${open ? "border-brand-500" : "border-line"} ${field.is_active ? "" : "opacity-75"}`}
+            >
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
+                <div className="min-w-0 flex-1 basis-56">
+                  <p className="break-words text-base font-semibold">{field.label || "(sem rótulo)"}</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+                    <span className="rounded-full bg-brand-100 px-2 py-0.5 font-semibold text-brand-700">{FIELD_TYPE_LABELS[field.type]}</span>
+                    {field.key.startsWith("q_") ? <span>banco de perguntas</span> : null}
+                    {locked ? <span>sempre ativo</span> : null}
+                  </p>
+                </div>
+                <label className="inline-flex min-h-9 items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    className="size-5 accent-brand-600"
+                    checked={field.required}
+                    disabled={locked}
+                    onChange={(e) => update(index, { required: e.target.checked })}
+                  />
+                  Obrigatório
+                </label>
+                {locked ? null : (
+                  <Switch checked={field.is_active} onChange={(on) => update(index, { is_active: on })} label={`Usar ${field.label} neste formulário`} />
+                )}
+                <div className="flex gap-1">
+                  <IconButton onClick={() => move(index, -1)} disabled={index === 0} label={`Mover ${field.label} para cima`} icon="up" />
+                  <IconButton onClick={() => move(index, 1)} disabled={index === fields.length - 1} label={`Mover ${field.label} para baixo`} icon="down" />
+                  <IconButton onClick={() => setEditing(open ? null : field.key)} label={`${open ? "Fechar edição de" : "Editar"} ${field.label}`} pressed={open} icon="edit" />
+                  {locked ? null : (
+                    <IconButton onClick={() => setFields((list) => list.filter((_, i) => i !== index))} label={`Excluir ${field.label}`} danger icon="trash" />
+                  )}
+                </div>
+              </div>
+              {open ? (
+                <div className="border-t border-line bg-brand-50 p-4 sm:p-5">
+                  <div className="grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5">
                   <label htmlFor={id("label")} className="text-sm font-medium">Rótulo</label>
@@ -222,35 +202,26 @@ export function FormBuilder({
                             </Button>
                           </div>
                         )}
-                        </div>
-                      </td>
-                    </tr>
-                  ) : null}
-                </Fragment>
-              );
-            })}
-            {bank
-              .filter((q) => !fields.some((f) => f.key === bankFieldKey(q.id)))
-              .map((q) => (
-                <tr key={q.id} className="text-ink-muted hover:bg-brand-50">
-                  <th scope="row" className="break-words px-3 py-3 sm:px-4 text-left font-semibold">
-                    {q.label}
-                    <span className="block text-xs font-normal">{FIELD_TYPE_LABELS[q.type]} · banco de perguntas</span>
-                  </th>
-                  <td className="px-2 py-3 text-center">
-                    <input type="checkbox" className="size-5" checked={q.required} disabled aria-label={`${q.label} é obrigatório`} />
-                  </td>
-                  <td className="px-2 py-3 text-center">
-                    <Switch checked={false} disabled={fields.length >= 60} onChange={() => toggleBank(q, true)} label={`Usar ${q.label} neste formulário`} />
-                  </td>
-                  <td />
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
+                  </div>
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+        {bank
+          .filter((q) => !fields.some((f) => f.key === bankFieldKey(q.id)))
+          .map((q) => (
+            <li key={q.id} className="flex flex-wrap items-center justify-between gap-3 rounded-(--radius-card) border border-dashed border-line-strong bg-surface p-4 text-ink-muted">
+              <div className="min-w-0">
+                <p className="break-words font-semibold text-ink">{q.label}</p>
+                <p className="text-xs">{FIELD_TYPE_LABELS[q.type]} · banco de perguntas</p>
+              </div>
+              <Switch checked={false} disabled={fields.length >= 60} onChange={() => toggleBank(q, true)} label={`Usar ${q.label} neste formulário`} />
+            </li>
+          ))}
+      </ul>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-(--radius-card) border border-dashed border-line-strong p-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-(--radius-card) border border-dashed border-brand-300 bg-brand-50 p-4">
         <div className="grid gap-1.5">
           <label htmlFor="new-field-type" className="text-sm font-medium">Novo campo</label>
           <select id="new-field-type" className={inputClass()} value={newType} onChange={(e) => setNewType(e.target.value as FieldType)}>
@@ -262,11 +233,13 @@ export function FormBuilder({
           </select>
         </div>
         <Button variant="secondary" onClick={add} disabled={fields.length >= 60}>
-          Adicionar campo
+          <Icon name="plus" className="size-4" /> Adicionar campo
         </Button>
       </div>
 
-      <SubmitButton pendingLabel="Salvando…">Salvar formulário</SubmitButton>
+      <div className="sticky bottom-0 -mx-4 border-t border-line bg-surface/95 px-4 py-4 backdrop-blur-sm sm:mx-0 sm:rounded-(--radius-card) sm:border sm:shadow-(--shadow-card)">
+        <SubmitButton pendingLabel="Salvando…">Salvar formulário</SubmitButton>
+      </div>
     </form>
   );
 }
@@ -292,14 +265,14 @@ function Switch({ checked, onChange, label, disabled }: { checked: boolean; onCh
 }
 
 function IconButton({
-  children,
+  icon,
   label,
   onClick,
   disabled,
   danger,
   pressed,
 }: {
-  children: ReactNode;
+  icon: IconName;
   label: string;
   onClick: () => void;
   disabled?: boolean;
@@ -314,11 +287,11 @@ function IconButton({
       aria-label={label}
       title={label}
       aria-pressed={pressed}
-      className={`inline-flex size-9 items-center justify-center rounded-full border border-line-strong bg-surface hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-brand-600 disabled:opacity-40 ${
+      className={`inline-flex size-9 items-center justify-center rounded-full border border-line-strong bg-surface hover:border-brand-500 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-600 disabled:opacity-40 ${
         danger ? "text-danger-ink" : "text-brand-700"
       } ${pressed ? "bg-brand-50" : ""}`}
     >
-      <span aria-hidden="true">{children}</span>
+      <Icon name={icon} className="size-4" />
     </button>
   );
 }
