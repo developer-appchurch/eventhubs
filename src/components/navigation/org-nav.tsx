@@ -26,12 +26,14 @@ export function eventSections(base: string, showRegistrations: boolean, showFina
   ];
 }
 
-// Inscrições, check-in, pagamentos e relatório são por evento: ficam nas abas do evento.
-export function buildOrgNav(orgSlug: string): NavItem[] {
+// Check-in, pagamentos e relatório são por evento: ficam nas abas do evento. Inscrições também
+// têm uma lista geral, com todos os eventos da organização.
+export function buildOrgNav(orgSlug: string, showRegistrations: boolean): NavItem[] {
   const base = `/app/${orgSlug}`;
   return [
     { label: "Visão geral", href: base },
     { label: "Eventos", href: `${base}/events` },
+    ...(showRegistrations ? [{ label: "Inscrições", href: `${base}/registrations` }] : []),
     { label: "Equipe", href: `${base}/team` },
     { label: "Configurações", href: `${base}/settings` },
   ];
@@ -40,6 +42,7 @@ export function buildOrgNav(orgSlug: string): NavItem[] {
 const ORG_ICONS: Record<string, IconName> = {
   "Visão geral": "overview",
   Eventos: "calendar",
+  Inscrições: "inbox",
   Equipe: "users",
   Configurações: "settings",
 };
@@ -114,7 +117,7 @@ export function OrgNav({ organizations }: { organizations: NavOrganization[] }) 
             <Icon name="chevron" className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
           </button>
           <ul className={`${open ? "grid" : "hidden"} mt-1 gap-0.5 lg:mt-0 lg:grid`}>
-            {buildOrgNav(active.slug).map((item) => {
+            {buildOrgNav(active.slug, active.showRegistrations).map((item) => {
               const current =
                 pathname === item.href || (item.href !== `/app/${active.slug}` && pathname.startsWith(`${item.href}/`));
               // Dentro de um evento o destaque fica no submenu; o item pai só fica em negrito.
