@@ -13,3 +13,13 @@ export function parseCheckinCode(input: string | undefined): string | null {
 export function checkinUrl(appUrl: string, orgSlug: string, eventId: string, code: string): string {
   return `${appUrl.replace(/\/$/, "")}/app/${orgSlug}/events/${eventId}/checkin?code=${code}`;
 }
+
+// Mensagem para quem tentou abrir a câmera e não conseguiu (getUserMedia rejeita com DOMException).
+export function cameraErrorMessage(error: unknown): string {
+  const name = (error as { name?: unknown } | null)?.name;
+  if (name === "NotAllowedError" || name === "SecurityError")
+    return "Sem permissão para usar a câmera. Libere a câmera para este site nas configurações do navegador e toque em Ler QR Code de novo.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "Nenhuma câmera encontrada neste aparelho.";
+  if (name === "NotReadableError") return "A câmera está em uso por outro aplicativo. Feche-o e tente de novo.";
+  return "Não foi possível abrir a câmera. Use o campo acima para digitar o código.";
+}
