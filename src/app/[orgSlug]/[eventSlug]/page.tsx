@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PublicEventView } from "@/components/events/public-event-view";
+import { PublicEventView, soldOutMessage } from "@/components/events/public-event-view";
 import { RegistrationForm } from "@/components/events/registration-form";
 import { getPublicEvent } from "@/modules/events/queries";
 import { publicAvailability } from "@/modules/events/status";
@@ -46,8 +46,13 @@ export default async function PublicEventPage({ params }: Props) {
               tickets={data.tickets}
               fields={data.form.fields}
               hasTerms={Boolean(data.event.participant_terms)}
-                paymentsEnabled={data.payments_enabled}
+              paymentsEnabled={data.payments_enabled}
             />
+          ) : data.event.remaining === 0 ? (
+            <div className="grid gap-1 text-center">
+              <p className="text-lg font-bold text-brand-900">Vagas encerradas</p>
+              <p className="text-sm text-ink-muted">{soldOutMessage(data.event.capacity)} Não é possível fazer novas inscrições.</p>
+            </div>
           ) : (
             <p className="text-sm text-ink-muted">A inscrição online não está disponível agora. Veja a situação do evento acima.</p>
           )
