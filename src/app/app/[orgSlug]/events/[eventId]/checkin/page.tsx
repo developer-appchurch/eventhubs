@@ -14,6 +14,7 @@ import { getOrganizationContext } from "@/modules/organizations/queries";
 import { listRegistrations, REGISTRATION_STATUS_LABELS } from "@/modules/registrations/queries";
 import { canReadRegistrations } from "@/modules/registrations/roles";
 import { CheckInButton } from "./check-in-button";
+import { QrScanner } from "./qr-scanner";
 
 export const metadata: Metadata = { title: "Check-in", referrer: "no-referrer" };
 
@@ -62,8 +63,10 @@ export default async function CheckinPage({
 
       {unavailable ? <Alert tone="warning">Check-in indisponível: o evento está em rascunho ou foi cancelado.</Alert> : null}
 
+      {unavailable ? null : <QrScanner />}
+
       <form method="get" className="flex flex-wrap items-end gap-3" role="search">
-        <label className="grid min-w-64 flex-1 gap-1.5 text-sm font-semibold">
+        <label className="grid min-w-0 flex-1 basis-64 gap-1.5 text-sm font-semibold">
           Código do QR, nome ou e-mail
           <input name="q" defaultValue={code ?? q} autoFocus autoComplete="off" className={`${inputClass()} min-h-12 text-lg`} />
         </label>
@@ -72,7 +75,7 @@ export default async function CheckinPage({
         </button>
       </form>
       <p className="-mt-3 text-sm text-ink-muted">
-        Leia o QR com a câmera do celular (o link abre esta tela) ou com um leitor que digita o código no campo acima.
+        Toque em Ler QR Code e permita o uso da câmera quando o navegador pedir. Também funciona com um leitor que digita o código no campo acima.
       </p>
 
       {code ? (
