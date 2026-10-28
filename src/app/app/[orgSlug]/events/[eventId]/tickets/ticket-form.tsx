@@ -5,7 +5,7 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { TextInput } from "@/components/ui/field";
 import { SubmitButton } from "@/components/forms/submit-button";
-import { utcToZonedLocal } from "@/lib/datetime";
+import { maskPriceInput, utcToZonedLocal } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
 import type { TicketType } from "@/modules/events/queries";
 import { deleteTicketType, saveTicketType } from "@/modules/ticket-types/actions";
@@ -52,8 +52,11 @@ export function TicketForm({
             id={`${p}-price`}
             name="price"
             label="Preço (R$)"
-            inputMode="decimal"
-            defaultValue={ticket ? centsToInput(ticket.price_cents) : "0,00"}
+            inputMode="numeric"
+            defaultValue={maskPriceInput(ticket ? centsToInput(ticket.price_cents) : "")}
+            onInput={(e) => {
+              e.currentTarget.value = maskPriceInput(e.currentTarget.value);
+            }}
             hint="0,00 = gratuito"
             error={errors.price}
           />

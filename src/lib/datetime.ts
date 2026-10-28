@@ -81,6 +81,12 @@ export function formatCents(cents: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
+// Máscara de preço enquanto digita: os dígitos entram pelos centavos ("1234" -> "12,34").
+export function maskPriceInput(input: string): string {
+  const cents = Number(input.replace(/\D/g, "").slice(0, 10) || "0");
+  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(cents / 100);
+}
+
 // "1.234,56", "R$ 50", "50,5" ou "12.90" -> centavos. null se inválido.
 export function parsePriceToCents(input: string): number | null {
   let value = input.replace(/R\$|\s/g, "");
