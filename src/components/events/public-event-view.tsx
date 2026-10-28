@@ -15,13 +15,21 @@ const AVAILABILITY_MESSAGES: Record<Availability, { tone: "info" | "warning" | "
   cancelled: { tone: "danger", text: "Este evento foi cancelado pelo organizador." },
 };
 
+export function soldOutMessage(capacity: number): string {
+  return `Vagas encerradas: todas as ${capacity.toLocaleString("pt-BR")} vagas deste evento foram preenchidas.`;
+}
+
 // Página pública do evento. Usada pela rota pública e pela pré-visualização (mesmo
 // conteúdo, vindo de get_public_event ou get_event_preview). O texto do organizador é
 // renderizado como texto puro (React escapa), sem HTML.
 export function PublicEventView({ data, registration }: { data: PublicEventPayload; registration: ReactNode }) {
   const { event, organization, tickets } = data;
   const availability = publicAvailability(event);
-  const notice = AVAILABILITY_MESSAGES[availability];
+  // Publicado e dentro do prazo, mas sem vagas: o público precisa saber que lotou.
+  const soldOut = availability === "open" && event.remaining === 0;
+  const notice = soldOut
+    ? { tone: "warning" as const, text: soldOutMessage(event.capacity) }
+    : AVAILABILITY_MESSAGES[availability];
   const tz = event.timezone;
   const start = formatDate(event.starts_at, tz);
   const end = formatDate(event.ends_at, tz);
@@ -39,7 +47,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
     [
       "Vagas",
       event.remaining === 0
-        ? "Esgotadas"
+        ? `Encerradas · ${event.capacity.toLocaleString("pt-BR")} de ${event.capacity.toLocaleString("pt-BR")} preenchidas`
         : `${event.remaining.toLocaleString("pt-BR")} de ${event.capacity.toLocaleString("pt-BR")} disponíveis`,
     ],
     ...(prices.length ? [["Ingressos", priceRange] as [string, ReactNode]] : []),
@@ -72,7 +80,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
             href="#inscricao"
             className="mt-2 inline-flex min-h-11 items-center rounded-full bg-white px-6 text-sm font-bold tracking-wide text-brand-900 uppercase shadow-(--shadow-overlay) hover:bg-brand-100"
           >
-            {availability === "open" ? "Inscreva-se" : "Ver inscrições"}
+            {availability === "open" && !soldOut ? "Inscreva-se" : "Ver inscrições"}
           </a>
         </div>
         {availability === "open" ? <Countdown to={event.starts_at} /> : null}
