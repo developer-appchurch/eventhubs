@@ -26,12 +26,12 @@ export default async function EventLayout({
 
   return (
     <div className="grid gap-6">
-      <div className="grid gap-3">
+      <div className="grid gap-3 rounded-(--radius-card) border border-line bg-surface p-4 shadow-(--shadow-card) sm:p-5">
         <Link href={`/app/${org.slug}/events`} className="text-sm font-medium text-brand-700 hover:underline">
           ← Eventos
         </Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-semibold">{event.title}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{event.title}</h2>
           <EventStatusBadge status={event.status} />
           {event.status !== "draft" ? (
             <Link href={`/${org.slug}/${event.slug}`} className="text-sm font-medium text-brand-700 hover:underline" target="_blank">

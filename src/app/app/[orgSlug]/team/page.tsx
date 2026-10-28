@@ -37,7 +37,7 @@ export default async function TeamPage({ params }: { params: Promise<{ orgSlug: 
           <div className="mt-6 overflow-x-auto">
             <table className="w-full min-w-[32rem] text-left text-sm">
               <caption className="sr-only">Membros da organização {org.name}</caption>
-              <thead className="border-b border-line text-ink-muted">
+              <thead className="border-b border-line bg-brand-100 text-xs uppercase tracking-wide text-brand-900">
                 <tr>
                   <th scope="col" className="py-2 pr-4 font-semibold">Nome</th>
                   <th scope="col" className="py-2 pr-4 font-semibold">Papel</th>
@@ -47,7 +47,7 @@ export default async function TeamPage({ params }: { params: Promise<{ orgSlug: 
               </thead>
               <tbody className="divide-y divide-line">
                 {members.map((member) => (
-                  <tr key={member.user_id}>
+                  <tr key={member.user_id} className="hover:bg-brand-50">
                     <td className="py-3 pr-4 font-medium">{member.full_name || "Sem nome informado"}</td>
                     <td className="py-3 pr-4">{ROLE_LABELS[member.role]}</td>
                     <td className="py-3 pr-4">

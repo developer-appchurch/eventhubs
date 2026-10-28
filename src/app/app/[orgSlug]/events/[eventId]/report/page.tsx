@@ -47,16 +47,16 @@ export default async function ReportPage({ params }: { params: Promise<{ orgSlug
       <Card>
         <CardTitle>Por ingresso</CardTitle>
         <table className="mt-3 w-full text-sm">
-          <thead>
+          <thead className="border-b border-line bg-brand-100 text-xs uppercase tracking-wide text-brand-900">
             <tr className="text-left text-ink-muted">
-              <th className="py-1 font-medium">Ingresso</th>
-              <th className="py-1 text-right font-medium">Preço</th>
-              <th className="py-1 text-right font-medium">Confirmadas</th>
+              <th className="py-1 font-semibold">Ingresso</th>
+              <th className="py-1 text-right font-semibold">Preço</th>
+              <th className="py-1 text-right font-semibold">Confirmadas</th>
             </tr>
           </thead>
           <tbody>
             {r.by_ticket.map((t) => (
-              <tr key={t.name} className="border-t border-line">
+              <tr key={t.name} className="border-t border-line hover:bg-brand-50">
                 <td className="py-1.5">{t.name}</td>
                 <td className="py-1.5 text-right tabular-nums">{t.price_cents === 0 ? "Gratuito" : formatCents(t.price_cents)}</td>
                 <td className="py-1.5 text-right tabular-nums">{t.confirmed}</td>

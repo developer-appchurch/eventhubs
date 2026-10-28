@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { signOut } from "@/modules/auth/actions";
 import type { OrganizationContext } from "@/modules/organizations/queries";
 import { canReadPayments } from "@/modules/payments/queries";
@@ -17,11 +17,23 @@ export function AppShell({
   organizations: OrganizationContext[];
   userName: string;
 }) {
+  const signOutButton =
+    "inline-flex min-h-9 items-center gap-2 rounded-md px-2 text-sm font-medium text-brand-200 hover:bg-white/10 hover:text-white";
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
-      <aside className="border-b border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-b-0 lg:border-r">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr]">
+      <aside
+        data-surface="dark"
+        className="bg-sidebar text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col"
+      >
         <div className="flex items-center justify-between gap-4 px-4 py-4 lg:px-5 lg:py-6">
-          <Brand href="/app" />
+          <Brand href="/app" tone="dark" />
+          {/* No celular o nome da conta e a saída ficam na barra superior da sidebar. */}
+          <form action={signOut} className="lg:hidden">
+            <button type="submit" className={signOutButton}>
+              <Icon name="logout" className="size-4" />
+              Sair
+            </button>
+          </form>
         </div>
 
         <OrgNav
@@ -32,30 +44,29 @@ export function AppShell({
           }))}
         />
 
-        <div className="hidden border-t border-line px-5 py-5 lg:block">
-          <Link href="/app/account" className="block truncate text-sm font-medium text-ink hover:underline">
-            {userName}
+        <div className="hidden border-t border-white/10 px-5 py-5 lg:block">
+          <Link href="/app/account" className="flex items-center gap-3 rounded-md text-sm font-medium text-white hover:text-brand-200">
+            <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-bold uppercase">
+              {userName.trim().charAt(0) || "?"}
+            </span>
+            <span className="truncate">{userName}</span>
           </Link>
           <form action={signOut} className="mt-2">
-            <Button type="submit" variant="ghost" className="min-h-9 px-0 text-ink-muted hover:bg-transparent hover:text-ink">
+            <button type="submit" className={signOutButton}>
+              <Icon name="logout" className="size-4" />
               Sair
-            </Button>
+            </button>
           </form>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 lg:hidden">
-          <Link href="/app/account" className="truncate text-sm font-medium text-ink-muted hover:text-ink">
+        <header className="border-b border-line bg-surface px-4 py-2 lg:hidden">
+          <Link href="/app/account" className="block truncate text-sm font-medium text-ink-muted hover:text-ink">
             {userName}
           </Link>
-          <form action={signOut}>
-            <Button type="submit" variant="ghost" className="min-h-9 px-2 text-sm text-ink-muted hover:bg-transparent hover:text-ink">
-              Sair
-            </Button>
-          </form>
         </header>
-        <main id="conteudo" className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+        <main id="conteudo" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           {children}
         </main>
       </div>

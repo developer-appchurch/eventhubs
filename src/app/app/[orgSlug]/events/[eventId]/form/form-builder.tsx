@@ -99,20 +99,20 @@ export function FormBuilder({
       <input type="hidden" name="newBankIds" value={JSON.stringify(newBankIds)} />
       {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
 
-      <div className="overflow-x-auto rounded-(--radius-card) border border-line bg-surface">
+      <div className="overflow-x-auto rounded-(--radius-card) border border-line bg-surface shadow-(--shadow-card)">
         <table className="w-full text-sm">
-          <thead className="border-b border-line-strong text-left text-xs uppercase tracking-wide text-ink-muted">
+          <thead className="border-b border-line bg-brand-100 text-xs uppercase tracking-wide text-brand-900">
             <tr>
-              <th scope="col" className="px-4 py-3 font-medium">Campo</th>
-              <th scope="col" className="px-2 py-3 text-center font-medium">
+              <th scope="col" className="px-4 py-3 font-semibold">Campo</th>
+              <th scope="col" className="px-2 py-3 text-center font-semibold">
                 <span className="sm:hidden">Obrig.</span>
                 <span className="hidden sm:inline">Obrigatório</span>
               </th>
-              <th scope="col" className="px-2 py-3 text-center font-medium">
+              <th scope="col" className="px-2 py-3 text-center font-semibold">
                 <span className="sm:hidden">Ativo</span>
                 <span className="hidden sm:inline">Ativado / desativado</span>
               </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">Opções</th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold">Opções</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -123,7 +123,7 @@ export function FormBuilder({
               const id = (part: string) => `field-${field.key}-${part}`;
               return (
                 <Fragment key={field.key}>
-                  <tr className={field.is_active ? "" : "text-ink-muted"}>
+                  <tr className={`${field.is_active ? "" : "text-ink-muted"} hover:bg-brand-50`}>
                     <th scope="row" className="break-words px-3 py-3 sm:px-4 text-left align-top">
                       <span className="block text-base font-semibold">{field.label || "(sem rótulo)"}</span>
                       <span className="text-xs font-normal text-ink-muted">
@@ -162,7 +162,7 @@ export function FormBuilder({
                     </td>
                   </tr>
                   {open ? (
-                    <tr className="bg-surface-muted/50">
+                    <tr className="bg-surface-muted/50 hover:bg-brand-50">
                       <td colSpan={4} className="px-4 py-4">
                         <div className="grid gap-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -232,7 +232,7 @@ export function FormBuilder({
             {bank
               .filter((q) => !fields.some((f) => f.key === bankFieldKey(q.id)))
               .map((q) => (
-                <tr key={q.id} className="text-ink-muted">
+                <tr key={q.id} className="text-ink-muted hover:bg-brand-50">
                   <th scope="row" className="break-words px-3 py-3 sm:px-4 text-left font-semibold">
                     {q.label}
                     <span className="block text-xs font-normal">{FIELD_TYPE_LABELS[q.type]} · banco de perguntas</span>

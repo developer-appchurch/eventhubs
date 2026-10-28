@@ -6,22 +6,28 @@
  * Modo escuro ainda não é suportado: o tema é claro com contraste AA verificado.
  */
 @theme inline {
-  --color-canvas: #f4f7f9;
+  /* Superfícies e texto (claro, com áreas escuras estratégicas). */
+  --color-canvas: #f8f5ff;
   --color-surface: #ffffff;
-  --color-surface-muted: #eaf0f3;
-  --color-ink: #13202b;
-  --color-ink-muted: #4f5f6c;
-  --color-line: #d5dee5;
-  --color-line-strong: #b4c2cc;
+  --color-surface-muted: #f0eaff;
+  --color-ink: #261a40;
+  --color-ink-muted: #6b6180;
+  --color-line: #e5ddf3;
+  --color-line-strong: #bdb0d6;
 
-  --color-brand-50: #eef7f8;
-  --color-brand-100: #d3eaee;
-  --color-brand-500: #17788b;
-  --color-brand-600: #126476;
-  --color-brand-700: #0e5160;
-  --color-brand-900: #0a3640;
-  --color-accent-400: #e7b44a;
+  /* Escala violeta da marca: 900/800 são as áreas escuras, 600 o botão primário (AA com texto branco). */
+  --color-brand-50: #f8f5ff;
+  --color-brand-100: #f0eaff;
+  --color-brand-200: #ddd0fb;
+  --color-brand-300: #c4aefc;
+  --color-brand-500: #a17aff;
+  --color-brand-600: #8050f5;
+  --color-brand-700: #6535d6;
+  --color-brand-800: #302052;
+  --color-brand-900: #211044;
+  --color-accent-400: #a17aff;
 
+  /* Estados funcionais mantêm verde, amarelo, vermelho e azul. */
   --color-success-bg: #e7f5ee;
   --color-success-ink: #17603a;
   --color-warning-bg: #fdf3da;
@@ -33,11 +39,27 @@
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --radius-control: 0.5rem;
-  --radius-card: 0.875rem;
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
 
-  --shadow-card: 0 1px 2px rgb(19 32 43 / 0.06), 0 1px 1px rgb(19 32 43 / 0.04);
-  --shadow-overlay: 0 12px 32px rgb(19 32 43 / 0.18);
+  --shadow-card: 0 1px 2px rgb(33 16 68 / 0.06), 0 4px 16px rgb(33 16 68 / 0.05);
+  --shadow-overlay: 0 16px 40px rgb(33 16 68 / 0.22);
+  --shadow-glow: 0 8px 24px rgb(128 80 245 / 0.35);
+}
+
+/* Degradês reservados às áreas de destaque (hero, sidebar, capas, chamadas). */
+@utility bg-hero {
+  background-color: var(--color-brand-900);
+  background-image:
+    radial-gradient(60rem 36rem at 85% -10%, rgb(128 80 245 / 0.55), transparent 60%),
+    radial-gradient(40rem 28rem at -10% 110%, rgb(161 122 255 / 0.28), transparent 60%),
+    linear-gradient(160deg, var(--color-brand-900), var(--color-brand-800));
+}
+@utility bg-brand-gradient {
+  background-image: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-700));
+}
+@utility bg-sidebar {
+  background-image: linear-gradient(180deg, var(--color-brand-900), #1a0c38);
 }
 
 @layer base {
@@ -52,11 +74,27 @@
     line-height: 1.55;
   }
   :focus-visible {
-    outline: 3px solid var(--color-accent-400);
+    outline: 3px solid var(--color-brand-600);
     outline-offset: 2px;
   }
   h1, h2, h3 {
     letter-spacing: -0.01em;
     text-wrap: balance;
+  }
+  /* Em fundos escuros o anel de foco usa a lavanda para manter contraste. */
+  [data-surface="dark"] :focus-visible,
+  [data-surface="dark"]:focus-visible {
+    outline-color: var(--color-brand-300);
+  }
+  [data-surface="light"] :focus-visible {
+    outline-color: var(--color-brand-600);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }

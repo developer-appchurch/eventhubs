@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
+import { buttonClass } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
 import { formatShortDate } from "@/lib/datetime";
 import { EVENTS_PAGE_SIZE, listEvents } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 
 export const metadata: Metadata = { title: "Eventos" };
-
-const linkButton = "inline-flex min-h-11 items-center justify-center rounded-(--radius-control) bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700";
 
 export default async function EventsPage({
   params,
@@ -31,53 +32,62 @@ export default async function EventsPage({
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Eventos</h2>
-        {canManage ? (
-          <Link href={`${base}/new`} className={linkButton}>
-            Novo evento
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        title="Eventos"
+        description="Crie, publique e acompanhe os eventos da organização."
+        actions={
+          canManage ? (
+            <Link href={`${base}/new`} className={buttonClass()}>
+              <Icon name="plus" className="size-4" /> Novo evento
+            </Link>
+          ) : undefined
+        }
+      />
 
       {events.length === 0 ? (
-        <EmptyState title="Nenhum evento ainda">
+        <EmptyState
+          icon="calendar"
+          title="Nenhum evento ainda"
+          action={
+            canManage ? (
+              <Link href={`${base}/new`} className={buttonClass()}>
+                <Icon name="plus" className="size-4" /> Criar primeiro evento
+              </Link>
+            ) : undefined
+          }
+        >
           {canManage
             ? "Crie o primeiro evento. Ele começa como rascunho e só aparece ao público depois de publicado."
             : "Quando a equipe criar eventos, eles aparecerão aqui."}
         </EmptyState>
       ) : (
-        <div className="overflow-x-auto rounded-(--radius-card) border border-line bg-surface">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-line bg-surface-muted text-ink-muted">
-              <tr>
-                <th scope="col" className="px-4 py-3 font-medium">Evento</th>
-                <th scope="col" className="px-4 py-3 font-medium">Início</th>
-                <th scope="col" className="px-4 py-3 font-medium">Formato</th>
-                <th scope="col" className="px-4 py-3 font-medium">Capacidade</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.map((event) => (
-                <tr key={event.id} className="border-b border-line last:border-0">
-                  <td className="px-4 py-3">
-                    <Link href={`${base}/${event.id}`} className="font-semibold text-brand-700 hover:underline">
-                      {event.title}
-                    </Link>
-                    <p className="text-xs text-ink-muted">/{org.slug}/{event.slug}</p>
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">{formatShortDate(event.starts_at, event.timezone)}</td>
-                  <td className="px-4 py-3">{FORMAT_LABELS[event.format]}</td>
-                  <td className="px-4 py-3 tabular-nums">{event.capacity.toLocaleString("pt-BR")}</td>
-                  <td className="px-4 py-3">
-                    <EventStatusBadge status={event.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="grid gap-3">
+          {events.map((event) => (
+            <li key={event.id}>
+              <Link
+                href={`${base}/${event.id}`}
+                className="group grid gap-3 rounded-(--radius-card) border border-line bg-surface p-4 shadow-(--shadow-card) transition hover:border-brand-300 hover:shadow-(--shadow-overlay) sm:grid-cols-[1fr_auto] sm:items-center sm:p-5"
+              >
+                <div className="grid gap-1">
+                  <span className="text-lg font-semibold text-ink group-hover:text-brand-700">{event.title}</span>
+                  <span className="text-xs text-ink-muted">/{org.slug}/{event.slug}</span>
+                  <span className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-muted">
+                    <span className="inline-flex items-center gap-1.5 tabular-nums">
+                      <Icon name="calendar" className="size-4 text-brand-600" /> {formatShortDate(event.starts_at, event.timezone)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Icon name="pin" className="size-4 text-brand-600" /> {FORMAT_LABELS[event.format]}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 tabular-nums">
+                      <Icon name="users" className="size-4 text-brand-600" /> {event.capacity.toLocaleString("pt-BR")} vagas
+                    </span>
+                  </span>
+                </div>
+                <EventStatusBadge status={event.status} />
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
 
       {pages > 1 ? (
