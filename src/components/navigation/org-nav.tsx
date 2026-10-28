@@ -78,24 +78,30 @@ export function OrgNav({
   const active = organizations.find((org) => org.slug === params.orgSlug);
 
   return (
-    <div className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-      <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 lg:px-5 lg:py-6">
+    <>
+      <header data-surface="dark" className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 bg-sidebar px-4 text-white lg:hidden">
         {brand}
         <button
           type="button"
           aria-expanded={open}
           aria-controls="painel-menu"
           onClick={() => setOpen(!open)}
-          className="inline-flex min-h-10 items-center gap-2 rounded-(--radius-control) bg-white/10 px-3 text-sm font-medium text-white hover:bg-white/15 lg:hidden"
+          className="inline-flex min-h-10 items-center gap-2 rounded-(--radius-control) bg-white/10 px-3 text-sm font-medium text-white hover:bg-white/15"
         >
           <Icon name={open ? "close" : "menu"} className="size-4" /> {open ? "Fechar" : "Menu"}
         </button>
-      </div>
+      </header>
+      {open ? (
+        <button type="button" aria-label="Fechar menu" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/50 lg:hidden" />
+      ) : null}
 
-      <div
+      <aside
         id="painel-menu"
-        className={`${open ? "flex" : "hidden"} max-h-[calc(100dvh-3.5rem)] flex-col overflow-y-auto lg:flex lg:max-h-none lg:min-h-0 lg:flex-1 lg:overflow-visible`}
+        aria-label="Menu principal"
+        data-surface="dark"
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col overflow-y-auto bg-sidebar text-white shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:h-dvh lg:min-h-0 lg:w-auto lg:translate-x-0 lg:overflow-visible ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
+        <div className="hidden px-5 py-6 lg:block">{brand}</div>
         <div className="grid gap-3 px-3 pb-4 lg:min-h-0 lg:flex-1 lg:content-start lg:gap-4 lg:overflow-y-auto">
           <div className="grid gap-1.5 rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
             <label htmlFor="org-switcher" className="text-xs font-semibold uppercase tracking-wider text-brand-300">
@@ -189,7 +195,7 @@ export function OrgNav({
           ) : null}
         </div>
         {children}
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }

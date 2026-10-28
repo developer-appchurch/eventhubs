@@ -21,9 +21,8 @@ export function AppShell({
     "inline-flex min-h-9 items-center gap-2 rounded-md px-2 text-sm font-medium text-brand-200 hover:bg-white/10 hover:text-white";
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr]">
-      {/* No celular a sidebar vira uma barra fixa compacta; o menu abre por cima do conteúdo. */}
-      <aside data-surface="dark" className="sticky top-0 z-30 bg-sidebar text-white lg:flex lg:h-dvh lg:flex-col">
-        <OrgNav
+      {/* No celular o menu é uma gaveta à esquerda, aberta pelo botão da barra superior. */}
+      <OrgNav
           brand={<Brand href="/app" tone="dark" />}
           organizations={organizations.map(({ role, ...org }) => ({
             ...org,
@@ -45,8 +44,7 @@ export function AppShell({
               </button>
             </form>
           </div>
-        </OrgNav>
-      </aside>
+      </OrgNav>
 
       <div className="flex min-w-0 flex-col">
         <main id="conteudo" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
