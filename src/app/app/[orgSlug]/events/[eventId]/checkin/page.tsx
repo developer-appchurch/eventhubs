@@ -13,6 +13,7 @@ import { getEvent, listTicketTypes } from "@/modules/events/queries";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { listRegistrations, REGISTRATION_STATUS_LABELS } from "@/modules/registrations/queries";
 import { canReadRegistrations } from "@/modules/registrations/roles";
+import { CameraReader } from "./camera-reader";
 import { CheckInButton } from "./check-in-button";
 
 export const metadata: Metadata = { title: "Check-in", referrer: "no-referrer" };
@@ -71,8 +72,9 @@ export default async function CheckinPage({
           Buscar
         </button>
       </form>
-      <p className="-mt-3 text-sm text-ink-muted">
-        Leia o QR com a câmera do celular (o link abre esta tela) ou com um leitor que digita o código no campo acima.
+      <CameraReader />
+      <p className="text-sm text-ink-muted">
+        Leia o QR com a câmera do celular ou com um leitor que digita o código no campo acima.
       </p>
 
       {code ? (
