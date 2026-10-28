@@ -20,6 +20,7 @@ import {
   type RegistrationStatus,
 } from "@/modules/registrations/queries";
 import { canReadRegistrations } from "@/modules/registrations/roles";
+import { RegistrationActions } from "./registration-actions";
 
 export const metadata: Metadata = { title: "Inscrições" };
 
@@ -59,6 +60,7 @@ export default async function RegistrationsPage({
   const pageHref = (n: number) => `${base}?${new URLSearchParams({ ...filters, page: String(n) })}`;
   const filtered = Boolean(q || status || ticket || presence);
   const occupied = counts.confirmed + counts.pending_payment;
+  const canManage = canManageEvents(org.role);
 
   return (
     <div className="grid gap-6">
@@ -105,7 +107,7 @@ export default async function RegistrationsPage({
         <button type="submit" className="inline-flex min-h-11 items-center rounded-(--radius-control) bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
           Filtrar
         </button>
-        {canManageEvents(org.role) ? (
+        {canManage ? (
           <a href={`${base}/export?${new URLSearchParams(filters)}`} className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-brand-700 hover:underline">
             Exportar CSV
           </a>
@@ -148,6 +150,9 @@ export default async function RegistrationsPage({
                       </div>
                     ))}
                   </dl>
+                  {canManage ? (
+                    <RegistrationActions organizationSlug={org.slug} registrationId={r.id} active={r.status === "confirmed" || r.status === "pending_payment"} />
+                  ) : null}
                 </details>
               </li>
             );
