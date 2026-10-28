@@ -18,11 +18,13 @@ export function TicketForm({
   organizationSlug,
   eventId,
   timezone,
+  capacity,
   ticket,
 }: {
   organizationSlug: string;
   eventId: string;
   timezone: string;
+  capacity: number;
   ticket?: TicketType;
 }) {
   const [state, action] = useActionState(saveTicketType, INITIAL_STATE);
@@ -61,9 +63,14 @@ export function TicketForm({
             label="Vagas"
             type="number"
             min={1}
+            max={capacity}
             placeholder="Sem limite"
             defaultValue={ticket?.quantity_limit ?? ""}
-            hint="Dentro da capacidade do evento"
+            onInput={(e) => {
+              // Não deixa digitar acima da capacidade; o servidor confere de novo ao salvar.
+              if (Number(e.currentTarget.value) > capacity) e.currentTarget.value = String(capacity);
+            }}
+            hint={`Até ${capacity.toLocaleString("pt-BR")} (capacidade do evento)`}
             error={errors.quantityLimit}
           />
         </div>

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Countdown } from "./countdown";
+import { WhatsAppLink } from "./whatsapp-link";
 import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
 import type { PublicEventPayload } from "@/modules/events/queries";
 import { FORMAT_LABELS, publicAvailability, type Availability } from "@/modules/events/status";
@@ -45,7 +46,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
     ...(event.contact_email
       ? [["E-mail", <a key="e" href={`mailto:${event.contact_email}`} className="text-brand-700 hover:underline">{event.contact_email}</a>] as [string, ReactNode]]
       : []),
-    ...(event.contact_phone ? [["Telefone", event.contact_phone] as [string, ReactNode]] : []),
+    ...(event.contact_phone ? [["WhatsApp", <WhatsAppLink key="w" phone={event.contact_phone} />] as [string, ReactNode]] : []),
   ];
 
   return (

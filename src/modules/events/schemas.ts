@@ -1,14 +1,8 @@
 import { z } from "zod";
 import { isEventTimezone, zonedLocalToUtc } from "@/lib/datetime";
+import { isMobileBR, maskPhone } from "@/lib/phone";
 import { validateSlug } from "@/lib/slug";
 import { EVENT_FORMATS } from "./status";
-
-const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, `Use no máximo ${max} caracteres.`)
-    .transform((v) => v || null);
 
 const httpsUrl = z
   .string()
@@ -52,7 +46,11 @@ export const eventInputSchema = z
       .max(254)
       .refine((v) => v === "" || z.email().safeParse(v).success, "Informe um e-mail válido.")
       .transform((v) => v || null),
-    contactPhone: optionalText(40),
+    contactPhone: z
+      .string()
+      .trim()
+      .refine((v) => v === "" || isMobileBR(v), "Informe um WhatsApp válido com DDD, por exemplo (11) 91234-5678.")
+      .transform((v) => (v ? maskPhone(v) : null)),
     participantTerms: z.string().trim().max(20000, "Texto muito longo."),
     isPaid: z.boolean(),
     salesStartAt: z.string().trim(),

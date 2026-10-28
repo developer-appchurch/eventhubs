@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { Alert } from "@/components/ui/alert";
 import { PayButton } from "@/components/events/pay-button";
+import { WhatsAppLink } from "@/components/events/whatsapp-link";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
 import { getEnv } from "@/lib/env";
@@ -138,7 +139,11 @@ export default async function RegistrationStatusPage({ params }: Props) {
           {event.contact_email || event.contact_phone ? (
             <div>
               <dt className="text-ink-muted">Contato do organizador</dt>
-              <dd className="font-medium">{[event.contact_email, event.contact_phone].filter(Boolean).join(" · ")}</dd>
+              <dd className="flex flex-wrap items-center gap-x-2 font-medium">
+                {event.contact_email}
+                {event.contact_email && event.contact_phone ? " · " : null}
+                {event.contact_phone ? <WhatsAppLink phone={event.contact_phone} /> : null}
+              </dd>
             </div>
           ) : null}
         </dl>

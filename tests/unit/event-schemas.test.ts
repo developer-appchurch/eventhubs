@@ -42,6 +42,12 @@ describe("eventInputSchema", () => {
     });
   });
 
+  it("valida e normaliza o WhatsApp do organizador", () => {
+    const r = eventInputSchema.safeParse({ ...valid, contactPhone: "11912345678" });
+    expect(r.success && r.data.contact_phone).toBe("(11) 91234-5678");
+    expect(paths({ ...valid, contactPhone: "(11) 3333-4444" })).toContain("contactPhone");
+  });
+
   it("converte o início das vendas e recusa depois do fim do evento", () => {
     const r = eventInputSchema.safeParse({ ...valid, salesStartAt: "2026-11-01T09:00" });
     expect(r.success && r.data.sales_start_at).toBe("2026-11-01T12:00:00.000Z");
