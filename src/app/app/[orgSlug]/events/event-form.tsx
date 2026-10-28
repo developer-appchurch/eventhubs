@@ -301,7 +301,7 @@ function PhonePreview({
         <div className="relative overflow-hidden rounded-[2rem] bg-canvas">
           <div className="absolute top-2 left-1/2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-ink" aria-hidden />
           <p className="truncate border-b border-line bg-surface px-4 pt-9 pb-2 text-center text-[11px] text-ink-muted">{url}</p>
-          <div className="h-[36rem] overflow-y-auto px-4 py-4" inert>
+          <div className="h-[36rem] overflow-y-auto overscroll-contain px-4 py-4">
             <PublicEventView
               data={{
                 organization,
