@@ -21,7 +21,7 @@ export function AppShell({
     "inline-flex min-h-9 items-center gap-2 rounded-md px-2 text-sm font-medium text-brand-200 hover:bg-white/10 hover:text-white";
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr]">
-      {/* No celular a sidebar vira uma barra fixa compacta; o menu abre por cima do conteúdo. */}
+      {/* No celular fica só a barra com o botão Menu; a sidebar desliza da esquerda por cima do conteúdo. */}
       <aside data-surface="dark" className="sticky top-0 z-30 bg-sidebar text-white lg:flex lg:h-dvh lg:flex-col">
         <OrgNav
           brand={<Brand href="/app" tone="dark" />}

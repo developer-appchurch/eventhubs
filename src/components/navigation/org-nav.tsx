@@ -59,7 +59,7 @@ const EVENT_ICONS: Record<string, IconName> = {
 };
 
 // Marca, seletor de organização, seções da organização ativa e conta (children), na sidebar.
-// No celular só a barra com a marca e o botão Menu fica visível; o resto abre num painel.
+// No celular só a barra com a marca e o botão Menu fica visível; o resto desliza da esquerda.
 // A lista vem do servidor (RLS: só organizações em que o usuário é membro ativo); trocar
 // apenas navega para /app/<slug>, e o layout da organização revalida o vínculo no servidor.
 export function OrgNav({
@@ -88,15 +88,30 @@ export function OrgNav({
           onClick={() => setOpen(!open)}
           className="inline-flex min-h-10 items-center gap-2 rounded-(--radius-control) bg-white/10 px-3 text-sm font-medium text-white hover:bg-white/15 lg:hidden"
         >
-          <Icon name={open ? "close" : "menu"} className="size-4" /> {open ? "Fechar" : "Menu"}
+          <Icon name="menu" className="size-4" /> Menu
         </button>
       </div>
 
+      {open ? <div aria-hidden="true" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/50 lg:hidden" /> : null}
+      {/* invisible quando fechado tira os links da ordem de foco; no desktop é a coluna fixa de sempre. */}
       <div
         id="painel-menu"
-        className={`${open ? "flex" : "hidden"} max-h-[calc(100dvh-3.5rem)] flex-col overflow-y-auto lg:flex lg:max-h-none lg:min-h-0 lg:flex-1 lg:overflow-visible`}
+        onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col overflow-y-auto bg-sidebar shadow-(--shadow-overlay) transition-[translate,visibility] duration-200 ${
+          open ? "translate-x-0" : "invisible -translate-x-full"
+        } lg:visible lg:static lg:z-auto lg:w-auto lg:max-w-none lg:min-h-0 lg:flex-1 lg:translate-x-0 lg:overflow-visible lg:shadow-none lg:transition-none`}
       >
-        <div className="grid gap-3 px-3 pb-4 lg:min-h-0 lg:flex-1 lg:content-start lg:gap-4 lg:overflow-y-auto">
+        <div className="flex min-h-14 items-center justify-between gap-3 px-4 py-2 lg:hidden">
+          {brand}
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="inline-flex min-h-10 items-center gap-2 rounded-(--radius-control) bg-white/10 px-3 text-sm font-medium text-white hover:bg-white/15"
+          >
+            <Icon name="close" className="size-4" /> Fechar
+          </button>
+        </div>
+        <div className="grid flex-1 content-start gap-3 px-3 pb-4 lg:min-h-0 lg:content-start lg:gap-4 lg:overflow-y-auto">
           <div className="grid gap-1.5 rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
             <label htmlFor="org-switcher" className="text-xs font-semibold uppercase tracking-wider text-brand-300">
               Organização
