@@ -97,7 +97,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-brand-100 py-20">
+      <section className="bg-brand-200 py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="mx-auto max-w-2xl text-center text-3xl font-bold tracking-tight sm:text-4xl">Como funciona</h2>
           <ol className="mt-12 grid gap-5 md:grid-cols-3">
