@@ -77,6 +77,12 @@ export function formatShortDateTime(iso: string, timeZone: string): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone, dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
 }
 
+// "29/10 18:31": sem ano nem vírgula, para listas no celular.
+export function formatDayTime(iso: string, timeZone: string): string {
+  const p = new Intl.DateTimeFormat("pt-BR", { timeZone, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+  return p.replace(", ", " ").replace(" às ", " ");
+}
+
 export function formatCents(cents: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
