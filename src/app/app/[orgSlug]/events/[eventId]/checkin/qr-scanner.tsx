@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -37,6 +37,7 @@ export function QrScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!open) return;
@@ -61,7 +62,12 @@ export function QrScanner() {
             const code = raw ? parseCheckinCode(raw) : null;
             if (code) {
               setOpen(false);
-              router.push(`${pathname}?code=${code}`);
+              // Mantém o evento escolhido na tela do menu (?evento=); troca só o código.
+              const next = new URLSearchParams(searchParams);
+              next.delete("q");
+              next.delete("page");
+              next.set("code", code);
+              router.push(`${pathname}?${next}`);
               return;
             }
             if (raw) setHint("Este QR Code não é de um ingresso deste sistema.");
@@ -82,7 +88,7 @@ export function QrScanner() {
       cancelAnimationFrame(frame);
       stream?.getTracks().forEach((t) => t.stop());
     };
-  }, [open, pathname, router]);
+  }, [open, pathname, router, searchParams]);
 
   return (
     <div className="grid gap-3">
