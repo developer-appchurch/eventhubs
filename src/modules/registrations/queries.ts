@@ -74,7 +74,8 @@ export async function listRegistrations(
     presence,
     page = 1,
     pageSize = REGISTRATIONS_PAGE_SIZE,
-  }: { q?: string; status?: RegistrationStatus; ticket?: string; presence?: PresenceFilter; page?: number; pageSize?: number },
+    byName = false,
+  }: { q?: string; status?: RegistrationStatus; ticket?: string; presence?: PresenceFilter; page?: number; pageSize?: number; byName?: boolean },
 ): Promise<{ registrations: RegistrationListItem[]; total: number }> {
   const supabase = await createSupabaseServerClient();
   // Presentes: junção interna com o check-in; ausentes: junção externa sem check-in.
@@ -83,7 +84,8 @@ export async function listRegistrations(
     .from("registrations")
     .select(`id, status, attendee_name, attendee_email, answers, created_at, ticket_type_id, form_id, ${checkins}`, { count: "exact" })
     .eq("event_id", eventId)
-    .order("created_at", { ascending: false })
+    // Check-in procura por nome; a lista da equipe mostra as mais recentes primeiro.
+    .order(byName ? "attendee_name" : "created_at", { ascending: byName })
     .order("id")
     .range((page - 1) * pageSize, page * pageSize - 1);
 
