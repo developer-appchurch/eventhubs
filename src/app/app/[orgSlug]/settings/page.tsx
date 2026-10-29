@@ -4,8 +4,10 @@ import { Alert } from "@/components/ui/alert";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/datetime";
 import { getPaymentEnv } from "@/lib/env";
+import { getCurrentUser } from "@/modules/auth/session";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { canManageOrganization } from "@/modules/organizations/roles";
+import { appOwnerUserId } from "@/modules/payments/mercadopago";
 import { getPaymentAccountStatus } from "@/modules/payments/queries";
 import { DisconnectPaymentsButton } from "./disconnect-payments-button";
 import { OrganizationSettingsForm } from "./settings-form";
@@ -16,6 +18,21 @@ const CONNECT_RESULTS = {
   conectado: { tone: "success", text: "Conta Mercado Pago conectada. Os ingressos pagos já podem receber inscrições." },
   erro: { tone: "danger", text: "Não foi possível conectar a conta Mercado Pago. Tente novamente." },
 } as const;
+
+// Só o dono da plataforma vê se a conta conectada é a dona da aplicação: nela o Mercado Pago
+// recusa a taxa da plataforma no Pix (cause 2059).
+const PLATFORM_OWNER_EMAIL = "developer.appchurch@gmail.com";
+
+async function isAppOwnerAccount(sellerId: string): Promise<boolean | null> {
+  const env = getPaymentEnv();
+  if (!env) return null;
+  try {
+    return (await appOwnerUserId({ clientId: env.MERCADOPAGO_CLIENT_ID, clientSecret: env.MERCADOPAGO_CLIENT_SECRET })) === sellerId;
+  } catch (error) {
+    console.error("[pagamentos] falha ao consultar a conta da aplicação", { error: error instanceof Error ? error.message : "erro" });
+    return null;
+  }
+}
 
 export default async function SettingsPage({
   params,
@@ -31,6 +48,8 @@ export default async function SettingsPage({
   const canEdit = canManageOrganization(org.role);
   const account = canEdit ? await getPaymentAccountStatus(org.id) : null;
   const paymentsConfigured = getPaymentEnv() !== null;
+  const isPlatformOwner = account ? (await getCurrentUser())?.email?.toLowerCase() === PLATFORM_OWNER_EMAIL : false;
+  const appOwnerAccount = account && isPlatformOwner ? await isAppOwnerAccount(account.provider_user_id) : null;
   const result = CONNECT_RESULTS[(await searchParams).pagamentos as keyof typeof CONNECT_RESULTS];
 
   return (
@@ -76,6 +95,15 @@ export default async function SettingsPage({
             ) : (
               <p className="font-medium">Nenhuma conta conectada: ingressos pagos não aceitam inscrição.</p>
             )}
+            {isPlatformOwner && account ? (
+              <Alert tone={appOwnerAccount ? "danger" : "info"}>
+                {appOwnerAccount === null
+                  ? "Não foi possível verificar se esta é a conta dona da aplicação no Mercado Pago Developers."
+                  : appOwnerAccount
+                    ? "Esta é a conta dona da aplicação no Mercado Pago Developers. Nela o Mercado Pago recusa a taxa da plataforma e o Pix falha. Conecte outra conta para testar."
+                    : "Esta conta é diferente da dona da aplicação no Mercado Pago Developers."}
+              </Alert>
+            ) : null}
             {paymentsConfigured ? (
               <a
                 href={`/app/${org.slug}/settings/payments/connect`}

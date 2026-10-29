@@ -110,6 +110,12 @@ describe("chamadas ao Mercado Pago", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response('{"message":"token APP_USR-xyz inválido"}', { status: 401 })));
     await expect(mp.getPayment("T", "42")).rejects.toThrow(/^Mercado Pago: falha em consulta \(HTTP 401\)$/);
 
+    // Dona da aplicação: só o user_id do client_credentials sai da função, nunca o token.
+    const appFetch = vi.fn(async () => Response.json({ access_token: "APP_USR-segredo", user_id: 181001800 }));
+    vi.stubGlobal("fetch", appFetch);
+    await expect(mp.appOwnerUserId({ clientId: "1", clientSecret: "s" })).resolves.toBe("181001800");
+    expect(JSON.parse(String((appFetch.mock.calls[0] as unknown as [string, RequestInit])[1].body))).toMatchObject({ grant_type: "client_credentials" });
+
     // O cause entra no erro (diagnóstico do Pix), com credenciais mascaradas; o message não.
     vi.stubGlobal("fetch", vi.fn(async () => new Response('{"message":"token APP_USR-xyz","cause":[{"code":13253,"description":"sem chave APP_USR-abc-1"}]}', { status: 400 })));
     await expect(mp.getPayment("T", "42")).rejects.toThrow(/^Mercado Pago: falha em consulta \(HTTP 400\): cause 13253 sem chave \*\*\*$/);
