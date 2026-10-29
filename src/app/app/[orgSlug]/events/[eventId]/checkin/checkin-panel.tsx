@@ -87,7 +87,7 @@ export async function CheckinPanel({
         <label className="grid min-w-0 flex-1 gap-1.5 text-sm font-semibold">
           Nome, e-mail ou código do QR
           {/* text-base: abaixo de 16px o iPhone amplia a tela ao focar. */}
-          <input name="q" type="search" defaultValue={code ?? q} autoFocus autoComplete="off" enterKeyHint="search" className={`${inputClass()} min-h-12 text-base`} />
+          <input name="q" type="search" defaultValue={code ? "" : q} autoFocus autoComplete="off" enterKeyHint="search" className={`${inputClass()} min-h-12 text-base`} />
         </label>
         <button type="submit" className={buttonClass("primary", "min-h-12 shrink-0 px-5")}>
           Buscar
