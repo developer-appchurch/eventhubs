@@ -14,9 +14,9 @@ export const PAYMENT_STATUSES = [
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 export class PaymentProviderError extends Error {
-  constructor(readonly operation: string, readonly status?: number) {
-    // Nunca inclui corpo da resposta nem tokens: só a operação e o código HTTP.
-    super(`Mercado Pago: falha em ${operation}${status ? ` (HTTP ${status})` : ""}`);
+  constructor(readonly operation: string, readonly status?: number, detail?: string) {
+    // Nunca inclui corpo da resposta nem tokens: só a operação, o código HTTP e os códigos de causa.
+    super(`Mercado Pago: falha em ${operation}${status ? ` (HTTP ${status})` : ""}${detail ? `: ${detail}` : ""}`);
     this.name = "PaymentProviderError";
   }
 }
@@ -61,8 +61,20 @@ async function call(operation: string, path: string, init: RequestInit & { token
   } catch {
     throw new PaymentProviderError(operation);
   }
-  if (!response.ok) throw new PaymentProviderError(operation, response.status);
+  if (!response.ok) throw new PaymentProviderError(operation, response.status, await errorDetail(response));
   return (await response.json()) as Record<string, unknown>;
+}
+
+// Códigos da recusa (ex.: 13253, conta sem chave Pix), para o log dizer o que corrigir. Só os
+// códigos de cause: o texto do erro pode repetir o token enviado.
+async function errorDetail(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as { cause?: { code?: unknown }[] };
+    const codes = (Array.isArray(body.cause) ? body.cause : []).map((c) => String(c?.code ?? "")).filter((code) => /^[\w-]{1,40}$/.test(code));
+    return codes.length ? `cause ${codes.slice(0, 5).join(", ")}` : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function tokensFrom(data: Record<string, unknown>): OAuthTokens {
