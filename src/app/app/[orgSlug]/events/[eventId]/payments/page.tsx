@@ -60,7 +60,7 @@ export default async function PaymentsPage({
                   <Badge tone={TONES[p.status as keyof typeof TONES] ?? "warning"}>{PAYMENT_STATUS_LABELS[p.status]}</Badge>
                 </span>
               </div>
-              {p.attention ? <Alert tone="warning">{PAYMENT_ATTENTION_LABELS[p.attention]}</Alert> : null}
+              {p.attention && p.status !== "refunded" ? <Alert tone="warning">{PAYMENT_ATTENTION_LABELS[p.attention]}</Alert> : null}
             </li>
           ))}
         </ul>

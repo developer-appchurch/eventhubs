@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { getPaymentEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getPayment, verifyWebhookSignature } from "@/modules/payments/mercadopago";
+import { getPayment, refundPayment, verifyWebhookSignature } from "@/modules/payments/mercadopago";
 import { sellerAccess } from "@/modules/payments/service";
 import { sendConfirmationEmail } from "@/modules/notifications/confirmation";
 
@@ -64,6 +64,13 @@ export async function POST(request: Request) {
     }
     // A conta pode ser compartilhada entre organizações: a dona do pagamento é a da inscrição.
     const { result, organization_id } = data as { result: string; organization_id: string };
+    // Pagou depois de a vaga ir para outra pessoa: devolve sozinho. Se falhar, o aviso na tela
+    // de pagamentos continua pedindo o reembolso manual.
+    if (result === "paid_without_seat") {
+      await refundPayment(seller.token, payment.id).catch((error) =>
+        console.error("[pagamentos] falha no reembolso automático", { dataId, error: error instanceof Error ? error.message : "erro" }),
+      );
+    }
     await finish(result, organization_id);
     if (result === "confirmed" || result === "confirmed_late") after(() => sendConfirmationEmail({ registrationId: payment.externalReference }));
     return new Response(null, { status: 200 });
