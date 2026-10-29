@@ -34,6 +34,7 @@ export async function checkIn(_prev: ActionState, formData: FormData): Promise<A
 
   const result = data as { result: "checked_in" | "already_checked_in"; attendee_name: string; checked_in_at: string; checked_in_by: string | null };
   revalidatePath(`/app/${org.slug}/events/${event.id}`, "layout");
+  revalidatePath(`/app/${org.slug}/checkin`);
   if (result.result === "checked_in") return { ok: true, message: `Presença registrada: ${result.attendee_name}.` };
   const by = result.checked_in_by ? ` por ${result.checked_in_by}` : "";
   return { ok: false, message: `${result.attendee_name} já fez check-in em ${formatShortDateTime(result.checked_in_at, event.timezone)}${by}.` };

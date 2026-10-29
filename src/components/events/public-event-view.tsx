@@ -59,7 +59,8 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
 
   return (
     // Medidas pelo contêiner (@), não pela tela: a mesma página cabe no celular da pré-visualização.
-    <article className="@container grid gap-6">
+    // wrap-anywhere: e-mail ou palavra longa quebra a linha em vez de alargar a página para os lados.
+    <article className="@container grid gap-6 wrap-anywhere">
       {/* Capa como fundo do topo, escurecida para o texto branco manter contraste; sem capa, degradê da marca. */}
       <header data-surface="dark" className="bg-hero relative isolate overflow-hidden rounded-(--radius-card) text-center text-white shadow-(--shadow-overlay)">
         {event.cover_image_url ? (
