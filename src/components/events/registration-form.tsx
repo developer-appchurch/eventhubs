@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { formatCents, formatDateTime } from "@/lib/datetime";
@@ -24,11 +24,20 @@ type Props = {
 
 export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, fields, hasTerms, paymentsEnabled, timezone }: Props) {
   const [state, action, pending] = useActionState(registerForEvent, INITIAL_STATE);
+  const formRef = useRef<HTMLFormElement>(null);
   const available = tickets.filter((t) => ticketAvailability(t, undefined, paymentsEnabled) === "available");
   const errors = state.fieldErrors ?? {};
   const [selectedId, setSelectedId] = useState(available.length === 1 ? available[0].id : "");
   const selected = tickets.find((t) => t.id === selectedId);
   const submitLabel = selected && selected.price_cents > 0 && paymentsEnabled ? `Ir para o pagamento · ${formatCents(selected.price_cents)}` : "Garantir minha vaga";
+
+  // Com erro, leva o foco ao primeiro campo inválido (o formulário é longo no celular).
+  useEffect(() => {
+    if (state.ok || !state.fieldErrors) return;
+    const target = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"], fieldset[data-invalid]');
+    target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    (target?.matches("fieldset") ? target.querySelector<HTMLElement>("input") : target)?.focus({ preventScroll: true });
+  }, [state]);
 
   // Envio manual: com <form action>, o React limpa os campos ao terminar e o participante
   // perderia o que digitou quando o servidor aponta um erro.
@@ -43,7 +52,7 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-5" noValidate>
+    <form ref={formRef} onSubmit={onSubmit} className="grid gap-5" noValidate>
       <input type="hidden" name="orgSlug" value={orgSlug} />
       <input type="hidden" name="eventSlug" value={eventSlug} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
@@ -56,7 +65,7 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
 
       {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
 
-      <fieldset className="grid gap-2" aria-describedby={errors.ticketTypeId ? "ticket-error" : undefined}>
+      <fieldset className="grid gap-2" aria-describedby={errors.ticketTypeId ? "ticket-error" : undefined} data-invalid={errors.ticketTypeId ? "" : undefined}>
         <legend className="mb-1 text-sm font-medium">
           Ingresso<span className="text-danger-ink"> *</span>
         </legend>
