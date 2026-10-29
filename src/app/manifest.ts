@@ -12,7 +12,10 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#211044",
     theme_color: "#211044",
-    // shortcut: ícone de 71x76; com um PNG quadrado de 192 e 512px o Android oferece "Instalar app".
-    icons: [{ src: "/brand/favicon.png", sizes: "71x76", type: "image/png" }],
+    // Gerados do favicon sobre fundo branco; o iPhone usa src/app/apple-icon.png (180px).
+    icons: [
+      { src: "/brand/app-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/brand/app-512.png", sizes: "512x512", type: "image/png" },
+    ],
   };
 }
