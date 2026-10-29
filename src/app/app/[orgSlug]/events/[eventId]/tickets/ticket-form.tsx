@@ -46,8 +46,10 @@ export function TicketForm({
       <form action={action} className="grid gap-4" noValidate>
         {hidden}
         {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
-        <div className="grid gap-4 sm:grid-cols-[2fr_1fr_1fr]">
-          <TextInput id={`${p}-name`} name="name" label="Nome" placeholder="Ex.: Inteira, Meia, Lote 1" defaultValue={ticket?.name} required maxLength={80} error={errors.name} />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-[2fr_1fr_1fr]">
+          <div className="col-span-2 sm:col-span-1">
+            <TextInput id={`${p}-name`} name="name" label="Nome" placeholder="Ex.: Inteira, Meia, Lote 1" defaultValue={ticket?.name} required maxLength={80} error={errors.name} />
+          </div>
           <TextInput
             id={`${p}-price`}
             name="price"

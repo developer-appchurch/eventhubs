@@ -66,6 +66,16 @@
   html {
     -webkit-text-size-adjust: 100%;
   }
+  /* iOS Safari dá largura própria aos campos de data e eles estouram a coluna no celular. */
+  input[type="date"],
+  input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+  }
+  input::-webkit-date-and-time-value {
+    text-align: left;
+  }
   body {
     background: var(--color-canvas);
     color: var(--color-ink);
