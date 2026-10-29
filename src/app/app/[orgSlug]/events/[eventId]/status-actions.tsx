@@ -24,20 +24,20 @@ export function StatusActions({ organizationSlug, eventId, status }: { organizat
   return (
     <div className="grid gap-3">
       {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
-      <div className="flex flex-wrap items-start gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-start">
         {targets
           .filter((to) => to !== "cancelled")
           .map((to) => (
             <form key={to} action={action}>
               {hidden}
               <input type="hidden" name="status" value={to} />
-              <Button type="submit" variant={to === "published" ? "primary" : "secondary"} disabled={pending}>
+              <Button type="submit" variant={to === "published" ? "primary" : "secondary"} disabled={pending} className="w-full sm:w-auto">
                 {transitionLabel(status, to)}
               </Button>
             </form>
           ))}
         {targets.includes("cancelled") ? (
-          <details className="rounded-(--radius-control) border border-line px-3 py-2">
+          <details className="col-span-2 rounded-(--radius-control) border border-line px-3 py-2 sm:col-span-1">
             <summary className="flex min-h-7 cursor-pointer items-center text-sm font-semibold text-danger-ink">Cancelar evento</summary>
             <form action={action} className="mt-3 grid max-w-md gap-3">
               {hidden}
