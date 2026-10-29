@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -11,19 +12,24 @@ import { parseCheckinCode } from "@/modules/checkins/code";
 import { countCheckins, findByCheckinCode } from "@/modules/checkins/queries";
 import { getEvent, listTicketTypes } from "@/modules/events/queries";
 import { getOrganizationContext } from "@/modules/organizations/queries";
-import { listRegistrations, REGISTRATION_STATUS_LABELS } from "@/modules/registrations/queries";
+import { listRegistrations, type PresenceFilter, REGISTRATION_STATUS_LABELS, REGISTRATIONS_PAGE_SIZE } from "@/modules/registrations/queries";
 import { canReadRegistrations } from "@/modules/registrations/roles";
 import { CheckInButton } from "./check-in-button";
 import { QrScanner } from "./qr-scanner";
 
 export const metadata: Metadata = { title: "Check-in", referrer: "no-referrer" };
 
+const FILTERS = ["todos", "pendentes", "presentes"] as const;
+type Filter = (typeof FILTERS)[number];
+const FILTER_LABELS: Record<Filter, string> = { todos: "Todos", pendentes: "Pendentes", presentes: "Presentes" };
+const PRESENCE: Record<Filter, PresenceFilter | undefined> = { todos: undefined, pendentes: "absent", presentes: "present" };
+
 export default async function CheckinPage({
   params,
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; eventId: string }>;
-  searchParams: Promise<{ q?: string; code?: string }>;
+  searchParams: Promise<{ q?: string; code?: string; filtro?: string; page?: string }>;
 }) {
   const { orgSlug, eventId } = await params;
   const org = await getOrganizationContext(orgSlug);
@@ -35,19 +41,26 @@ export default async function CheckinPage({
   // Câmera do celular abre o link do QR (?code=); leitor que digita ou busca usa o campo q.
   const code = parseCheckinCode(sp.code) ?? parseCheckinCode(q);
   const search = code ? "" : q.trim();
+  const filter: Filter = FILTERS.find((f) => f === sp.filtro) ?? "todos";
+  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
 
   const [counts, tickets, found, results] = await Promise.all([
     countCheckins(event.id),
     listTicketTypes(event.id),
     code ? findByCheckinCode(event.id, code) : null,
-    search ? listRegistrations(event.id, { q: search, status: "confirmed" }) : null,
+    listRegistrations(event.id, { q: search, status: "confirmed", presence: PRESENCE[filter], page, byName: true }),
   ]);
   const ticketNames = new Map(tickets.map((t) => [t.id, t.name]));
   const unavailable = event.status === "draft" || event.status === "cancelled";
   const common = { organizationSlug: org.slug, eventId: event.id };
+  const pending = Math.max(0, counts.confirmed - counts.present);
+  const tagCounts: Record<Filter, number> = { todos: counts.confirmed, pendentes: pending, presentes: counts.present };
+  const pages = Math.max(1, Math.ceil(results.total / REGISTRATIONS_PAGE_SIZE));
+  const href = (f: Filter, p = 1) =>
+    `?${new URLSearchParams({ ...(search ? { q: search } : {}), ...(f !== "todos" ? { filtro: f } : {}), ...(p > 1 ? { page: String(p) } : {}) })}`;
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-5">
       <div data-surface="dark" className="bg-hero grid gap-3 rounded-(--radius-card) p-5 text-white shadow-(--shadow-card)">
         <p className="text-sm text-brand-200">
           <span className="text-3xl font-extrabold tracking-tight text-white tabular-nums">{counts.present.toLocaleString("pt-BR")}</span>{" "}
@@ -65,18 +78,35 @@ export default async function CheckinPage({
 
       {unavailable ? null : <QrScanner />}
 
-      <form method="get" className="flex flex-wrap items-end gap-3" role="search">
-        <label className="grid min-w-0 flex-1 basis-64 gap-1.5 text-sm font-semibold">
-          Código do QR, nome ou e-mail
-          <input name="q" defaultValue={code ?? q} autoFocus autoComplete="off" className={`${inputClass()} min-h-12 text-lg`} />
+      <form method="get" className="flex items-end gap-2" role="search">
+        {filter !== "todos" ? <input type="hidden" name="filtro" value={filter} /> : null}
+        <label className="grid min-w-0 flex-1 gap-1.5 text-sm font-semibold">
+          Nome, e-mail ou código do QR
+          {/* text-base: abaixo de 16px o iPhone amplia a tela ao focar. */}
+          <input name="q" type="search" defaultValue={code ?? q} autoFocus autoComplete="off" enterKeyHint="search" className={`${inputClass()} min-h-12 text-base`} />
         </label>
-        <button type="submit" className={buttonClass("primary", "min-h-12 px-6")}>
+        <button type="submit" className={buttonClass("primary", "min-h-12 shrink-0 px-5")}>
           Buscar
         </button>
       </form>
-      <p className="-mt-3 text-sm text-ink-muted">
-        Toque em Ler QR Code e permita o uso da câmera quando o navegador pedir. Também funciona com um leitor que digita o código no campo acima.
-      </p>
+
+      <nav aria-label="Filtrar inscritos" className="-mt-2 flex max-w-full gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 shadow-(--shadow-card) sm:w-fit">
+        {FILTERS.map((f) => (
+          <Link
+            key={f}
+            href={href(f)}
+            aria-current={f === filter ? "page" : undefined}
+            className={`inline-flex min-h-10 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 text-sm font-semibold transition-colors sm:flex-none sm:px-4 ${
+              f === filter ? "bg-brand-600 text-white shadow-sm" : "text-ink-muted hover:bg-brand-100 hover:text-brand-700"
+            }`}
+          >
+            {FILTER_LABELS[f]}
+            <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${f === filter ? "bg-white/20" : "bg-brand-100 text-brand-700"}`}>
+              {tagCounts[f].toLocaleString("pt-BR")}
+            </span>
+          </Link>
+        ))}
+      </nav>
 
       {code ? (
         found ? (
@@ -102,28 +132,36 @@ export default async function CheckinPage({
         ) : (
           <Alert tone="danger">Código não encontrado neste evento. Confira se o QR é deste evento.</Alert>
         )
-      ) : results ? (
-        results.registrations.length === 0 ? (
-          <EmptyState icon="users" title="Nenhuma inscrição confirmada encontrada">Busque por parte do nome ou do e-mail.</EmptyState>
-        ) : (
-          <ul className="grid gap-2">
-            {results.registrations.map((r) => (
-              <li key={r.id} className="flex flex-wrap items-center justify-between gap-3 rounded-(--radius-card) border border-line bg-surface px-4 py-3 text-sm">
-                <span>
-                  <span className="block font-semibold">{r.attendee_name}</span>
-                  <span className="block text-ink-muted break-all">
-                    {r.attendee_email} · {ticketNames.get(r.ticket_type_id)}
-                  </span>
-                </span>
-                {r.checkins ? (
-                  <Badge tone="success">Presente desde {formatShortDateTime(r.checkins.checked_in_at, event.timezone)}</Badge>
-                ) : unavailable ? null : (
-                  <CheckInButton key={r.id} {...common} registrationId={r.id} label="Check-in manual" />
-                )}
-              </li>
-            ))}
-          </ul>
-        )
+      ) : null}
+
+      {results.registrations.length === 0 ? (
+        <EmptyState icon="users" title={search ? "Ninguém encontrado" : filter === "pendentes" ? "Todos já fizeram check-in" : "Nenhum inscrito aqui"}>
+          {search ? "Busque por parte do nome ou do e-mail." : "Só aparecem inscrições confirmadas."}
+        </EmptyState>
+      ) : (
+        <ul className="grid gap-2">
+          {results.registrations.map((r) => (
+            <li key={r.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-(--radius-card) border border-line bg-surface px-4 py-3 text-sm">
+              <span className="min-w-0 flex-1 basis-40">
+                <span className="block truncate text-base font-semibold">{r.attendee_name}</span>
+                <span className="block truncate text-ink-muted">{ticketNames.get(r.ticket_type_id)} · {r.attendee_email}</span>
+              </span>
+              {r.checkins ? (
+                <Badge tone="success">Presente · {formatShortDateTime(r.checkins.checked_in_at, event.timezone)}</Badge>
+              ) : unavailable ? null : (
+                <CheckInButton key={r.id} {...common} registrationId={r.id} label="Check-in" />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {pages > 1 ? (
+        <nav aria-label="Paginação" className="flex items-center justify-between gap-3 text-sm">
+          {page > 1 ? <Link href={href(filter, page - 1)} className={buttonClass("secondary")}>Anterior</Link> : <span />}
+          <span className="text-ink-muted">Página {page} de {pages}</span>
+          {page < pages ? <Link href={href(filter, page + 1)} className={buttonClass("secondary")}>Próxima</Link> : <span />}
+        </nav>
       ) : null}
     </div>
   );

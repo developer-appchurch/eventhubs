@@ -26,14 +26,19 @@ export function eventSections(base: string, showRegistrations: boolean, showFina
   ];
 }
 
-// Check-in, pagamentos e relatório são por evento: ficam nas abas do evento. Inscrições também
-// têm uma lista geral, com todos os eventos da organização.
+// Pagamentos e relatório são por evento: ficam nas abas do evento. Inscrições têm uma lista
+// geral; Check-in é um atalho que escolhe o evento e abre a aba de check-in dele.
 export function buildOrgNav(orgSlug: string, showRegistrations: boolean): NavItem[] {
   const base = `/app/${orgSlug}`;
   return [
     { label: "Visão geral", href: base },
     { label: "Eventos", href: `${base}/events` },
-    ...(showRegistrations ? [{ label: "Inscrições", href: `${base}/registrations` }] : []),
+    ...(showRegistrations
+      ? [
+          { label: "Inscrições", href: `${base}/registrations` },
+          { label: "Check-in", href: `${base}/checkin` },
+        ]
+      : []),
     { label: "Equipe", href: `${base}/team` },
     { label: "Configurações", href: `${base}/settings` },
   ];
@@ -43,6 +48,7 @@ const ORG_ICONS: Record<string, IconName> = {
   "Visão geral": "overview",
   Eventos: "calendar",
   Inscrições: "inbox",
+  "Check-in": "qr",
   Equipe: "users",
   Configurações: "settings",
 };
