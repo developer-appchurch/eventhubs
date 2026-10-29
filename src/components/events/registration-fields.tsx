@@ -1,4 +1,5 @@
 import { inputClass } from "@/components/ui/field";
+import { maskPhone } from "@/lib/phone";
 import type { FormField } from "@/modules/forms/fields";
 
 const INPUT_TYPES: Partial<Record<FormField["type"], string>> = {
@@ -96,6 +97,7 @@ export function RegistrationFields({
                 inputMode={field.type === "number" ? "decimal" : undefined}
                 autoComplete={field.type === "name" ? "name" : field.type === "email" ? "email" : field.type === "phone" ? "tel" : undefined}
                 placeholder={field.placeholder}
+                onInput={field.type === "phone" ? (e) => (e.currentTarget.value = maskPhone(e.currentTarget.value)) : undefined}
                 aria-invalid={Boolean(error) || undefined}
                 aria-describedby={describedBy}
                 className={inputClass(Boolean(error))}

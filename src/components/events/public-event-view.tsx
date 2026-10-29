@@ -3,6 +3,7 @@ import { Alert } from "@/components/ui/alert";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Countdown } from "./countdown";
 import { WhatsAppLink } from "./whatsapp-link";
+import { calendarUrl, mapsUrl } from "@/lib/links";
 import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
 import type { PublicEventPayload } from "@/modules/events/queries";
 import { FORMAT_LABELS, publicAvailability, type Availability } from "@/modules/events/status";
@@ -22,7 +23,7 @@ export function soldOutMessage(capacity: number): string {
 // Página pública do evento. Usada pela rota pública e pela pré-visualização (mesmo
 // conteúdo, vindo de get_public_event ou get_event_preview). O texto do organizador é
 // renderizado como texto puro (React escapa), sem HTML.
-export function PublicEventView({ data, registration }: { data: PublicEventPayload; registration: ReactNode }) {
+export function PublicEventView({ data, registration, ticketsInForm = false }: { data: PublicEventPayload; registration: ReactNode; ticketsInForm?: boolean }) {
   const { event, organization, tickets } = data;
   const availability = publicAvailability(event);
   // Publicado e dentro do prazo, mas sem vagas: o público precisa saber que lotou.
@@ -42,7 +43,9 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
     ["Data", start === end ? start : `De ${start} a ${end}`],
     ["Formato", FORMAT_LABELS[event.format]],
     ...(event.format !== "online" && event.venue_name ? [["Local", event.venue_name] as [string, ReactNode]] : []),
-    ...(event.format !== "online" && event.address ? [["Endereço", event.address] as [string, ReactNode]] : []),
+    ...(event.format !== "online" && event.address
+      ? [["Endereço", <span key="a">{event.address} · <a href={mapsUrl(event.address)} target="_blank" rel="noopener noreferrer" className="text-brand-700 hover:underline">Ver no mapa</a></span>] as [string, ReactNode]]
+      : []),
     ...(event.format !== "in_person" ? [["Acesso online", "Link enviado aos inscritos"] as [string, ReactNode]] : []),
     [
       "Vagas",
@@ -77,6 +80,11 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
           <p className="text-white/90">
             {formatDate(event.starts_at, tz)} · {FORMAT_LABELS[event.format]}
           </p>
+          {availability !== "draft" ? (
+            <a href={calendarUrl(event, organization.name)} target="_blank" rel="noopener noreferrer" className="text-sm text-white/90 underline underline-offset-4 hover:text-white">
+              Adicionar à agenda
+            </a>
+          ) : null}
           <a
             href="#inscricao"
             className="mt-2 inline-flex min-h-11 items-center rounded-full bg-white px-6 text-sm font-bold tracking-wide text-brand-900 uppercase shadow-(--shadow-overlay) hover:bg-brand-100"
@@ -110,6 +118,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
           </Card>
         ) : null}
 
+        {ticketsInForm ? null : (
         <Card>
           <CardTitle>Ingressos</CardTitle>
           {tickets.length === 0 ? (
@@ -131,6 +140,7 @@ export function PublicEventView({ data, registration }: { data: PublicEventPaylo
             </ul>
           )}
         </Card>
+        )}
 
         <section id="inscricao" data-surface="dark" className="bg-hero scroll-mt-4 rounded-(--radius-card) px-4 py-8 @xl:px-8">
           <h2 className="text-center text-2xl font-bold text-white">Inscrições</h2>
