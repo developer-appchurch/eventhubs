@@ -2,7 +2,7 @@
 
 ## 1. Projeto Supabase próprio
 
-Crie um projeto exclusivo para o EventHubs (não reutilize outro produto). Anote:
+Crie um projeto exclusivo para o EventHub (não reutilize outro produto). Anote:
 
 - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
 - **Publishable key** (`sb_publishable_...`) → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`

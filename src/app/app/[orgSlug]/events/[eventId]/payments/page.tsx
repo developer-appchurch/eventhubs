@@ -39,7 +39,7 @@ export default async function PaymentsPage({
   return (
     <div className="grid gap-6">
       <p className="text-sm text-ink-muted">
-        Valores brutos, como registrados pelo Mercado Pago. A taxa do EventHubs é retida na hora do pagamento; as tarifas do Mercado Pago e o valor
+        Valores brutos, como registrados pelo Mercado Pago. A taxa do EventHub é retida na hora do pagamento; as tarifas do Mercado Pago e o valor
         líquido ficam no painel da sua conta Mercado Pago.
       </p>
       {payments.length === 0 ? (

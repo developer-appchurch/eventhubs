@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Sistema de design do EventHubs. Cores, tipografia, raios e sombras são tokens aqui;
+ * Sistema de design do EventHub. Cores, tipografia, raios e sombras são tokens aqui;
  * componentes usam somente estes tokens (nunca cores soltas).
  * Modo escuro ainda não é suportado: o tema é claro com contraste AA verificado.
  */

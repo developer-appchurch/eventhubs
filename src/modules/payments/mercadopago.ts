@@ -122,7 +122,7 @@ export type CheckoutInput = {
 };
 
 // Checkout Pro criado com o token do vendedor (a organização). marketplace_fee é a parte do
-// EventHubs, em reais. Boleto fica de fora: compensa em dias e a reserva dura 30 minutos.
+// EventHub, em reais. Boleto fica de fora: compensa em dias e a reserva dura 30 minutos.
 export async function createCheckout(sellerToken: string, input: CheckoutInput): Promise<{ id: string; url: string }> {
   const data = await call("checkout", "/checkout/preferences", {
     method: "POST",
@@ -142,7 +142,7 @@ export async function createCheckout(sellerToken: string, input: CheckoutInput):
       expires: true,
       expiration_date_to: input.expiresAt.toISOString(),
       date_of_expiration: input.expiresAt.toISOString(),
-      statement_descriptor: "EVENTHUBS",
+      statement_descriptor: "EVENTHUB",
     }),
   });
   if (typeof data.id !== "string" || typeof data.init_point !== "string" || !data.init_point.startsWith("https://")) {
@@ -175,7 +175,7 @@ export async function createPix(sellerToken: string, input: PixInput): Promise<{
       notification_url: input.notificationUrl,
       application_fee: input.platformFeeCents / 100,
       date_of_expiration: new Date(input.expiresAt.getTime() + PIX_GRACE_MS).toISOString(),
-      statement_descriptor: "EVENTHUBS",
+      statement_descriptor: "EVENTHUB",
     }),
   });
   const code = (data.point_of_interaction as { transaction_data?: { qr_code?: unknown } } | undefined)?.transaction_data?.qr_code;

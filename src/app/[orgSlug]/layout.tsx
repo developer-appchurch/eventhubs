@@ -14,7 +14,7 @@ export default function PublicOrganizationLayout({ children }: { children: React
           {children}
         </main>
       </div>
-      <footer className="border-t border-line py-5 text-center text-sm text-ink-muted">Página criada com EventHubs</footer>
+      <footer className="border-t border-line py-5 text-center text-sm text-ink-muted">Página criada com EventHub</footer>
     </div>
   );
 }

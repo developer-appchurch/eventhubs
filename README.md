@@ -1,4 +1,4 @@
-# EventHubs
+# EventHub
 
 Plataforma independente para criar eventos, receber inscrições, gerenciar participantes e acompanhar a presença. Multi-organização, com isolamento de dados garantido pelo banco (Row Level Security).
 
@@ -16,7 +16,7 @@ Plataforma independente para criar eventos, receber inscrições, gerenciar part
 
 - Node.js 22 LTS ou superior
 - PostgreSQL 16+ local para testes de banco (ou Supabase CLI com Docker)
-- Um projeto Supabase próprio do EventHubs (para executar a aplicação completa)
+- Um projeto Supabase próprio do EventHub (para executar a aplicação completa)
 
 ## Como instalar
 

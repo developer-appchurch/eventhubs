@@ -42,7 +42,7 @@ describe("e-mail de confirmação", () => {
   it("envia ao Resend com imagem inline e idempotência; erro não vaza a resposta", async () => {
     const fetchMock = vi.fn(async () => Response.json({ id: "email-1" }));
     vi.stubGlobal("fetch", fetchMock);
-    const env = { SUPABASE_SECRET_KEY: "sb_secret_x", RESEND_API_KEY: "re_123", EMAIL_FROM: "EventHubs <ola@ex.com>" };
+    const env = { SUPABASE_SECRET_KEY: "sb_secret_x", RESEND_API_KEY: "re_123", EMAIL_FROM: "EventHub <ola@ex.com>" };
     const email = await buildEmail(ctx);
     await expect(sendEmail(env, email)).resolves.toBe("email-1");
     const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
