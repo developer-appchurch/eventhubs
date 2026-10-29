@@ -5,9 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { inputClass } from "@/components/ui/field";
 import { formatShortDateTime } from "@/lib/datetime";
-import { getEvent, listTicketTypes } from "@/modules/events/queries";
+import { getOrganizationEvent, isUuid, listTicketTypes } from "@/modules/events/queries";
 import { canManageEvents } from "@/modules/events/status";
-import { getOrganizationContext } from "@/modules/organizations/queries";
 import {
   countRegistrations,
   listFormVersions,
@@ -36,23 +35,24 @@ export default async function RegistrationsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event || !canReadRegistrations(org.role)) notFound();
 
   const sp = await searchParams;
   const q = (sp.q ?? "").slice(0, 100);
   const status = REGISTRATION_STATUSES.includes(sp.status as RegistrationStatus) ? (sp.status as RegistrationStatus) : undefined;
-  const tickets = await listTicketTypes(event.id);
-  const ticket = tickets.some((t) => t.id === sp.ticket) ? sp.ticket : undefined;
   const presence = PRESENCE_FILTERS.includes(sp.presence as PresenceFilter) ? (sp.presence as PresenceFilter) : undefined;
   const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
 
-  const [{ registrations, total }, counts, forms] = await Promise.all([
-    listRegistrations(event.id, { q, status, ticket, presence, page }),
+  // Tudo em paralelo: um ingresso de outro evento só filtra por event_id e volta vazio.
+  const ticketFilter = sp.ticket && isUuid(sp.ticket) ? sp.ticket : undefined;
+  const [tickets, { registrations, total }, counts, forms] = await Promise.all([
+    listTicketTypes(event.id),
+    listRegistrations(event.id, { q, status, ticket: ticketFilter, presence, page }),
     countRegistrations(event.id),
     listFormVersions(event.id),
   ]);
+  const ticket = tickets.some((t) => t.id === ticketFilter) ? ticketFilter : undefined;
   const ticketNames = new Map(tickets.map((t) => [t.id, t.name]));
   const pages = Math.max(1, Math.ceil(total / REGISTRATIONS_PAGE_SIZE));
   const base = `/app/${org.slug}/events/${event.id}/registrations`;

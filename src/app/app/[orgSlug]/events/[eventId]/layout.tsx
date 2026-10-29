@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
-import { getEvent } from "@/modules/events/queries";
+import { getOrganizationEvent } from "@/modules/events/queries";
 import { canManageEvents } from "@/modules/events/status";
-import { getOrganizationContext } from "@/modules/organizations/queries";
 import { canReadPayments } from "@/modules/payments/queries";
 import { canReadRegistrations } from "@/modules/registrations/roles";
 import { EventStepNav } from "./event-sub-nav";
@@ -17,9 +16,8 @@ export default async function EventLayout({
   params: Promise<{ orgSlug: string; eventId: string }>;
 }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
   // Evento de outra organização ou inexistente: mesma resposta (404).
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event) notFound();
 
   const base = `/app/${org.slug}/events/${event.id}`;

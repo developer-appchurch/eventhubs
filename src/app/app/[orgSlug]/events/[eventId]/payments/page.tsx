@@ -5,8 +5,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatCents, formatShortDateTime } from "@/lib/datetime";
-import { getEvent } from "@/modules/events/queries";
-import { getOrganizationContext } from "@/modules/organizations/queries";
+import { getOrganizationEvent } from "@/modules/events/queries";
 import {
   canReadPayments,
   listPayments,
@@ -27,8 +26,7 @@ export default async function PaymentsPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event || !canReadPayments(org.role)) notFound();
 
   const page = Math.max(1, Number.parseInt((await searchParams).page ?? "1", 10) || 1);

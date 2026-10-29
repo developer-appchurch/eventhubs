@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/datetime";
-import { getEvent, listTicketTypes } from "@/modules/events/queries";
+import { getOrganizationEvent, listTicketTypes } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
-import { getOrganizationContext } from "@/modules/organizations/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EventForm } from "../event-form";
 import { DeleteEventForm, DuplicateEventForm } from "./delete-event-form";
@@ -13,8 +12,7 @@ export const metadata: Metadata = { title: "Evento" };
 
 export default async function EventDetailsPage({ params }: { params: Promise<{ orgSlug: string; eventId: string }> }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event) notFound();
 
   const manager = canManageEvents(org.role);
@@ -22,7 +20,11 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
 
   // Excluir só aparece sem nenhuma inscrição; a função delete_event confere de novo sob trava.
   const supabase = await createSupabaseServerClient();
-  const { count } = manager ? await supabase.from("registrations").select("id", { count: "exact", head: true }).eq("event_id", event.id) : { count: null };
+  // Em paralelo: a contagem e os ingressos não dependem um do outro.
+  const [{ count }, allTickets] = await Promise.all([
+    manager ? supabase.from("registrations").select("id", { count: "exact", head: true }).eq("event_id", event.id) : { count: null },
+    listTicketTypes(event.id),
+  ]);
   const actions = manager ? (
     <>
       <DuplicateEventForm organizationSlug={org.slug} eventId={event.id} />
@@ -62,7 +64,7 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
     );
   }
 
-  const tickets = (await listTicketTypes(event.id)).filter((t) => t.is_active).map((t) => ({ ...t, sold_out: false }));
+  const tickets = allTickets.filter((t) => t.is_active).map((t) => ({ ...t, sold_out: false }));
 
   return (
     <div className="grid gap-6">
