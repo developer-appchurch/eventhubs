@@ -28,7 +28,7 @@ export function FieldWrapper({
   children: ReactNode;
 }) {
   return (
-    <div className="grid min-w-0 gap-1.5">
+    <div className="grid min-w-0 grid-cols-1 gap-1.5">
       <label htmlFor={name} className="text-sm font-semibold text-ink">
         {label}
       </label>
