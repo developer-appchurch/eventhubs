@@ -8,6 +8,8 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { getRegistrationByToken, registrationCookie } from "@/modules/registrations/queries";
 import { PublicEventView, soldOutMessage } from "@/components/events/public-event-view";
 import { RegistrationForm } from "@/components/events/registration-form";
+import { StickyCta } from "@/components/events/sticky-cta";
+import { formatCents } from "@/lib/datetime";
 import { getPublicEvent } from "@/modules/events/queries";
 import { publicAvailability } from "@/modules/events/status";
 import { redirectIfOrganizationRenamed } from "@/modules/organizations/queries";
@@ -21,6 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: data.event.title,
     description: data.event.description.slice(0, 160) || `Evento de ${data.organization.name}`,
+    // A capa vira a imagem do link compartilhado (WhatsApp, redes sociais).
+    openGraph: { title: data.event.title, type: "website", images: data.event.cover_image_url ? [data.event.cover_image_url] : undefined },
   };
 }
 
@@ -37,6 +41,9 @@ export default async function PublicEventPage({ params }: Props) {
   const token = (await cookies()).get(registrationCookie(data.event.id))?.value ?? "";
   const mine = token ? await getRegistrationByToken(token).catch(() => null) : null;
   const ownStatus = mine?.event.id === data.event.id ? mine.status : null;
+  const formShown = publicAvailability(data.event) === "open" && Boolean(data.form) && data.event.remaining !== 0;
+  const minPrice = data.tickets.length ? Math.min(...data.tickets.map((t) => t.price_cents)) : null;
+  const stickyLabel = minPrice === null || minPrice === 0 ? "Inscreva-se" : `Inscreva-se · a partir de ${formatCents(minPrice)}`;
   const ownUrl = `/${data.organization.slug}/${data.event.slug}/inscricao/${token}`;
 
   return (
@@ -57,10 +64,12 @@ export default async function PublicEventPage({ params }: Props) {
           </Link>
         </Card>
       ) : null}
+      {formShown ? <StickyCta label={stickyLabel} /> : null}
       <PublicEventView
         data={data}
+        ticketsInForm={formShown}
         registration={
-          publicAvailability(data.event) === "open" && data.form && data.event.remaining !== 0 ? (
+          formShown && data.form ? (
             <RegistrationForm
               orgSlug={data.organization.slug}
               eventSlug={data.event.slug}
@@ -70,6 +79,7 @@ export default async function PublicEventPage({ params }: Props) {
               fields={data.form.fields}
               hasTerms={Boolean(data.event.participant_terms)}
               paymentsEnabled={data.payments_enabled}
+              timezone={data.event.timezone}
             />
           ) : data.event.remaining === 0 ? (
             <div className="grid gap-1 text-center">

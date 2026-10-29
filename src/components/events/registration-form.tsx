@@ -1,9 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, type FormEvent } from "react";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { formatCents } from "@/lib/datetime";
+import { formatCents, formatDateTime } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
 import type { PublicTicket } from "@/modules/events/queries";
 import type { FormField } from "@/modules/forms/fields";
@@ -19,12 +19,16 @@ type Props = {
   fields: Omit<FormField, "is_active">[];
   hasTerms: boolean;
   paymentsEnabled: boolean;
+  timezone: string;
 };
 
-export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, fields, hasTerms, paymentsEnabled }: Props) {
+export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, fields, hasTerms, paymentsEnabled, timezone }: Props) {
   const [state, action, pending] = useActionState(registerForEvent, INITIAL_STATE);
   const available = tickets.filter((t) => ticketAvailability(t, undefined, paymentsEnabled) === "available");
   const errors = state.fieldErrors ?? {};
+  const [selectedId, setSelectedId] = useState(available.length === 1 ? available[0].id : "");
+  const selected = tickets.find((t) => t.id === selectedId);
+  const submitLabel = selected && selected.price_cents > 0 && paymentsEnabled ? `Ir para o pagamento · ${formatCents(selected.price_cents)}` : "Garantir minha vaga";
 
   // Envio manual: com <form action>, o React limpa os campos ao terminar e o participante
   // perderia o que digitou quando o servidor aponta um erro.
@@ -72,9 +76,14 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
                   disabled={disabled}
                   defaultChecked={available.length === 1 && !disabled}
                   className="size-4"
+                  onChange={() => setSelectedId(ticket.id)}
                 />
                 <span>
                   <span className="font-medium">{ticket.name}</span>
+                  {ticket.description ? <span className="block text-xs text-ink-muted">{ticket.description}</span> : null}
+                  {!disabled && ticket.sales_end_at ? (
+                    <span className="block text-xs text-ink-muted">Vendas até {formatDateTime(ticket.sales_end_at, timezone)}</span>
+                  ) : null}
                   {disabled ? <span className="block text-xs text-ink-muted">{TICKET_AVAILABILITY_LABELS[status]}</span> : null}
                 </span>
               </span>
@@ -104,7 +113,7 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
       ) : null}
 
       <Button type="submit" disabled={pending} aria-busy={pending} className="w-full sm:w-auto">
-        {pending ? "Enviando inscrição…" : "Confirmar inscrição"}
+        {pending ? "Enviando inscrição…" : submitLabel}
       </Button>
       {paymentsEnabled && tickets.some((t) => t.price_cents > 0) ? (
         <p className="text-sm text-ink-muted">
