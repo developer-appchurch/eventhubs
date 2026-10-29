@@ -20,7 +20,7 @@ export default async function OrganizationLayout({
     <div className="grid gap-6">
       <header className="grid border-b border-line pb-3">
         <p className="text-xs text-ink-muted">Organização</p>
-        <h1 className="font-bold">{org.name}</h1>
+        <h1 className="text-xl font-bold tracking-tight">{org.name}</h1>
       </header>
       {children}
     </div>
