@@ -8,7 +8,7 @@ import { FORMAT_LABELS, type EventFormat } from "@/modules/events/status";
 import { getRegistrationByToken, type PublicRegistration } from "@/modules/registrations/queries";
 import { sendEmail } from "./resend";
 
-type Context = {
+export type Context = {
   notification_id: string;
   attendee_name: string;
   attendee_email: string;

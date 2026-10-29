@@ -132,4 +132,26 @@ describe("e-mail de confirmação", () => {
     expect(await as("authenticated", "select 1 from public.notifications where organization_id = $1", [org], viewer)).toEqual([]);
     await expect(as("authenticated", "delete from public.notifications where organization_id = $1", [org], owner)).rejects.toThrow(/permission denied/);
   });
+
+  it("lembrete: só eventos que começam em até 24h, uma vez por inscrição, só o servidor", async () => {
+    const token = await register("lembrete@exemplo.com");
+    const remind = () => as<{ c: { notification_id: string; attendee_email: string } }>("service_role", "select public.claim_event_reminders(500) as c");
+    // Evento a 30 dias: fora da janela.
+    expect((await remind()).filter((r) => r.c.attendee_email === "lembrete@exemplo.com")).toEqual([]);
+
+    await pool.query("update public.events set starts_at = now() + interval '12 hours', ends_at = now() + interval '36 hours' where id = $1", [eventId]);
+    const first = (await remind()).filter((r) => r.c.attendee_email === "lembrete@exemplo.com");
+    expect(first).toHaveLength(1);
+    expect((await remind()).filter((r) => r.c.attendee_email === "lembrete@exemplo.com")).toEqual([]);
+    await finish(first[0].c.notification_id, null);
+    expect((await remind()).filter((r) => r.c.attendee_email === "lembrete@exemplo.com")).toEqual([]);
+    const { rows } = await pool.query("select kind, status from public.notifications where id = $1", [first[0].c.notification_id]);
+    expect(rows[0]).toMatchObject({ kind: "event_reminder", status: "sent" });
+
+    // O lembrete não impede a confirmação da mesma inscrição (tipos diferentes).
+    expect(await claim(token)).not.toBeNull();
+
+    await expect(as("anon", "select public.claim_event_reminders(10)")).rejects.toThrow(/permission denied/);
+    await expect(as("authenticated", "select public.claim_event_reminders(10)", [], owner)).rejects.toThrow(/permission denied/);
+  });
 });
