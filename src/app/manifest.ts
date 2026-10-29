@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#211044",
     theme_color: "#211044",
-    // Gerados do favicon sobre fundo branco; o iPhone usa src/app/apple-icon.png (180px).
+    // Gerados do logo em SVG; o iPhone usa src/app/apple-icon.png (180px).
     icons: [
       { src: "/brand/app-192.png", sizes: "192x192", type: "image/png" },
       { src: "/brand/app-512.png", sizes: "512x512", type: "image/png" },
