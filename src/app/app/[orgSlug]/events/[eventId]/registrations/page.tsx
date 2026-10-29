@@ -127,8 +127,8 @@ export default async function RegistrationsPage({
             const identity = new Set(form.filter((f) => f.type === "name" || f.type === "email").map((f) => f.key));
             const extra = Object.entries(r.answers).filter(([key]) => !identity.has(key));
             return (
-              <li key={r.id} className="rounded-(--radius-card) border border-line bg-surface">
-                <details>
+              <li key={r.id} className="flex items-start rounded-(--radius-card) border border-line bg-surface">
+                <details className="min-w-0 flex-1">
                   <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
                     <span>
                       <span className="block font-semibold">{r.attendee_name}</span>
@@ -150,10 +150,12 @@ export default async function RegistrationsPage({
                       </div>
                     ))}
                   </dl>
-                  {canManage ? (
-                    <RegistrationActions organizationSlug={org.slug} registrationId={r.id} active={r.status === "confirmed" || r.status === "pending_payment"} />
-                  ) : null}
                 </details>
+                {canManage ? (
+                  <div className="shrink-0 py-2 pr-2">
+                    <RegistrationActions organizationSlug={org.slug} registrationId={r.id} active={r.status === "confirmed" || r.status === "pending_payment"} />
+                  </div>
+                ) : null}
               </li>
             );
           })}

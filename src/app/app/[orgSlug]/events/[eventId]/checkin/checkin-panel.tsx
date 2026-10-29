@@ -10,7 +10,7 @@ import { parseCheckinCode } from "@/modules/checkins/code";
 import { countCheckins, findByCheckinCode } from "@/modules/checkins/queries";
 import { type EventRecord, listTicketTypes } from "@/modules/events/queries";
 import { listRegistrations, type PresenceFilter, REGISTRATION_STATUS_LABELS, REGISTRATIONS_PAGE_SIZE } from "@/modules/registrations/queries";
-import { CheckInButton } from "./check-in-button";
+import { CheckInButton, UndoCheckInButton } from "./check-in-button";
 import { QrScanner } from "./qr-scanner";
 
 const FILTERS = ["todos", "pendentes", "presentes"] as const;
@@ -27,11 +27,14 @@ export async function CheckinPanel({
   event,
   sp,
   keep = {},
+  showProgress = true,
 }: {
   org: { slug: string };
   event: EventRecord;
   sp: CheckinSearchParams;
   keep?: Record<string, string>;
+  // A tela Check-in do menu dispensa a barra: os filtros abaixo já mostram presentes e pendentes.
+  showProgress?: boolean;
 }) {
   const q = (sp.q ?? "").slice(0, 200);
   // Câmera do celular abre o link do QR (?code=); leitor que digita ou busca usa o campo q.
@@ -57,18 +60,20 @@ export async function CheckinPanel({
 
   return (
     <div className="grid gap-5">
-      <div data-surface="dark" className="bg-hero grid gap-3 rounded-(--radius-card) p-5 text-white shadow-(--shadow-card)">
-        <p className="text-sm text-brand-200">
-          <span className="text-3xl font-extrabold tracking-tight text-white tabular-nums">{counts.present.toLocaleString("pt-BR")}</span>{" "}
-          presentes de {counts.confirmed.toLocaleString("pt-BR")} inscrições confirmadas
-        </p>
-        <div role="presentation" className="h-2 overflow-hidden rounded-full bg-white/15">
-          <div
-            className="h-full rounded-full bg-brand-500"
-            style={{ width: `${counts.confirmed > 0 ? Math.min(100, (counts.present / counts.confirmed) * 100) : 0}%` }}
-          />
+      {showProgress ? (
+        <div data-surface="dark" className="bg-hero grid gap-3 rounded-(--radius-card) p-5 text-white shadow-(--shadow-card)">
+          <p className="text-sm text-brand-200">
+            <span className="text-3xl font-extrabold tracking-tight text-white tabular-nums">{counts.present.toLocaleString("pt-BR")}</span>{" "}
+            presentes de {counts.confirmed.toLocaleString("pt-BR")} inscrições confirmadas
+          </p>
+          <div role="presentation" className="h-2 overflow-hidden rounded-full bg-white/15">
+            <div
+              className="h-full rounded-full bg-brand-500"
+              style={{ width: `${counts.confirmed > 0 ? Math.min(100, (counts.present / counts.confirmed) * 100) : 0}%` }}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {unavailable ? <Alert tone="warning">Check-in indisponível: o evento está em rascunho ou foi cancelado.</Alert> : null}
 
@@ -120,7 +125,10 @@ export async function CheckinPanel({
             </div>
             <div className="mt-4">
               {found.checkins ? (
-                <Alert tone="warning">Check-in já feito em {formatShortDateTime(found.checkins.checked_in_at, event.timezone)}.</Alert>
+                <div className="grid gap-2">
+                  <Alert tone="warning">Check-in já feito em {formatShortDateTime(found.checkins.checked_in_at, event.timezone)}.</Alert>
+                  <UndoCheckInButton key={found.id} {...common} registrationId={found.id} />
+                </div>
               ) : found.status !== "confirmed" ? (
                 <Alert tone="danger">Inscrição não confirmada: não é possível registrar presença.</Alert>
               ) : unavailable ? null : (
@@ -146,7 +154,10 @@ export async function CheckinPanel({
                 <span className="block truncate text-ink-muted">{ticketNames.get(r.ticket_type_id)} · {r.attendee_email}</span>
               </span>
               {r.checkins ? (
-                <Badge tone="success">Presente · {formatShortDateTime(r.checkins.checked_in_at, event.timezone)}</Badge>
+                <span className="flex flex-wrap items-center gap-2">
+                  <Badge tone="success">Presente · {formatShortDateTime(r.checkins.checked_in_at, event.timezone)}</Badge>
+                  <UndoCheckInButton key={r.id} {...common} registrationId={r.id} />
+                </span>
               ) : unavailable ? null : (
                 <CheckInButton key={r.id} {...common} registrationId={r.id} label="Check-in" />
               )}

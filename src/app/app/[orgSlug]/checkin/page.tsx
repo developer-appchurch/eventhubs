@@ -40,7 +40,7 @@ export default async function OrgCheckinPage({
             Trocar evento
           </Link>
         </div>
-        <CheckinPanel org={org} event={selected} sp={sp} keep={{ evento: selected.id }} />
+        <CheckinPanel org={org} event={selected} sp={sp} keep={{ evento: selected.id }} showProgress={false} />
       </div>
     );
   }

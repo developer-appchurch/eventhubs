@@ -194,6 +194,32 @@ describe("check-in", () => {
   });
 });
 
+describe("desfazer check-in", () => {
+  const undo = (caller: Caller, registration: string) => as(caller, "select public.undo_check_in($1)", [registration]);
+
+  it("operador desfaz, a pessoa volta a pendente e pode fazer check-in de novo; fica na auditoria", async () => {
+    const { code } = await register(eventId, ticketId, "desfazer@exemplo.com");
+    const id = await registrationId(code);
+    await checkIn(operator, eventId, code);
+    await undo(operator, id);
+    expect(await as<unknown[]>(manager, "select 1 from public.checkins where registration_id = $1", [id])).toEqual([]);
+    await undo(operator, id); // sem check-in: não faz nada
+    expect(await checkIn(operator, eventId, code)).toMatchObject({ result: "checked_in" });
+    const audit = await as<unknown[]>(user(ids.ownerA), "select 1 from public.audit_logs where action = 'registration.check_in_undone' and target_id = $1", [id]);
+    expect(audit).toHaveLength(1);
+  });
+
+  it("visualizador, outra organização e anônimo não desfazem", async () => {
+    const { code } = await register(eventId, ticketId, "desfazer-bloqueado@exemplo.com");
+    const id = await registrationId(code);
+    await checkIn(operator, eventId, code);
+    await expect(undo(user(ids.viewerA), id)).rejects.toThrow("FORBIDDEN");
+    await expect(undo(user(ids.ownerB), id)).rejects.toThrow("FORBIDDEN");
+    await expect(undo(anon, id)).rejects.toThrow(/permission denied/);
+    expect(await as<unknown[]>(manager, "select 1 from public.checkins where registration_id = $1", [id])).toHaveLength(1);
+  });
+});
+
 describe("RLS de checkins", () => {
   it("equipe do evento lê; visualizador e outra organização não; ninguém escreve direto", async () => {
     expect((await as<unknown[]>(operator, "select 1 from public.checkins where event_id = $1", [eventId])).length).toBeGreaterThan(0);

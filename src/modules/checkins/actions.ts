@@ -39,3 +39,19 @@ export async function checkIn(_prev: ActionState, formData: FormData): Promise<A
   const by = result.checked_in_by ? ` por ${result.checked_in_by}` : "";
   return { ok: false, message: `${result.attendee_name} já fez check-in em ${formatShortDateTime(result.checked_in_at, event.timezone)}${by}.` };
 }
+
+// Desfaz um check-in lançado por engano. O banco repete papel e organização.
+export async function undoCheckIn(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const org = await getOrganizationContext(text(formData, "organizationSlug"));
+  const eventId = text(formData, "eventId");
+  const registrationId = text(formData, "registrationId");
+  if (!org || !canReadRegistrations(org.role) || !isUuid(eventId) || !isUuid(registrationId)) return FORBIDDEN;
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("undo_check_in", { p_registration_id: registrationId });
+  if (error) return mapDatabaseError(error);
+
+  revalidatePath(`/app/${org.slug}/events/${eventId}`, "layout");
+  revalidatePath(`/app/${org.slug}/checkin`);
+  return { ok: true, message: "Check-in desfeito." };
+}
