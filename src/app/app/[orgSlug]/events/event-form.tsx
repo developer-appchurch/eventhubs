@@ -117,8 +117,8 @@ export function EventForm({
 
         <FormSection title="Data e local" description="Quando e onde o evento acontece.">
         <div className="grid grid-cols-2 gap-3 sm:gap-5">
-          <TextInput name="startsAt" label="Data de início" type="date" defaultValue={localDate(event?.starts_at)} required error={errors.startsAt} />
-          <TextInput name="endsAt" label="Data de término" type="date" defaultValue={localDate(event?.ends_at)} required error={errors.endsAt} />
+          <DateField name="startsAt" label="Data de início" value={values.startsAt} error={errors.startsAt} />
+          <DateField name="endsAt" label="Data de término" value={values.endsAt} error={errors.endsAt} />
         </div>
 
         <Segmented
@@ -235,13 +235,43 @@ export function EventForm({
   );
 }
 
+// No celular o iPhone mostra a data por extenso ("28 de out. de 2026") e não cabe lado a lado:
+// lá aparece 28/10/2026 e o campo nativo fica transparente por cima, abrindo o calendário ao tocar.
+function DateField({ name, label, value, error }: { name: string; label: string; value: string; error?: string }) {
+  const ids = useFieldIds(undefined, error);
+  return (
+    <FieldWrapper label={label} name={name} hintId={ids.hintId} error={error} errorId={ids.errorId}>
+      <div className="relative">
+        <input
+          id={name}
+          name={name}
+          type="date"
+          defaultValue={value}
+          required
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={ids.describedBy}
+          onClick={(e) => {
+            try {
+              e.currentTarget.showPicker?.();
+            } catch {} // sem suporte: o toque já abre o seletor nativo
+          }}
+          className={`peer ${inputClass(Boolean(error))} max-sm:absolute max-sm:inset-0 max-sm:opacity-0`}
+        />
+        <span aria-hidden className={`${inputClass(Boolean(error))} flex items-center tabular-nums peer-focus:border-brand-600 sm:hidden`}>
+          {value ? value.split("-").reverse().join("/") : "dd/mm/aaaa"}
+        </span>
+      </div>
+    </FieldWrapper>
+  );
+}
+
 // Campo do endereço no estilo "https://site/organizacao/[digite aqui]".
 function SlugField({ prefix, hint, error, ...props }: { prefix: string; hint: string; error?: string; defaultValue?: string; readOnly?: boolean }) {
   const ids = useFieldIds(hint, error);
   return (
     <FieldWrapper label="Endereço da página do evento" name="slug" hint={hint} hintId={ids.hintId} error={error} errorId={ids.errorId}>
       <div className={`${inputClass(Boolean(error))} flex items-center focus-within:border-brand-500`}>
-        <span className="min-w-0 shrink truncate font-medium text-brand-700" aria-hidden>
+        <span className="min-w-0 max-w-1/2 shrink truncate font-medium text-brand-700" aria-hidden>
           {prefix}
         </span>
         <input
