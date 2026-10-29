@@ -34,7 +34,7 @@ beforeAll(async () => {
     for (const [key, id] of Object.entries(ids)) {
       await c.query("insert into auth.users (id, email) values ($1, $2)", [id, `${key}-${id}@test.local`]);
     }
-    await c.query("insert into public.organizations (id, slug, name, created_by) values ($1, $2, 'A', $3), ($4, $5, 'B', $6)", [
+    await c.query("insert into public.organizations (id, slug, name, created_by) values ($1, $2, 'Org A', $3), ($4, $5, 'Org B', $6)", [
       orgA, `st-a-${orgA.slice(0, 8)}`, ids.manager, orgB, `st-b-${orgB.slice(0, 8)}`, ids.other,
     ]);
     await c.query(
