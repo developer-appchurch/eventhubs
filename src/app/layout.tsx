@@ -4,6 +4,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: { default: "EventHub", template: "%s · EventHub" },
   description: "Crie eventos, receba inscrições e acompanhe a presença em um único lugar.",
+  // iPhone: o atalho da tela inicial abre como app, sem a barra do Safari.
+  appleWebApp: { capable: true, title: "EventHub" },
 };
 
 // Todas as rotas leem sessão ou configuração em tempo de requisição; nada é pré-renderizado
