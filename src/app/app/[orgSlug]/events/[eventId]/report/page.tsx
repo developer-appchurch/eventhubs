@@ -77,7 +77,7 @@ export default async function ReportPage({ params }: { params: Promise<{ orgSlug
         </p>
         <dl className="mt-3 grid gap-3 sm:grid-cols-3">
           <div><dt className="text-sm text-ink-muted">Aprovado</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.approved_cents)}</dd></div>
-          <div><dt className="text-sm text-ink-muted">Taxa do EventHubs</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.platform_fee_cents)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">Taxa do EventHub</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.platform_fee_cents)}</dd></div>
           <div><dt className="text-sm text-ink-muted">Reembolsado ou contestado</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.refunded_cents)}</dd></div>
         </dl>
       </Card>

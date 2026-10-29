@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "EventHubs", template: "%s · EventHubs" },
+  title: { default: "EventHub", template: "%s · EventHub" },
   description: "Crie eventos, receba inscrições e acompanhe a presença em um único lugar.",
 };
 

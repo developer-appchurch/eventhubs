@@ -61,11 +61,11 @@ export default async function SettingsPage({
             {result ? <Alert tone={result.tone}>{result.text}</Alert> : null}
             <p className="text-ink-muted">
               Os ingressos pagos são cobrados pelo Mercado Pago, na conta da própria organização. O valor vai direto para ela, e o Mercado Pago
-              retém na hora a taxa do EventHubs e as tarifas dele.
+              retém na hora a taxa do EventHub e as tarifas dele.
             </p>
             <p className="text-ink-muted">
               No parcelamento, os juros são pagos pelo participante, a menos que você ative &quot;parcelamento sem juros&quot; na sua conta Mercado Pago.
-              Em caso de reembolso, a taxa do EventHubs não é devolvida à organização.
+              Em caso de reembolso, a taxa do EventHub não é devolvida à organização.
             </p>
             {account ? (
               <p>
@@ -83,7 +83,7 @@ export default async function SettingsPage({
                 {account ? "Reconectar conta Mercado Pago" : "Conectar conta Mercado Pago"}
               </a>
             ) : (
-              <p className="text-ink-muted">Pagamentos ainda não foram configurados nesta instalação do EventHubs.</p>
+              <p className="text-ink-muted">Pagamentos ainda não foram configurados nesta instalação do EventHub.</p>
             )}
           </div>
         </Card>

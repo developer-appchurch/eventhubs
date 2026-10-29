@@ -8,10 +8,10 @@ Status: **implementado, nunca testado contra o Mercado Pago real.** Faltam as cr
 | --- | --- | --- |
 | Gateway | Mercado Pago, Checkout Pro | Junio (26/10/2026) |
 | Recebedor | Cada organização, na própria conta Mercado Pago (OAuth) | Junio (26/10/2026) |
-| Taxa do EventHubs | `marketplace_fee`, retida pelo Mercado Pago no pagamento e enviada à conta dona do aplicativo | Junio (26/10/2026) |
+| Taxa do EventHub | `marketplace_fee`, retida pelo Mercado Pago no pagamento e enviada à conta dona do aplicativo | Junio (26/10/2026) |
 | Valor da taxa | `PLATFORM_FEE_BPS` (pontos-base; 500 = 5%). Padrão 0 | **pendente**: valor e quem paga (participante ou organização) |
 | Boleto | Excluído do checkout: compensa em dias e a reserva dura 30 minutos | padrão técnico, reversível |
-| Reembolso | Manual, pelo painel do Mercado Pago da organização. O EventHubs registra o resultado pelo webhook | padrão técnico; reembolso automático exige política explícita |
+| Reembolso | Manual, pelo painel do Mercado Pago da organização. O EventHub registra o resultado pelo webhook | padrão técnico; reembolso automático exige política explícita |
 
 ## O que diz a documentação oficial (consultada em 26/10/2026)
 
@@ -45,7 +45,7 @@ Estado da inscrição e estado financeiro são separados: `registrations.status`
 
 ## Como habilitar
 
-1. No [painel de desenvolvedores do Mercado Pago](https://www.mercadopago.com.br/developers/panel/app), com a conta que vai **receber a taxa do EventHubs**, crie um aplicativo (Checkout Pro, modelo marketplace).
+1. No [painel de desenvolvedores do Mercado Pago](https://www.mercadopago.com.br/developers/panel/app), com a conta que vai **receber a taxa do EventHub**, crie um aplicativo (Checkout Pro, modelo marketplace).
 2. No aplicativo: Redirect URL = `https://<domínio>/app/payments/mercadopago/callback`; ative "authorization code com PKCE"; inclua o escopo `offline_access`.
 3. Em Webhooks: URL `https://<domínio>/api/v1/webhooks/mercadopago`, evento **Pagamentos**; copie a chave secreta.
 4. Na Vercel (somente servidor, nunca `NEXT_PUBLIC_`): `SUPABASE_SECRET_KEY`, `MERCADOPAGO_CLIENT_ID`, `MERCADOPAGO_CLIENT_SECRET`, `MERCADOPAGO_WEBHOOK_SECRET`, `PAYMENT_TOKEN_KEY` (`openssl rand -base64 32`; trocar esta chave invalida as contas já conectadas) e, se houver taxa, `PLATFORM_FEE_BPS`.
@@ -55,7 +55,7 @@ O webhook precisa de URL pública com HTTPS: em `localhost` o checkout abre, mas
 
 ## Limitações conhecidas
 
-- Sem reembolso pelo EventHubs; sem cancelamento de inscrição pelo organizador (fase seguinte).
+- Sem reembolso pelo EventHub; sem cancelamento de inscrição pelo organizador (fase seguinte).
 - Sem desconectar a conta. Reconectar com **outra** conta Mercado Pago deixa sem consulta os pagamentos pendentes da conta anterior.
 - Um ingresso por inscrição (quantidade por pedido não é usada).
 - Confirmado o pagamento, sai o mesmo e-mail com o QR Code da inscrição gratuita (se o e-mail estiver configurado). Não há e-mail de "pagamento pendente" nem de reembolso.

@@ -43,7 +43,7 @@ export function getEnv(): Env {
 const emailSchema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(20),
   RESEND_API_KEY: z.string().startsWith("re_"),
-  // Remetente num domínio verificado no Resend, por exemplo "EventHubs <inscricoes@seudominio.com.br>".
+  // Remetente num domínio verificado no Resend, por exemplo "EventHub <inscricoes@seudominio.com.br>".
   EMAIL_FROM: z.string().min(3),
 });
 
@@ -67,7 +67,7 @@ const paymentSchema = z.object({
   MERCADOPAGO_WEBHOOK_SECRET: z.string().min(10),
   // 32 bytes em base64 (openssl rand -base64 32): cifra os tokens das organizações no banco.
   PAYMENT_TOKEN_KEY: z.string().refine((v) => Buffer.from(v, "base64").length === 32, "32 bytes em base64"),
-  // Taxa do EventHubs em pontos-base (500 = 5%), retida pelo Mercado Pago em cada pagamento.
+  // Taxa do EventHub em pontos-base (500 = 5%), retida pelo Mercado Pago em cada pagamento.
   PLATFORM_FEE_BPS: z.coerce.number().int().min(0).max(5000).default(0),
 });
 
