@@ -100,6 +100,17 @@ function tokensFrom(data: Record<string, unknown>): OAuthTokens {
   };
 }
 
+// Conta dona da aplicação (a do Mercado Pago Developers): o token de client_credentials sai em
+// nome dela. Só o user_id é usado; o token é descartado.
+export async function appOwnerUserId(input: { clientId: string; clientSecret: string }): Promise<string> {
+  const data = await call("oauth (aplicação)", "/oauth/token", {
+    method: "POST",
+    body: JSON.stringify({ client_id: input.clientId, client_secret: input.clientSecret, grant_type: "client_credentials" }),
+  });
+  if (data.user_id == null) throw new PaymentProviderError("oauth (aplicação, resposta incompleta)");
+  return String(data.user_id);
+}
+
 export async function exchangeCode(input: { clientId: string; clientSecret: string; code: string; redirectUri: string; codeVerifier: string }) {
   const data = await call("oauth", "/oauth/token", {
     method: "POST",
