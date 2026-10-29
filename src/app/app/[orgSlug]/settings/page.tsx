@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatDateTime } from "@/lib/datetime";
 import { getPaymentEnv } from "@/lib/env";
@@ -95,22 +96,20 @@ export default async function SettingsPage({
             ) : (
               <p className="font-medium">Nenhuma conta conectada: ingressos pagos não aceitam inscrição.</p>
             )}
-            {isPlatformOwner && account ? (
-              <Alert tone={appOwnerAccount ? "danger" : "info"}>
-                {appOwnerAccount === null
-                  ? "Não foi possível verificar se esta é a conta dona da aplicação no Mercado Pago Developers."
-                  : appOwnerAccount
-                    ? "Esta é a conta dona da aplicação no Mercado Pago Developers. Nela o Mercado Pago recusa a taxa da plataforma e o Pix falha. Conecte outra conta para testar."
-                    : "Esta conta é diferente da dona da aplicação no Mercado Pago Developers."}
-              </Alert>
-            ) : null}
             {paymentsConfigured ? (
-              <a
-                href={`/app/${org.slug}/settings/payments/connect`}
-                className="inline-flex min-h-11 w-fit items-center rounded-(--radius-control) bg-brand-600 px-4 font-semibold text-white hover:bg-brand-700"
-              >
-                {account ? "Reconectar conta Mercado Pago" : "Conectar conta Mercado Pago"}
-              </a>
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={`/app/${org.slug}/settings/payments/connect`}
+                  className="inline-flex min-h-11 w-fit items-center rounded-(--radius-control) bg-brand-600 px-4 font-semibold text-white hover:bg-brand-700"
+                >
+                  {account ? "Reconectar conta Mercado Pago" : "Conectar conta Mercado Pago"}
+                </a>
+                {isPlatformOwner && account ? (
+                  <Badge tone={appOwnerAccount === null ? "neutral" : appOwnerAccount ? "danger" : "success"}>
+                    {appOwnerAccount === null ? "Dona da aplicação: não verificado" : appOwnerAccount ? "Conta dona da aplicação: Pix falha" : "Conta diferente da dona da aplicação"}
+                  </Badge>
+                ) : null}
+              </div>
             ) : (
               <p className="text-ink-muted">Pagamentos ainda não foram configurados nesta instalação do EventHub.</p>
             )}
