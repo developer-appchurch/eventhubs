@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { inputClass } from "@/components/ui/field";
-import { formatShortDateTime } from "@/lib/datetime";
+import { formatDayTime, formatShortDateTime } from "@/lib/datetime";
 import { canManageEvents } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { filterParams, parseOrgRegistrationFilters } from "@/modules/registrations/filters";
@@ -123,23 +123,19 @@ export default async function OrgRegistrationsPage({
                 <span className="block font-semibold">{r.attendee_name}</span>
                 <span className="block text-ink-muted break-all">{r.attendee_email}</span>
               </span>
-              {/* No celular cada informação ganha rótulo e linha própria; no desktop continua tudo numa linha. */}
-              <span className="grid w-full gap-1 border-t border-line pt-3 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 sm:border-0 sm:pt-0">
-                <span className="min-w-0">
-                  <span className="text-ink-muted sm:hidden">Evento: </span>
+              {/* No celular só data curta e selos; evento e ingresso ficam para o desktop. */}
+              <span className="flex w-full flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-3 sm:w-auto sm:border-0 sm:pt-0">
+                <span className="hidden min-w-0 sm:inline">
                   <Link href={`/app/${org.slug}/events/${r.event_id}/registrations`} className="font-medium text-brand-700 hover:underline">
                     {r.event.title}
                   </Link>
                 </span>
-                <span>
-                  <span className="text-ink-muted sm:hidden">Ingresso: </span>
-                  {r.ticket.name}
-                </span>
+                <span className="hidden sm:inline">{r.ticket.name}</span>
                 <span className="tabular-nums text-ink-muted">
-                  <span className="sm:hidden">Inscrição em </span>
-                  {formatShortDateTime(r.created_at, r.event.timezone)}
+                  <span className="sm:hidden">{formatDayTime(r.created_at, r.event.timezone)}</span>
+                  <span className="hidden sm:inline">{formatShortDateTime(r.created_at, r.event.timezone)}</span>
                 </span>
-                <span className="mt-1 flex flex-wrap gap-2 sm:contents">
+                <span className="flex flex-wrap gap-2 sm:contents">
                   <Badge tone={STATUS_TONES[r.status]}>{REGISTRATION_STATUS_LABELS[r.status]}</Badge>
                   {r.checkins ? <Badge tone="brand">Presente</Badge> : null}
                 </span>
