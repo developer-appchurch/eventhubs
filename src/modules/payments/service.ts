@@ -2,7 +2,7 @@ import "server-only";
 import { getEnv, getPaymentEnv, type PaymentEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { decryptToken, encryptToken } from "./crypto";
-import { createCheckout, createPix, platformFeeCents, refreshTokens, type OAuthTokens } from "./mercadopago";
+import { createCheckout, createPix, isFeeRejected, platformFeeCents, refreshTokens, type OAuthTokens } from "./mercadopago";
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
 
@@ -140,8 +140,22 @@ export async function pixCodeFor(publicToken: string): Promise<string | null> {
   if (!payable) return null;
   const charge = await prepareCharge(payable);
   if (!charge) return null;
-  const pix = await createPix(charge.seller.token, charge.input);
+  let input = charge.input;
+  let pix: Awaited<ReturnType<typeof createPix>>;
+  try {
+    pix = await createPix(charge.seller.token, input);
+  } catch (error) {
+    if (!isFeeRejected(error) || input.platformFeeCents === 0) throw error;
+    // O Mercado Pago recusa a taxa da plataforma no Pix desta conta (2059): gera sem a taxa
+    // para a pessoa conseguir pagar, e o aviso no log mostra a receita que deixou de entrar.
+    console.warn("[pagamentos] Pix gerado sem taxa da plataforma (Mercado Pago recusou application_fee)", {
+      registrationId: input.registrationId,
+      feeCents: input.platformFeeCents,
+    });
+    input = { ...input, platformFeeCents: 0 };
+    pix = await createPix(charge.seller.token, input);
+  }
   // Mantém o link do checkout, se já houver: a pessoa pode voltar a pagar com cartão.
-  await saveCharge(payable, payable.ctx.checkout_url, charge.input.platformFeeCents, charge.seller.sellerId);
+  await saveCharge(payable, payable.ctx.checkout_url, input.platformFeeCents, charge.seller.sellerId);
   return pix.code;
 }

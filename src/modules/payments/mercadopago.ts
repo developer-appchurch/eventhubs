@@ -13,8 +13,13 @@ export const PAYMENT_STATUSES = [
 ] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+// Código 2059: "You cannot use application_fee with this payment".
+export function isFeeRejected(error: unknown): boolean {
+  return error instanceof PaymentProviderError && /^cause (.*, )?2059\b/.test(error.detail ?? "");
+}
+
 export class PaymentProviderError extends Error {
-  constructor(readonly operation: string, readonly status?: number, detail?: string) {
+  constructor(readonly operation: string, readonly status?: number, readonly detail?: string) {
     // Nunca inclui corpo da resposta nem tokens: só a operação, o código HTTP e o cause.
     super(`Mercado Pago: falha em ${operation}${status ? ` (HTTP ${status})` : ""}${detail ? `: ${detail}` : ""}`);
     this.name = "PaymentProviderError";
@@ -194,7 +199,8 @@ export async function createPix(sellerToken: string, input: PixInput): Promise<{
   const data = await call("pix", "/v1/payments", {
     method: "POST",
     token: sellerToken,
-    headers: { "X-Idempotency-Key": `pix-${input.registrationId}` },
+    // Chave própria para o Pix sem taxa: a mesma chave com outro corpo seria recusada.
+    headers: { "X-Idempotency-Key": `pix-${input.platformFeeCents > 0 ? "" : "sem-taxa-"}${input.registrationId}` },
     body: JSON.stringify({
       transaction_amount: input.priceCents / 100,
       description: input.title.slice(0, 250),
@@ -203,7 +209,7 @@ export async function createPix(sellerToken: string, input: PixInput): Promise<{
       external_reference: input.registrationId,
       metadata: { organization_id: input.organization.id, organization_name: input.organization.name },
       notification_url: input.notificationUrl,
-      application_fee: input.platformFeeCents / 100,
+      ...(input.platformFeeCents > 0 ? { application_fee: input.platformFeeCents / 100 } : {}),
       date_of_expiration: new Date(input.expiresAt.getTime() + PIX_GRACE_MS).toISOString(),
       statement_descriptor: "EVENTHUB",
     }),

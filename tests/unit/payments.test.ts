@@ -176,6 +176,32 @@ describe("Pix", () => {
     });
   });
 
+  it("Pix sem taxa não manda application_fee e usa chave de idempotência própria", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ id: 7, point_of_interaction: { transaction_data: { qr_code: "PIX" } } }));
+    vi.stubGlobal("fetch", fetchMock);
+    await mp.createPix("T", {
+      registrationId: "reg-2",
+      title: "t",
+      priceCents: 200,
+      platformFeeCents: 0,
+      payer: { name: "a", email: "a@b.c" },
+      expiresAt: new Date(),
+      notificationUrl: "https://x.test",
+      organization: { id: "o", name: "o" },
+    });
+    const init = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect((init.headers as Record<string, string>)["X-Idempotency-Key"]).toBe("pix-sem-taxa-reg-2");
+    expect(JSON.parse(String(init.body))).not.toHaveProperty("application_fee");
+  });
+
+  it("reconhece a recusa da taxa (cause 2059) e só ela", () => {
+    expect(mp.isFeeRejected(new mp.PaymentProviderError("pix", 400, "cause 2059 You cannot use application_fee with this payment."))).toBe(true);
+    expect(mp.isFeeRejected(new mp.PaymentProviderError("pix", 400, "cause 13253, 2059"))).toBe(true);
+    expect(mp.isFeeRejected(new mp.PaymentProviderError("pix", 400, "cause 20590"))).toBe(false);
+    expect(mp.isFeeRejected(new mp.PaymentProviderError("pix", 400))).toBe(false);
+    expect(mp.isFeeRejected(new Error("cause 2059"))).toBe(false);
+  });
+
   it("resposta sem código Pix vira erro do provedor", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({ id: 99 })));
     await expect(
