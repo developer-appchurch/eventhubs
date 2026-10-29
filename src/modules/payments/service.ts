@@ -2,7 +2,7 @@ import "server-only";
 import { getEnv, getPaymentEnv, type PaymentEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { decryptToken, encryptToken } from "./crypto";
-import { createCheckout, createPix, platformFeeCents, refreshTokens, type OAuthTokens } from "./mercadopago";
+import { createCheckout, platformFeeCents, refreshTokens, type OAuthTokens } from "./mercadopago";
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
 
@@ -134,14 +134,18 @@ export async function checkoutUrlFor(publicToken: string): Promise<string | null
   return checkout.url;
 }
 
-// Código Pix "copia e cola" de uma inscrição pendente, com as mesmas regras do checkout.
-export async function pixCodeFor(publicToken: string): Promise<string | null> {
+// Checkout só com Pix. Não fica guardado: checkout_url é o do cartão, que a pessoa ainda pode usar.
+export async function pixCheckoutUrlFor(publicToken: string): Promise<string | null> {
   const payable = await payableContext(publicToken);
   if (!payable) return null;
   const charge = await prepareCharge(payable);
   if (!charge) return null;
-  const pix = await createPix(charge.seller.token, charge.input);
-  // Mantém o link do checkout, se já houver: a pessoa pode voltar a pagar com cartão.
-  await saveCharge(payable, payable.ctx.checkout_url, charge.input.platformFeeCents, charge.seller.sellerId);
-  return pix.code;
+  const { ctx } = payable;
+  const checkout = await createCheckout(
+    charge.seller.token,
+    { ...charge.input, returnUrl: `${charge.appUrl}/${ctx.organization.slug}/${ctx.event.slug}/inscricao/${ctx.public_token}` },
+    true,
+  );
+  await saveCharge(payable, ctx.checkout_url, charge.input.platformFeeCents, charge.seller.sellerId);
+  return checkout.url;
 }

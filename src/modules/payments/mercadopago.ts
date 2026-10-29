@@ -153,11 +153,14 @@ export type CheckoutInput = {
 
 // Checkout Pro criado com o token do vendedor (a organização). marketplace_fee é a parte do
 // EventHub, em reais. Boleto fica de fora: compensa em dias e a reserva dura 30 minutos.
-export async function createCheckout(sellerToken: string, input: CheckoutInput): Promise<{ id: string; url: string }> {
+// pixOnly deixa só o Pix: na API de pagamentos o Mercado Pago recusa a taxa no Pix (cause 2059),
+// no Checkout Pro ele a cobra.
+export async function createCheckout(sellerToken: string, input: CheckoutInput, pixOnly = false): Promise<{ id: string; url: string }> {
+  const excluded = pixOnly ? ["ticket", "credit_card", "debit_card", "prepaid_card"] : ["ticket"];
   const data = await call("checkout", "/checkout/preferences", {
     method: "POST",
     token: sellerToken,
-    headers: { "X-Idempotency-Key": input.registrationId },
+    headers: { "X-Idempotency-Key": `${pixOnly ? "pix-" : ""}${input.registrationId}` },
     body: JSON.stringify({
       items: [{ id: input.registrationId, title: input.title.slice(0, 250), quantity: 1, unit_price: input.priceCents / 100, currency_id: "BRL" }],
       payer: { name: input.payer.name, email: input.payer.email },
@@ -168,7 +171,7 @@ export async function createCheckout(sellerToken: string, input: CheckoutInput):
       back_urls: { success: input.returnUrl, pending: input.returnUrl, failure: input.returnUrl },
       auto_return: "approved",
       marketplace_fee: input.platformFeeCents / 100,
-      payment_methods: { excluded_payment_types: [{ id: "ticket" }] },
+      payment_methods: { excluded_payment_types: excluded.map((id) => ({ id })) },
       expires: true,
       expiration_date_to: input.expiresAt.toISOString(),
       date_of_expiration: input.expiresAt.toISOString(),
@@ -179,38 +182,6 @@ export async function createCheckout(sellerToken: string, input: CheckoutInput):
     throw new PaymentProviderError("checkout (resposta incompleta)");
   }
   return { id: data.id, url: data.init_point };
-}
-
-// O Pix vence no mínimo 30 minutos depois de criado (regra do Mercado Pago). Prazo fixo a partir da
-// reserva para a mesma chave de idempotência sempre mandar o mesmo corpo; pagamento depois da
-// reserva cai na regra de reserva vencida do record_payment.
-const PIX_GRACE_MS = 31 * 60_000;
-
-export type PixInput = Omit<CheckoutInput, "returnUrl">;
-
-// Pix criado direto na API de pagamentos, com o token do vendedor. A chave de idempotência por
-// inscrição faz o Mercado Pago devolver o mesmo Pix enquanto ele vale, sem guardar nada aqui.
-export async function createPix(sellerToken: string, input: PixInput): Promise<{ id: string; code: string }> {
-  const data = await call("pix", "/v1/payments", {
-    method: "POST",
-    token: sellerToken,
-    headers: { "X-Idempotency-Key": `pix-${input.registrationId}` },
-    body: JSON.stringify({
-      transaction_amount: input.priceCents / 100,
-      description: input.title.slice(0, 250),
-      payment_method_id: "pix",
-      payer: { email: input.payer.email, first_name: input.payer.name.slice(0, 100) },
-      external_reference: input.registrationId,
-      metadata: { organization_id: input.organization.id, organization_name: input.organization.name },
-      notification_url: input.notificationUrl,
-      application_fee: input.platformFeeCents / 100,
-      date_of_expiration: new Date(input.expiresAt.getTime() + PIX_GRACE_MS).toISOString(),
-      statement_descriptor: "EVENTHUB",
-    }),
-  });
-  const code = (data.point_of_interaction as { transaction_data?: { qr_code?: unknown } } | undefined)?.transaction_data?.qr_code;
-  if (data.id == null || typeof code !== "string" || !code) throw new PaymentProviderError("pix (resposta incompleta)");
-  return { id: String(data.id), code };
 }
 
 export type ProviderPayment = {

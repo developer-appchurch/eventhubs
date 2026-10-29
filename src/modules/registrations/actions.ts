@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
-import QRCode from "qrcode";
 import { formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
 import { allowRequest, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -14,7 +13,7 @@ import { answersFromFormData, validateAnswers } from "@/modules/forms/answers";
 import type { FormField } from "@/modules/forms/fields";
 import { sendConfirmationEmail, sendPendingPaymentEmail } from "@/modules/notifications/confirmation";
 import { getOrganizationContext } from "@/modules/organizations/queries";
-import { checkoutUrlFor, pixCodeFor } from "@/modules/payments/service";
+import { checkoutUrlFor, pixCheckoutUrlFor } from "@/modules/payments/service";
 import { registrationCookie } from "./queries";
 import { ticketAvailability } from "./tickets";
 
@@ -87,26 +86,18 @@ export async function payRegistration(_prev: ActionState, formData: FormData): P
   redirect(url);
 }
 
-export type PixState = ActionState & { code?: string; qrSvg?: string };
-
-// Pix dentro do app: QR Code e "copia e cola" na própria página da inscrição, que cabe no celular.
-export async function payWithPix(_prev: PixState, formData: FormData): Promise<PixState> {
+// Pix pelo Checkout Pro do Mercado Pago, que cobra a taxa da plataforma.
+export async function payWithPix(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const token = text(formData, "token");
   if (!/^[0-9a-f]{64}$/.test(token)) return { ok: false, message: "Inscrição não encontrada." };
-  try {
-    const code = await pixCodeFor(token);
-    if (!code) return { ok: false, message: "Não foi possível gerar o Pix agora. Tente novamente ou pague com cartão." };
-    const qrSvg = await QRCode.toString(code, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
-    return { ok: true, code, qrSvg };
-  } catch (error) {
-    console.error("[pagamentos] falha ao gerar Pix", { error: error instanceof Error ? error.message : "erro" });
-    return { ok: false, message: "Não foi possível gerar o Pix agora. Tente novamente ou pague com cartão." };
-  }
+  const url = await safeCheckoutUrl(token, pixCheckoutUrlFor);
+  if (!url) return { ok: false, message: "Não foi possível abrir o Pix agora. Tente novamente ou pague com cartão." };
+  redirect(url);
 }
 
-async function safeCheckoutUrl(token: string): Promise<string | null> {
+async function safeCheckoutUrl(token: string, urlFor = checkoutUrlFor): Promise<string | null> {
   try {
-    return await checkoutUrlFor(token);
+    return await urlFor(token);
   } catch (error) {
     console.error("[pagamentos] falha ao criar checkout", { error: error instanceof Error ? error.message : "erro" });
     return null;
