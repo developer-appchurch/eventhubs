@@ -7,6 +7,7 @@ import { getPaymentEnv } from "@/lib/env";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { canManageOrganization } from "@/modules/organizations/roles";
 import { getPaymentAccountStatus } from "@/modules/payments/queries";
+import { DisconnectPaymentsButton } from "./disconnect-payments-button";
 import { OrganizationSettingsForm } from "./settings-form";
 
 export const metadata: Metadata = { title: "Configurações da organização" };
@@ -85,6 +86,14 @@ export default async function SettingsPage({
             ) : (
               <p className="text-ink-muted">Pagamentos ainda não foram configurados nesta instalação do EventHub.</p>
             )}
+            {account ? (
+              <>
+                <p className="text-ink-muted">
+                  Para trocar de conta, saia do Mercado Pago neste navegador e use &quot;Reconectar&quot; com a outra conta, ou desconecte esta.
+                </p>
+                <DisconnectPaymentsButton organizationSlug={org.slug} />
+              </>
+            ) : null}
           </div>
         </Card>
       ) : null}
