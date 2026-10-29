@@ -27,11 +27,14 @@ export async function CheckinPanel({
   event,
   sp,
   keep = {},
+  showProgress = true,
 }: {
   org: { slug: string };
   event: EventRecord;
   sp: CheckinSearchParams;
   keep?: Record<string, string>;
+  // A tela Check-in do menu dispensa a barra: os filtros abaixo já mostram presentes e pendentes.
+  showProgress?: boolean;
 }) {
   const q = (sp.q ?? "").slice(0, 200);
   // Câmera do celular abre o link do QR (?code=); leitor que digita ou busca usa o campo q.
@@ -57,18 +60,20 @@ export async function CheckinPanel({
 
   return (
     <div className="grid gap-5">
-      <div data-surface="dark" className="bg-hero grid gap-3 rounded-(--radius-card) p-5 text-white shadow-(--shadow-card)">
-        <p className="text-sm text-brand-200">
-          <span className="text-3xl font-extrabold tracking-tight text-white tabular-nums">{counts.present.toLocaleString("pt-BR")}</span>{" "}
-          presentes de {counts.confirmed.toLocaleString("pt-BR")} inscrições confirmadas
-        </p>
-        <div role="presentation" className="h-2 overflow-hidden rounded-full bg-white/15">
-          <div
-            className="h-full rounded-full bg-brand-500"
-            style={{ width: `${counts.confirmed > 0 ? Math.min(100, (counts.present / counts.confirmed) * 100) : 0}%` }}
-          />
+      {showProgress ? (
+        <div data-surface="dark" className="bg-hero grid gap-3 rounded-(--radius-card) p-5 text-white shadow-(--shadow-card)">
+          <p className="text-sm text-brand-200">
+            <span className="text-3xl font-extrabold tracking-tight text-white tabular-nums">{counts.present.toLocaleString("pt-BR")}</span>{" "}
+            presentes de {counts.confirmed.toLocaleString("pt-BR")} inscrições confirmadas
+          </p>
+          <div role="presentation" className="h-2 overflow-hidden rounded-full bg-white/15">
+            <div
+              className="h-full rounded-full bg-brand-500"
+              style={{ width: `${counts.confirmed > 0 ? Math.min(100, (counts.present / counts.confirmed) * 100) : 0}%` }}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {unavailable ? <Alert tone="warning">Check-in indisponível: o evento está em rascunho ou foi cancelado.</Alert> : null}
 
