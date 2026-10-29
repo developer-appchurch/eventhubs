@@ -56,13 +56,13 @@ export default async function EventsPage({
         }
       />
 
-      <nav aria-label="Filtrar eventos" className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-line bg-surface p-1 shadow-(--shadow-card)">
+      <nav aria-label="Filtrar eventos" className="grid grid-cols-3 gap-1 rounded-2xl border border-line bg-surface p-1 shadow-(--shadow-card) sm:flex sm:w-fit sm:rounded-full">
         {EVENT_TABS.map((t) => (
           <Link
             key={t}
             href={tabHref(t)}
             aria-current={t === tab ? "page" : undefined}
-            className={`inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors ${
+            className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-center text-sm leading-tight font-semibold transition-colors sm:min-h-10 sm:flex-row sm:gap-2 sm:whitespace-nowrap sm:rounded-full sm:px-4 sm:py-0 ${
               t === tab ? "bg-brand-600 text-white shadow-sm" : "text-ink-muted hover:bg-brand-100 hover:text-brand-700"
             }`}
           >
