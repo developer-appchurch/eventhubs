@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { PageHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -15,6 +15,7 @@ export const metadata: Metadata = { title: "Check-in" };
 
 // Atalho do menu: escolhe o evento e leva à tela de check-in dele. Entram os eventos em andamento
 // e os próximos (a recepção abre antes do início), fora rascunho, com inscrição confirmada.
+// Sempre mostra a escolha, mesmo com um só evento.
 export default async function OrgCheckinPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
   const org = await getOrganizationContext(orgSlug);
@@ -26,9 +27,6 @@ export default async function OrgCheckinPage({ params }: { params: Promise<{ org
   const confirmed = await countConfirmedByEvent(candidates.map((e) => e.id));
   const events = candidates.filter((e) => (confirmed.get(e.id) ?? 0) > 0);
   const href = (id: string) => `/app/${org.slug}/events/${id}/checkin`;
-
-  // Um único evento possível: vai direto, sem um toque a mais no celular.
-  if (events.length === 1) redirect(href(events[0]!.id));
 
   return (
     <div className="grid gap-6">
