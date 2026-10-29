@@ -32,7 +32,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
 // Grupo lógico de campos de um formulário: título e descrição à esquerda, campos à direita (empilhados no celular).
 export function FormSection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <fieldset className="grid gap-5 border-t border-line pt-6 first:border-t-0 first:pt-0 lg:grid-cols-[13rem_1fr] lg:gap-8">
+    <fieldset className="grid min-w-0 gap-5 border-t border-line pt-6 first:border-t-0 first:pt-0 lg:grid-cols-[13rem_1fr] lg:gap-8">
       <legend className="sr-only">{title}</legend>
       <div aria-hidden="true" className="grid content-start gap-1">
         <p className="text-base font-semibold text-ink">{title}</p>

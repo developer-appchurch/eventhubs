@@ -6,7 +6,7 @@ import { canManageEvents } from "@/modules/events/status";
 import { getOrganizationContext } from "@/modules/organizations/queries";
 import { canReadPayments } from "@/modules/payments/queries";
 import { canReadRegistrations } from "@/modules/registrations/roles";
-import { EventStepNav, EventSubNav } from "./event-sub-nav";
+import { EventStepNav } from "./event-sub-nav";
 import { StatusActions } from "./status-actions";
 
 export default async function EventLayout({
@@ -42,7 +42,6 @@ export default async function EventLayout({
           ) : null}
         </div>
         {canManageEvents(org.role) ? <StatusActions organizationSlug={org.slug} eventId={event.id} status={event.status} /> : null}
-        <EventSubNav base={base} showRegistrations={showRegistrations} showFinance={showFinance} />
       </div>
       {children}
       <EventStepNav base={base} showRegistrations={showRegistrations} showFinance={showFinance} />

@@ -69,8 +69,8 @@ export default async function RegistrationsPage({
         {counts.cancelled ? ` · ${counts.cancelled.toLocaleString("pt-BR")} canceladas` : ""}
       </p>
 
-      <form method="get" className="flex flex-wrap items-end gap-3" role="search">
-        <label className="grid gap-1.5 text-sm font-medium">
+      <form method="get" className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap" role="search">
+        <label className="col-span-2 grid gap-1.5 text-sm font-medium">
           Buscar
           <input name="q" defaultValue={q} placeholder="Nome ou e-mail" className={inputClass()} />
         </label>
