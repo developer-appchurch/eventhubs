@@ -31,3 +31,7 @@ Após cada migration, rode no projeto:
 - Excluir a conta do último proprietário é bloqueado (`LAST_OWNER`). Para encerrar uma organização, transfira a propriedade antes (fluxo ainda não existe).
 - Sem limite de taxa implementado: monitore picos de cadastro.
 - Sem observabilidade externa ainda: erros aparecem apenas nos logs do runtime da Vercel.
+
+## Lembrete do evento
+
+Um cron diário da Vercel (`vercel.json`, 12:00 UTC) chama `GET /api/v1/cron/reminders`, que envia um e-mail de lembrete a cada inscrição confirmada de eventos publicados que começam nas próximas 24 horas. Exige a variável `CRON_SECRET` (pelo menos 16 caracteres; a Vercel a envia como `Authorization: Bearer`) e a configuração de e-mail (`RESEND_API_KEY`, `EMAIL_FROM`). Sem `CRON_SECRET` a rota responde 503. Cada inscrição recebe o lembrete uma vez (tabela `notifications`, tipo `event_reminder`); falhas são retentadas até 5 vezes nas rodadas seguintes. Aplique antes a migration `20261029000700_event_reminders.sql`.
