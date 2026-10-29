@@ -52,14 +52,14 @@ export default async function OrgRegistrationsPage({
     <div className="grid gap-6">
       <PageHeader title="Inscrições" description="Inscrições de todos os eventos da organização." />
 
-      <form method="get" className="flex flex-wrap items-end gap-3" role="search">
-        <label className="grid gap-1.5 text-sm font-medium">
+      <form method="get" className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap" role="search">
+        <label className="col-span-2 grid gap-1.5 text-sm font-medium">
           Buscar
           <input name="q" defaultValue={filters.q} placeholder="Nome ou e-mail" className={inputClass()} />
         </label>
-        <label className="grid gap-1.5 text-sm font-medium">
+        <label className="grid min-w-0 gap-1.5 text-sm font-medium">
           Evento
-          <select name="event" defaultValue={filters.event ?? ""} className={`${inputClass()} max-w-64`}>
+          <select name="event" defaultValue={filters.event ?? ""} className={`${inputClass()} sm:max-w-64`}>
             <option value="">Todos</option>
             {events.map((e) => (
               <option key={e.id} value={e.id}>
@@ -68,7 +68,7 @@ export default async function OrgRegistrationsPage({
             ))}
           </select>
         </label>
-        <label className="grid gap-1.5 text-sm font-medium">
+        <label className="grid min-w-0 gap-1.5 text-sm font-medium">
           Situação
           <select name="status" defaultValue={filters.status ?? ""} className={inputClass()}>
             <option value="">Todas</option>
@@ -79,33 +79,36 @@ export default async function OrgRegistrationsPage({
             ))}
           </select>
         </label>
-        <label className="grid gap-1.5 text-sm font-medium">
+        <label className="grid min-w-0 gap-1.5 text-sm font-medium">
           De
           <input type="date" name="from" defaultValue={filters.from} className={inputClass()} />
         </label>
-        <label className="grid gap-1.5 text-sm font-medium">
+        <label className="grid min-w-0 gap-1.5 text-sm font-medium">
           Até
           <input type="date" name="to" defaultValue={filters.to} className={inputClass()} />
         </label>
-        <button type="submit" className="inline-flex min-h-11 items-center rounded-(--radius-control) bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
-          Filtrar
-        </button>
-        {filtered ? (
-          <Link href={base} className={link}>
-            Limpar
-          </Link>
-        ) : null}
-        {/* Como na lista do evento: o operador de check-in vê, mas não exporta dados pessoais. */}
-        {canManageEvents(org.role) && total > 0 ? (
-          <>
-            <a href={exportHref("csv")} className={link}>
-              Exportar CSV
-            </a>
-            <a href={exportHref("pdf")} target="_blank" rel="noopener" className={link}>
-              Exportar PDF
-            </a>
-          </>
-        ) : null}
+        {/* No celular as ações ficam juntas numa linha; no desktop seguem soltas no fluxo dos filtros. */}
+        <div className="col-span-2 flex flex-wrap items-center gap-x-1 gap-y-2 sm:contents">
+          <button type="submit" className="inline-flex min-h-11 items-center rounded-(--radius-control) bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
+            Filtrar
+          </button>
+          {filtered ? (
+            <Link href={base} className={link}>
+              Limpar
+            </Link>
+          ) : null}
+          {/* Como na lista do evento: o operador de check-in vê, mas não exporta dados pessoais. */}
+          {canManageEvents(org.role) && total > 0 ? (
+            <>
+              <a href={exportHref("csv")} className={link}>
+                Exportar CSV
+              </a>
+              <a href={exportHref("pdf")} target="_blank" rel="noopener" className={link}>
+                Exportar PDF
+              </a>
+            </>
+          ) : null}
+        </div>
       </form>
 
       {registrations.length === 0 ? (
@@ -120,14 +123,26 @@ export default async function OrgRegistrationsPage({
                 <span className="block font-semibold">{r.attendee_name}</span>
                 <span className="block text-ink-muted break-all">{r.attendee_email}</span>
               </span>
-              <span className="flex flex-wrap items-center gap-3">
-                <Link href={`/app/${org.slug}/events/${r.event_id}/registrations`} className="font-medium text-brand-700 hover:underline">
-                  {r.event.title}
-                </Link>
-                <span>{r.ticket.name}</span>
-                <span className="tabular-nums text-ink-muted">{formatShortDateTime(r.created_at, r.event.timezone)}</span>
-                <Badge tone={STATUS_TONES[r.status]}>{REGISTRATION_STATUS_LABELS[r.status]}</Badge>
-                {r.checkins ? <Badge tone="brand">Presente</Badge> : null}
+              {/* No celular cada informação ganha rótulo e linha própria; no desktop continua tudo numa linha. */}
+              <span className="grid w-full gap-1 border-t border-line pt-3 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 sm:border-0 sm:pt-0">
+                <span className="min-w-0">
+                  <span className="text-ink-muted sm:hidden">Evento: </span>
+                  <Link href={`/app/${org.slug}/events/${r.event_id}/registrations`} className="font-medium text-brand-700 hover:underline">
+                    {r.event.title}
+                  </Link>
+                </span>
+                <span>
+                  <span className="text-ink-muted sm:hidden">Ingresso: </span>
+                  {r.ticket.name}
+                </span>
+                <span className="tabular-nums text-ink-muted">
+                  <span className="sm:hidden">Inscrição em </span>
+                  {formatShortDateTime(r.created_at, r.event.timezone)}
+                </span>
+                <span className="mt-1 flex flex-wrap gap-2 sm:contents">
+                  <Badge tone={STATUS_TONES[r.status]}>{REGISTRATION_STATUS_LABELS[r.status]}</Badge>
+                  {r.checkins ? <Badge tone="brand">Presente</Badge> : null}
+                </span>
               </span>
             </li>
           ))}
