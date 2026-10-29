@@ -109,6 +109,10 @@ describe("chamadas ao Mercado Pago", () => {
 
     vi.stubGlobal("fetch", vi.fn(async () => new Response('{"message":"token APP_USR-xyz inválido"}', { status: 401 })));
     await expect(mp.getPayment("T", "42")).rejects.toThrow(/^Mercado Pago: falha em consulta \(HTTP 401\)$/);
+
+    // Códigos de causa entram no erro (diagnóstico do Pix); o texto da resposta não.
+    vi.stubGlobal("fetch", vi.fn(async () => new Response('{"message":"token APP_USR-xyz","cause":[{"code":13253,"description":"x"}]}', { status: 400 })));
+    await expect(mp.getPayment("T", "42")).rejects.toThrow(/^Mercado Pago: falha em consulta \(HTTP 400\): cause 13253$/);
   });
 
   it("reembolso total com token do vendedor e idempotência por pagamento", async () => {
