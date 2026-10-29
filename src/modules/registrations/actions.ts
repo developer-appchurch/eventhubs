@@ -6,6 +6,7 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
+import { allowRequest, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPublicEvent, isUuid } from "@/modules/events/queries";
 import { canManageEvents, publicAvailability } from "@/modules/events/status";
@@ -22,6 +23,8 @@ import { ticketAvailability } from "./tickets";
 export async function registerForEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
   // Campo isca invisível: robôs costumam preenchê-lo. Resposta neutra, sem gravar nada.
   if (text(formData, "website")) return { ok: false, message: "Não foi possível concluir a inscrição. Tente novamente." };
+
+  if (!(await allowRequest("register", 20))) return { ok: false, message: RATE_LIMITED_MESSAGE };
 
   const orgSlug = text(formData, "orgSlug");
   const eventSlug = text(formData, "eventSlug");

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getEnv } from "@/lib/env";
 import type { ActionState } from "@/lib/errors";
+import { allowRequest, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
 import { safeNextPath } from "@/lib/safe-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -32,6 +33,8 @@ export async function signIn(_prev: ActionState, formData: FormData): Promise<Ac
   const parsed = signInSchema.safeParse({ email: text(formData, "email"), password: text(formData, "password") });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
 
+  if (!(await allowRequest("signin", 10))) return { ok: false, message: RATE_LIMITED_MESSAGE };
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
@@ -49,6 +52,8 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
     password: text(formData, "password"),
   });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
+
+  if (!(await allowRequest("signup", 5))) return { ok: false, message: RATE_LIMITED_MESSAGE };
 
   const env = getEnv();
   const supabase = await createSupabaseServerClient();
@@ -97,6 +102,8 @@ export async function signOut(): Promise<void> {
 export async function requestPasswordReset(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const parsed = forgotPasswordSchema.safeParse({ email: text(formData, "email") });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
+
+  if (!(await allowRequest("reset", 5))) return { ok: false, message: RATE_LIMITED_MESSAGE };
 
   const env = getEnv();
   const supabase = await createSupabaseServerClient();

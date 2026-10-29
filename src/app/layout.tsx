@@ -10,6 +10,9 @@ export const metadata: Metadata = {
 // no build, então o build não depende de variáveis de ambiente de produção.
 export const dynamic = "force-dynamic";
 
+// Teto de execução por requisição (segundos): uma função presa não vira conta alta.
+export const maxDuration = 30;
+
 export const viewport: Viewport = {
   themeColor: "#211044",
   width: "device-width",
