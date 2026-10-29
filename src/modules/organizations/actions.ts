@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { firstErrors, formText as text, mapDatabaseError, type ActionState } from "@/lib/errors";
+import { allowRequest, RATE_LIMITED_MESSAGE } from "@/lib/rate-limit";
 import { slugify } from "@/lib/slug";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/modules/auth/session";
@@ -19,6 +20,8 @@ export async function createOrganization(_prev: ActionState, formData: FormData)
   const rawSlug = text(formData, "slug").trim() || slugify(rawName);
   const parsed = createOrganizationSchema.safeParse({ name: rawName, slug: rawSlug });
   if (!parsed.success) return { ok: false, fieldErrors: firstErrors(parsed.error) };
+
+  if (!(await allowRequest("create-org", 5))) return { ok: false, message: RATE_LIMITED_MESSAGE };
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("create_organization", {
