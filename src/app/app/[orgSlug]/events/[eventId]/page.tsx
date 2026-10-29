@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/datetime";
-import { getEvent, listTicketTypes } from "@/modules/events/queries";
+import { getOrganizationEvent, listTicketTypes } from "@/modules/events/queries";
 import { canManageEvents, FORMAT_LABELS } from "@/modules/events/status";
-import { getOrganizationContext } from "@/modules/organizations/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EventForm } from "../event-form";
 import { DeleteEventForm, DuplicateEventForm } from "./delete-event-form";
@@ -13,8 +12,7 @@ export const metadata: Metadata = { title: "Evento" };
 
 export default async function EventDetailsPage({ params }: { params: Promise<{ orgSlug: string; eventId: string }> }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event) notFound();
 
   const manager = canManageEvents(org.role);

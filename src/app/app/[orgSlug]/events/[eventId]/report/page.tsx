@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardTitle } from "@/components/ui/card";
 import { formatCents } from "@/lib/datetime";
-import { getEvent } from "@/modules/events/queries";
-import { getOrganizationContext } from "@/modules/organizations/queries";
+import { getOrganizationEvent } from "@/modules/events/queries";
 import { canReadPayments } from "@/modules/payments/queries";
 import { getEventReport } from "@/modules/reports/queries";
 
@@ -14,8 +13,7 @@ const pct = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / 
 
 export default async function ReportPage({ params }: { params: Promise<{ orgSlug: string; eventId: string }> }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event || !canReadPayments(org.role)) notFound();
 
   const r = await getEventReport(event.id);

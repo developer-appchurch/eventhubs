@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getEvent, getFormVersion, listFormFields } from "@/modules/events/queries";
+import { getOrganizationEvent, getFormVersion, listFormFields } from "@/modules/events/queries";
 import { canManageEvents } from "@/modules/events/status";
 import { FIELD_TYPE_LABELS } from "@/modules/forms/fields";
-import { getOrganizationContext } from "@/modules/organizations/queries";
 import { listBankQuestions } from "@/modules/question-bank/queries";
 import { FormBuilder } from "./form-builder";
 import { RegistrationToggle } from "./registration-toggle";
@@ -12,8 +11,7 @@ export const metadata: Metadata = { title: "Formulário de inscrição" };
 
 export default async function EventFormPage({ params }: { params: Promise<{ orgSlug: string; eventId: string }> }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event) notFound();
 
   const [fields, version, bank] = await Promise.all([listFormFields(event.id), getFormVersion(event.id), listBankQuestions(org.id)]);

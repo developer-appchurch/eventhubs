@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { FormField } from "@/modules/forms/fields";
+import { getOrganizationContext } from "@/modules/organizations/queries";
 import type { EventFormat, EventStatus } from "./status";
 
 // Consultas administrativas usam a sessão do usuário (RLS). As públicas passam pelas
@@ -146,6 +147,20 @@ export const getEvent = cache(async function getEvent(organizationId: string, ev
 
   if (error) throw new Error("Não foi possível carregar o evento.");
   return data as EventRecord | null;
+});
+
+// Organização e evento em paralelo (uma ida ao banco a menos por tela). A RLS já limita o
+// evento às organizações do usuário; a comparação garante que é desta organização.
+export const getOrganizationEvent = cache(async function getOrganizationEvent(orgSlug: string, eventId: string) {
+  if (!isUuid(eventId)) return { org: await getOrganizationContext(orgSlug), event: null };
+  const supabase = await createSupabaseServerClient();
+  const [org, { data, error }] = await Promise.all([
+    getOrganizationContext(orgSlug),
+    supabase.from("events").select("*").eq("id", eventId).maybeSingle(),
+  ]);
+  if (error) throw new Error("Não foi possível carregar o evento.");
+  const event = org && data?.organization_id === org.id ? (data as EventRecord) : null;
+  return { org, event };
 });
 
 export async function listTicketTypes(eventId: string): Promise<TicketType[]> {

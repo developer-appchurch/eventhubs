@@ -4,17 +4,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatCents } from "@/lib/datetime";
-import { getEvent, listTicketTypes } from "@/modules/events/queries";
+import { getOrganizationEvent, listTicketTypes } from "@/modules/events/queries";
 import { canManageEvents } from "@/modules/events/status";
-import { getOrganizationContext } from "@/modules/organizations/queries";
 import { TicketForm } from "./ticket-form";
 
 export const metadata: Metadata = { title: "Ingressos" };
 
 export default async function TicketsPage({ params }: { params: Promise<{ orgSlug: string; eventId: string }> }) {
   const { orgSlug, eventId } = await params;
-  const org = await getOrganizationContext(orgSlug);
-  const event = org ? await getEvent(org.id, eventId) : null;
+  const { org, event } = await getOrganizationEvent(orgSlug, eventId);
   if (!org || !event) notFound();
 
   const tickets = await listTicketTypes(event.id);
