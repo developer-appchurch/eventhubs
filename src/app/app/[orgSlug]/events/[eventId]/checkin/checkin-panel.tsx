@@ -10,7 +10,7 @@ import { parseCheckinCode } from "@/modules/checkins/code";
 import { countCheckins, findByCheckinCode } from "@/modules/checkins/queries";
 import { type EventRecord, listTicketTypes } from "@/modules/events/queries";
 import { listRegistrations, type PresenceFilter, REGISTRATION_STATUS_LABELS, REGISTRATIONS_PAGE_SIZE } from "@/modules/registrations/queries";
-import { CheckInButton } from "./check-in-button";
+import { CheckInButton, UndoCheckInButton } from "./check-in-button";
 import { QrScanner } from "./qr-scanner";
 
 const FILTERS = ["todos", "pendentes", "presentes"] as const;
@@ -120,7 +120,10 @@ export async function CheckinPanel({
             </div>
             <div className="mt-4">
               {found.checkins ? (
-                <Alert tone="warning">Check-in já feito em {formatShortDateTime(found.checkins.checked_in_at, event.timezone)}.</Alert>
+                <div className="grid gap-2">
+                  <Alert tone="warning">Check-in já feito em {formatShortDateTime(found.checkins.checked_in_at, event.timezone)}.</Alert>
+                  <UndoCheckInButton key={found.id} {...common} registrationId={found.id} />
+                </div>
               ) : found.status !== "confirmed" ? (
                 <Alert tone="danger">Inscrição não confirmada: não é possível registrar presença.</Alert>
               ) : unavailable ? null : (
@@ -146,7 +149,10 @@ export async function CheckinPanel({
                 <span className="block truncate text-ink-muted">{ticketNames.get(r.ticket_type_id)} · {r.attendee_email}</span>
               </span>
               {r.checkins ? (
-                <Badge tone="success">Presente · {formatShortDateTime(r.checkins.checked_in_at, event.timezone)}</Badge>
+                <span className="flex flex-wrap items-center gap-2">
+                  <Badge tone="success">Presente · {formatShortDateTime(r.checkins.checked_in_at, event.timezone)}</Badge>
+                  <UndoCheckInButton key={r.id} {...common} registrationId={r.id} />
+                </span>
               ) : unavailable ? null : (
                 <CheckInButton key={r.id} {...common} registrationId={r.id} label="Check-in" />
               )}
