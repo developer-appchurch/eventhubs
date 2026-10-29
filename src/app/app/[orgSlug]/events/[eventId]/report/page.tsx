@@ -75,9 +75,8 @@ export default async function ReportPage({ params }: { params: Promise<{ orgSlug
         <p className="mt-1 text-sm text-ink-muted">
           Valores brutos, como registrados pelo Mercado Pago. Tarifas do Mercado Pago e valor líquido ficam no painel da conta dele.
         </p>
-        <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+        <dl className="mt-3 grid gap-3 sm:grid-cols-2">
           <div><dt className="text-sm text-ink-muted">Aprovado</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.approved_cents)}</dd></div>
-          <div><dt className="text-sm text-ink-muted">Taxa do EventHub</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.platform_fee_cents)}</dd></div>
           <div><dt className="text-sm text-ink-muted">Reembolsado ou contestado</dt><dd className="text-2xl font-bold tracking-tight tabular-nums text-brand-700">{formatCents(r.finance.refunded_cents)}</dd></div>
         </dl>
       </Card>
