@@ -22,7 +22,11 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
 
   // Excluir só aparece sem nenhuma inscrição; a função delete_event confere de novo sob trava.
   const supabase = await createSupabaseServerClient();
-  const { count } = manager ? await supabase.from("registrations").select("id", { count: "exact", head: true }).eq("event_id", event.id) : { count: null };
+  // Em paralelo: a contagem e os ingressos não dependem um do outro.
+  const [{ count }, allTickets] = await Promise.all([
+    manager ? supabase.from("registrations").select("id", { count: "exact", head: true }).eq("event_id", event.id) : { count: null },
+    listTicketTypes(event.id),
+  ]);
   const actions = manager ? (
     <>
       <DuplicateEventForm organizationSlug={org.slug} eventId={event.id} />
@@ -62,7 +66,7 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ o
     );
   }
 
-  const tickets = (await listTicketTypes(event.id)).filter((t) => t.is_active).map((t) => ({ ...t, sold_out: false }));
+  const tickets = allTickets.filter((t) => t.is_active).map((t) => ({ ...t, sold_out: false }));
 
   return (
     <div className="grid gap-6">
