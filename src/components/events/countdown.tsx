@@ -26,7 +26,7 @@ export function Countdown({ to }: { to: string }) {
   ];
 
   return (
-    <div className="flex justify-center gap-6 bg-ink/55 px-4 py-4 text-white @xl:gap-10" role="timer" aria-label="Tempo até o início do evento">
+    <div className="flex justify-center gap-4 bg-ink/55 px-4 py-4 text-white @sm:gap-6 @xl:gap-10" role="timer" aria-label="Tempo até o início do evento">
       {parts.map(([value, label]) => (
         <div key={label} className="grid justify-items-center">
           <span className="text-3xl font-extrabold tabular-nums @xl:text-4xl">{value}</span>
