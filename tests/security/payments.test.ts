@@ -309,3 +309,24 @@ describe("cancelar e apagar inscrição pelo organizador", () => {
     expect((await reserve(event, "paga@exemplo.com")).status).toBe("pending_payment");
   });
 });
+
+describe("desconectar conta", () => {
+  it("só owner/admin; recusa com reserva valendo; depois apaga e audita", async () => {
+    const event = await createEvent("desconectar", 5);
+    const pending = await reserve(event, "pagando@exemplo.com");
+    const disconnect = "select public.disconnect_payment_account($1)";
+
+    await expect(as(manager, disconnect, [orgA])).rejects.toThrow("FORBIDDEN");
+    await expect(as(user(ids.ownerB), disconnect, [orgA])).rejects.toThrow("FORBIDDEN");
+    await expect(as(user(ids.ownerA), disconnect, [orgA])).rejects.toThrow("PAYMENTS_PENDING");
+
+    await pool.query("update public.registrations set expires_at = now() - interval '1 minute' where organization_id = $1 and status = 'pending_payment'", [orgA]);
+    await as(user(ids.ownerA), disconnect, [orgA]);
+    expect((await as<{ s: unknown }>(user(ids.ownerA), "select public.payment_account_status($1) as s", [orgA]))[0].s).toBeNull();
+    const audit = await as(user(ids.ownerA), "select 1 from public.audit_logs where organization_id = $1 and action = 'payments.disconnected'", [orgA]);
+    expect(audit).toHaveLength(1);
+    // Sem conta, nada a fazer: repetir não dá erro.
+    await as(user(ids.ownerA), disconnect, [orgA]);
+    expect(await registrationStatus(pending.id)).toBe("pending_payment");
+  });
+});

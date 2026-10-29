@@ -27,6 +27,10 @@ export function PixCode({ code, qrSvg }: { code: string; qrSvg: string }) {
       <p className="text-sm text-ink-muted">
         No app do seu banco, escolha <strong className="text-ink">Pix</strong> e leia o QR Code ou use o código copia e cola.
       </p>
+      <Alert tone="warning">
+        Pague antes de a reserva vencer. Depois disso a vaga pode ir para outra pessoa: se acontecer, o valor volta sozinho para você e
+        será preciso se inscrever de novo.
+      </Alert>
       {/* SVG gerado no servidor pela biblioteca a partir do código do Mercado Pago. */}
       <div
         role="img"

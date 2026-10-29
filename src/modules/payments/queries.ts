@@ -22,7 +22,7 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 
 export const PAYMENT_ATTENTION_LABELS = {
   amount_mismatch: "Valor diferente do ingresso: confira no Mercado Pago antes de confirmar.",
-  paid_without_seat: "Pago depois de a reserva vencer, sem vaga disponível: reembolse pelo Mercado Pago.",
+  paid_without_seat: "Pago depois de a reserva vencer, sem vaga disponível. O reembolso é automático; se não aparecer como reembolsado, faça pelo Mercado Pago.",
   duplicate_payment: "Segundo pagamento da mesma inscrição: reembolse pelo Mercado Pago.",
   paid_after_cancellation: "Pago após o cancelamento da inscrição: reembolse pelo Mercado Pago.",
 } as const;

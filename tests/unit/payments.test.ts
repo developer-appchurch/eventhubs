@@ -111,6 +111,17 @@ describe("chamadas ao Mercado Pago", () => {
     await expect(mp.getPayment("T", "42")).rejects.toThrow(/^Mercado Pago: falha em consulta \(HTTP 401\)$/);
   });
 
+  it("reembolso total com token do vendedor e idempotência por pagamento", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ id: 1 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await mp.refundPayment("APP_USR-seller", "555");
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.mercadopago.com/v1/payments/555/refunds");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toMatchObject({ Authorization: "Bearer APP_USR-seller", "X-Idempotency-Key": "refund-555" });
+    await expect(mp.refundPayment("APP_USR-seller", "../1")).rejects.toThrow(mp.PaymentProviderError);
+  });
+
   it("autorização usa PKCE S256", () => {
     const { verifier, challenge } = mp.pkcePair();
     expect(verifier.length).toBeGreaterThanOrEqual(43);

@@ -209,6 +209,17 @@ export async function getPayment(sellerToken: string, paymentId: string): Promis
   };
 }
 
+// Reembolso total. A chave por pagamento faz uma repetição devolver o mesmo reembolso.
+export async function refundPayment(sellerToken: string, paymentId: string): Promise<void> {
+  if (!/^\d{1,20}$/.test(paymentId)) throw new PaymentProviderError("reembolso (id inválido)");
+  await call("reembolso", `/v1/payments/${paymentId}/refunds`, {
+    method: "POST",
+    token: sellerToken,
+    headers: { "X-Idempotency-Key": `refund-${paymentId}` },
+    body: "{}",
+  });
+}
+
 export function toCents(amount: number): number {
   return Number.isFinite(amount) ? Math.round(amount * 100) : -1;
 }
