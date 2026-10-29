@@ -103,6 +103,19 @@ describe("e-mail de confirmação", () => {
     expect(rows[0]).toMatchObject({ status: "sending", attempts: 2, last_error: null });
   });
 
+  it("depois de 5 tentativas falhas, deixa de reenviar", async () => {
+    const token = await register("teto@exemplo.com");
+    const first = await claim(token);
+    await finish(first!.notification_id, "Resend HTTP 500");
+    for (let attempt = 2; attempt <= 5; attempt++) {
+      expect((await claim(token))?.notification_id).toBe(first!.notification_id);
+      await finish(first!.notification_id, "Resend HTTP 500");
+    }
+    expect(await claim(token)).toBeNull();
+    const { rows } = await pool.query("select status, attempts from public.notifications where id = $1", [first!.notification_id]);
+    expect(rows[0]).toMatchObject({ status: "failed", attempts: 5 });
+  });
+
   it("inscrição não confirmada não gera e-mail", async () => {
     const token = await register("cancelada@exemplo.com");
     await pool.query("update public.registrations set status = 'cancelled' where public_token = $1", [token]);

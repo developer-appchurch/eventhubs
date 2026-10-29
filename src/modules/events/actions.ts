@@ -48,7 +48,7 @@ const COVER_TYPES = ["image/webp", "image/jpeg", "image/png"];
 
 // Capa enviada como arquivo. O navegador já reduz a foto; aqui ela é sempre regravada em
 // WebP, o que também garante que o arquivo é mesmo uma imagem.
-async function uploadCover(supabase: Supabase, organizationId: string, formData: FormData): Promise<{ url?: string; error?: string }> {
+async function uploadCover(supabase: Supabase, organizationId: string, formData: FormData): Promise<{ url?: string; path?: string; error?: string }> {
   const file = formData.get("coverImage");
   if (!(file instanceof File) || file.size === 0) return {};
   if (!COVER_TYPES.includes(file.type) || file.size > 1_000_000) return { error: "Envie uma foto JPG, PNG ou WebP de até 1 MB." };
@@ -67,7 +67,13 @@ async function uploadCover(supabase: Supabase, organizationId: string, formData:
   const path = `${organizationId}/${crypto.randomUUID()}.webp`;
   const { error } = await supabase.storage.from("event-covers").upload(path, webp, { contentType: "image/webp" });
   if (error) return { error: "Não foi possível enviar a imagem de capa." };
-  return { url: supabase.storage.from("event-covers").getPublicUrl(path).data.publicUrl };
+  return { url: supabase.storage.from("event-covers").getPublicUrl(path).data.publicUrl, path };
+}
+
+// Capa recém-enviada cuja gravação do evento falhou: ninguém a referencia ainda, então sai.
+// Capas substituídas não são apagadas: eventos duplicados reaproveitam a mesma URL.
+async function discardCover(supabase: Supabase, path: string | undefined) {
+  if (path) await supabase.storage.from("event-covers").remove([path]);
 }
 
 export async function createEvent(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -92,7 +98,10 @@ export async function createEvent(_prev: ActionState, formData: FormData): Promi
     .select("id")
     .single();
 
-  if (error) return mapDatabaseError(error);
+  if (error) {
+    await discardCover(supabase, cover.path);
+    return mapDatabaseError(error);
+  }
   redirect(`/app/${org.slug}/events/${data.id}`);
 }
 
@@ -115,6 +124,7 @@ export async function updateEvent(_prev: ActionState, formData: FormData): Promi
     .eq("organization_id", org.id)
     .select("id");
 
+  if (error || !data?.length) await discardCover(supabase, cover.path);
   if (error) return mapDatabaseError(error);
   if (!data?.length) return FORBIDDEN;
 

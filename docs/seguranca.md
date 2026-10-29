@@ -11,13 +11,14 @@
 - **Cabeçalhos:** `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options: DENY`, `Strict-Transport-Security`, `Permissions-Policy`. CSP ainda não definida (será definida com as páginas públicas).
 - **Segredos:** nenhuma chave secreta no código, no bundle ou em `.env.example`. `.env*` é ignorado, exceto `.env.example`.
 - **Auditoria:** criação de organização é registrada em `audit_logs`; leitura restrita a owner e admin.
+- **Limite de taxa:** contador no banco (`private.rate_limits`) por IP nas ações públicas e teto de inscrições por evento no próprio banco. Detalhes em `docs/deploy.md`.
 - **Rotas inexistentes:** slugs de organização inexistentes ou sem acesso retornam 404 idêntico.
 
 ## Pendências de segurança (antes de produção)
 
-- Rate limiting em cadastro, login, recuperação de senha e criação de organização (ainda não implementado).
+- Tetos de gasto e Firewall nos painéis da Vercel e do Supabase (checklist em `docs/deploy.md`).
 - Configurar proteção contra senhas vazadas e política de senha no Supabase Auth.
-- Rodar `get_advisors` (security) no projeto Supabase real.
+- Reavaliar `get_advisors` (security) após cada migration; o último resultado só apontava a proteção de senhas vazadas e as funções públicas intencionais.
 - Definir CSP para páginas públicas.
 - Revisar `search_path` e grants após cada migration nova.
 
