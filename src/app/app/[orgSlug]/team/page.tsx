@@ -34,28 +34,28 @@ export default async function TeamPage({ params }: { params: Promise<{ orgSlug: 
             <EmptyState icon="users" title="Nenhum membro encontrado">Verifique se a organização tem vínculos ativos.</EmptyState>
           </div>
         ) : (
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[32rem] text-left text-sm">
+          <div className="mt-6">
+            <table className="w-full text-left text-sm">
               <caption className="sr-only">Membros da organização {org.name}</caption>
               <thead className="border-b border-line bg-brand-100 text-xs uppercase tracking-wide text-brand-900">
                 <tr>
-                  <th scope="col" className="py-2 pr-4 font-semibold">Nome</th>
-                  <th scope="col" className="py-2 pr-4 font-semibold">Papel</th>
-                  <th scope="col" className="py-2 pr-4 font-semibold">Situação</th>
-                  <th scope="col" className="py-2 font-semibold">Desde</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Nome</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Papel</th>
+                  <th scope="col" className="py-2 pr-3 font-semibold">Situação</th>
+                  <th scope="col" className="hidden py-2 font-semibold sm:table-cell">Desde</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {members.map((member) => (
                   <tr key={member.user_id} className="hover:bg-brand-50">
-                    <td className="py-3 pr-4 font-medium">{member.full_name || "Sem nome informado"}</td>
-                    <td className="py-3 pr-4">{ROLE_LABELS[member.role]}</td>
-                    <td className="py-3 pr-4">
+                    <td className="py-3 pr-3 font-medium">{member.full_name || "Sem nome informado"}</td>
+                    <td className="py-3 pr-3">{ROLE_LABELS[member.role]}</td>
+                    <td className="py-3 pr-3">
                       <Badge tone={member.status === "active" ? "success" : "neutral"}>
                         {member.status === "active" ? "Ativo" : "Suspenso"}
                       </Badge>
                     </td>
-                    <td className="py-3 tabular-nums">{dateFormat.format(new Date(member.joined_at))}</td>
+                    <td className="hidden py-3 tabular-nums sm:table-cell">{dateFormat.format(new Date(member.joined_at))}</td>
                   </tr>
                 ))}
               </tbody>
