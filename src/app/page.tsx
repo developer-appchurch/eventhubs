@@ -19,6 +19,11 @@ const STEPS = [
   { n: "3", title: "Receba e confirme", text: "Acompanhe inscrições e pagamentos e faça o check-in dos participantes no dia." },
 ];
 
+const PRICING = [
+  { label: "Eventos gratuitos", value: "0%", note: "Nenhum custo para você", items: ["Todos os recursos da plataforma liberados, sem mensalidade"] },
+  { label: "Eventos pagos", value: "5%", note: "Sobre cada inscrição paga", items: ["Cobrança apenas quando a inscrição é confirmada", "O valor cai na sua conta Mercado Pago"] },
+];
+
 export default function HomePage() {
   return (
     <div id="conteudo" className="flex min-h-dvh flex-col">
@@ -106,6 +111,31 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      <section className="bg-surface py-20">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <h2 className="mx-auto max-w-2xl text-center text-3xl font-bold tracking-tight sm:text-4xl">
+            Taxas simples, sem surpresa no fim do evento
+          </h2>
+          <ul className="mt-12 grid gap-5 md:grid-cols-2">
+            {PRICING.map((plan) => (
+              <li key={plan.label} className="rounded-(--radius-card) border border-line bg-canvas p-8 text-center">
+                <h3 className="text-xl font-semibold">{plan.label}</h3>
+                <p className="mt-1 text-5xl font-extrabold tracking-tight text-brand-600">{plan.value}</p>
+                <p className="mt-2 text-sm font-semibold">{plan.note}</p>
+                <ul className="mt-6 grid gap-3 text-left text-sm text-ink-muted">
+                  {plan.items.map((item) => (
+                    <li key={item} className="flex items-start gap-3">
+                      <Icon name="check" className="size-5 shrink-0 text-brand-600" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
