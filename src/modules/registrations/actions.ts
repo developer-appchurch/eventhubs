@@ -72,7 +72,9 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
   // O e-mail sai depois da resposta: a pessoa não espera o provedor para ver a inscrição.
   if (status === "confirmed") after(() => sendConfirmationEmail({ token }));
   if (status === "pending_payment") after(() => sendPendingPaymentEmail(token));
-  redirect((status === "pending_payment" && (await safeCheckoutUrl(token))) || statusPage);
+  // Vai para a página da inscrição, que oferece Pix no app e cartão no Mercado Pago. Mandar direto
+  // ao Checkout Pro escondia o Pix quando a conta do vendedor não tem chave Pix cadastrada.
+  redirect(statusPage);
 }
 
 // Pagamento da reserva. Falha no Mercado Pago não perde a inscrição: a página dela oferece
