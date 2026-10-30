@@ -61,6 +61,7 @@ type CheckoutContext = {
   payable: boolean;
   expires_at: string;
   price_cents: number;
+  quantity: number;
   checkout_url: string | null;
   attendee_name: string;
   attendee_email: string;
@@ -92,7 +93,7 @@ async function prepareCharge({ env, admin, ctx }: Payable) {
     appUrl,
     input: {
       registrationId: ctx.registration_id,
-      title: `${ctx.organization.name} · ${ctx.event.title} · ${ctx.ticket.name}`,
+      title: `${ctx.organization.name} · ${ctx.event.title} · ${ctx.ticket.name}${ctx.quantity > 1 ? ` · ${ctx.quantity} inscrições` : ""}`,
       priceCents: ctx.price_cents,
       platformFeeCents: fee,
       payer: { name: ctx.attendee_name, email: ctx.attendee_email },

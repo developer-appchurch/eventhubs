@@ -39,8 +39,29 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
   }
 
   const fields = data.form.fields.map((f) => ({ ...f, is_active: true })) as FormField[];
-  const result = validateAnswers(fields, answersFromFormData(fields, formData));
-  if (!result.ok) return { ok: false, message: "Há campos para corrigir.", fieldErrors: result.errors };
+  const quantity = Number(text(formData, "quantity") || 1);
+  if (!Number.isInteger(quantity) || quantity < Math.max(1, ticket.min_per_order) || quantity > ticket.max_per_order) {
+    return { ok: false, message: "Quantidade de ingressos fora do limite por inscrição.", fieldErrors: { quantity: "Quantidade de ingressos fora do limite por inscrição." } };
+  }
+
+  // Um conjunto de respostas por participante; os erros voltam como "<posição>.<campo>".
+  const answers: Record<string, unknown>[] = [];
+  const errors: Record<string, string> = {};
+  const emailKey = fields.find((f) => f.type === "email")?.key;
+  const seenEmails = new Set<string>();
+  for (let i = 0; i < quantity; i++) {
+    const raw = answersFromFormData(fields, formData, `p${i}.`);
+    const result = validateAnswers(fields, raw);
+    if (!result.ok) {
+      for (const [key, message] of Object.entries(result.errors)) errors[`${i}.${key}`] = message;
+      continue;
+    }
+    answers.push(result.values);
+    const email = emailKey && typeof result.values[emailKey] === "string" ? result.values[emailKey].toLowerCase() : null;
+    if (email && seenEmails.has(email)) errors[`${i}.${emailKey}`] = "Cada participante precisa de um e-mail diferente.";
+    else if (email) seenEmails.add(email);
+  }
+  if (Object.keys(errors).length) return { ok: false, message: "Há campos para corrigir.", fieldErrors: errors };
 
   if (data.event.participant_terms && formData.get("acceptTerms") !== "on") {
     return { ok: false, message: "É preciso aceitar os termos do evento.", fieldErrors: { acceptTerms: "É preciso aceitar os termos para continuar." } };
@@ -50,16 +71,16 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
   if (!isUuid(idempotencyKey)) return { ok: false, message: "Recarregue a página e tente novamente." };
 
   const supabase = await createSupabaseServerClient();
-  const { data: created, error } = await supabase.rpc("register_for_event", {
+  const { data: created, error } = await supabase.rpc("register_group_for_event", {
     p_event_id: data.event.id,
     p_ticket_type_id: ticket.id,
     p_form_version: data.form.version,
-    p_answers: result.values,
+    p_answers: answers,
     p_idempotency_key: idempotencyKey,
   });
   if (error) return mapDatabaseError(error);
 
-  const { public_token: token, status } = created as { public_token: string; status: string };
+  const { public_token: token, status, tokens } = created as { public_token: string; status: string; tokens: string[] };
   const statusPage = `/${data.organization.slug}/${data.event.slug}/inscricao/${token}`;
   (await cookies()).set(registrationCookie(data.event.id), token, {
     httpOnly: true,
@@ -69,7 +90,8 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
     maxAge: 60 * 86_400,
   });
   // O e-mail sai depois da resposta: a pessoa não espera o provedor para ver a inscrição.
-  if (status === "confirmed") after(() => sendConfirmationEmail({ token }));
+  // Na confirmação direta cada participante recebe o seu; o pagamento pendente avisa só quem lidera.
+  if (status === "confirmed") after(() => tokens.forEach((t) => sendConfirmationEmail({ token: t })));
   if (status === "pending_payment") after(() => sendPendingPaymentEmail(token));
   // Vai para a página da inscrição, que oferece Pix no app e cartão no Mercado Pago. Mandar direto
   // ao Checkout Pro escondia o Pix quando a conta do vendedor não tem chave Pix cadastrada.

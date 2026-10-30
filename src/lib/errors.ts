@@ -31,6 +31,7 @@ const DOMAIN_MESSAGES: Record<string, string> = {
   ALREADY_REGISTERED:
     "Já existe uma inscrição ativa com este e-mail para este evento. Para ver a inscrição ou concluir o pagamento, use o link que enviamos para o seu e-mail.",
   SOLD_OUT: "As vagas deste evento se esgotaram.",
+  INVALID_QUANTITY: "Quantidade de ingressos fora do limite por inscrição.",
   TICKET_SOLD_OUT: "Este ingresso esgotou. Escolha outro, se houver.",
   CHECKIN_NOT_FOUND: "Código não encontrado neste evento. Confira se o QR é deste evento.",
   CHECKIN_UNAVAILABLE: "Check-in indisponível: o evento está em rascunho ou foi cancelado.",

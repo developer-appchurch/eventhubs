@@ -56,20 +56,31 @@ export default async function RegistrationStatusPage({ params }: Props) {
         <Alert tone="danger">Este evento foi cancelado pelo organizador.</Alert>
       ) : confirmed ? (
         <Alert tone="success">
-          {registration.price_cents > 0 ? "Pagamento aprovado! " : null}Sua inscrição em {event.title} está confirmada. Enviamos o QR Code do
+          {registration.total_cents > 0 ? "Pagamento aprovado! " : null}Sua inscrição em {event.title} está confirmada. Enviamos o QR Code do
           check-in para {registration.attendee_email}. Guarde este link: é por ele que você consulta sua inscrição.
         </Alert>
       ) : registration.status === "pending_payment" && registration.expires_at ? (
         <Card>
           <CardTitle>Pagamento pendente</CardTitle>
-          <p className="mt-1 mb-4 text-sm text-ink-muted">
-            Sua vaga está reservada até {formatDateTime(registration.expires_at, tz)}. Pague {formatCents(registration.price_cents)} para confirmar a
-            inscrição. Se você já pagou, a confirmação aparece aqui assim que o Mercado Pago aprovar.
-          </p>
-          <div className="grid gap-3">
-            <PixPayment token={token} />
-            <PayButton token={token} />
-          </div>
+          {registration.pays_here ? (
+            <>
+              <p className="mt-1 mb-4 text-sm text-ink-muted">
+                Sua vaga está reservada até {formatDateTime(registration.expires_at, tz)}.{" "}
+                {registration.group_names.length > 1
+                  ? `Pague ${formatCents(registration.total_cents)} para confirmar as ${registration.group_names.length} inscrições.`
+                  : `Pague ${formatCents(registration.total_cents)} para confirmar a inscrição.`}{" "}
+                Se você já pagou, a confirmação aparece aqui assim que o Mercado Pago aprovar.
+              </p>
+              <div className="grid gap-3">
+                <PixPayment token={token} />
+                <PayButton token={token} />
+              </div>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-ink-muted">
+              Sua vaga está reservada até {formatDateTime(registration.expires_at, tz)}. A inscrição é confirmada quando o pagamento do grupo for aprovado.
+            </p>
+          )}
         </Card>
       ) : registration.status === "expired" ? (
         <Alert tone="warning">A reserva expirou sem pagamento aprovado e a vaga foi liberada. Faça uma nova inscrição, se ainda houver vagas.</Alert>
@@ -105,6 +116,18 @@ export default async function RegistrationStatusPage({ params }: Props) {
             <dt className="text-ink-muted">E-mail</dt>
             <dd className="font-medium break-all">{registration.attendee_email}</dd>
           </div>
+          {registration.group_names.length > 1 ? (
+            <div className="sm:col-span-2">
+              <dt className="text-ink-muted">Participantes do grupo</dt>
+              <dd>
+                <ul className="list-disc pl-5 font-medium">
+                  {registration.group_names.map((name, i) => (
+                    <li key={i}>{name}</li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+          ) : null}
           <div>
             <dt className="text-ink-muted">Feita em</dt>
             <dd className="font-medium">{formatDateTime(registration.created_at, tz)}</dd>

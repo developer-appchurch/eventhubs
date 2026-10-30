@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     const method = await admin.from("payments").update({ method: payment.method }).eq("provider", "mercadopago").eq("external_id", payment.id);
     if (method.error) console.error("[pagamentos] falha ao gravar a forma de pagamento", { dataId, error: method.error.message });
     // A conta pode ser compartilhada entre organizações: a dona do pagamento é a da inscrição.
-    const { result, organization_id } = data as { result: string; organization_id: string };
+    const { result, organization_id, registration_ids } = data as { result: string; organization_id: string; registration_ids?: string[] };
     // Pagou depois de a vaga ir para outra pessoa: devolve sozinho. Se falhar, o aviso na tela
     // de pagamentos continua pedindo o reembolso manual.
     if (result === "paid_without_seat") {
@@ -75,7 +75,10 @@ export async function POST(request: Request) {
       );
     }
     await finish(result, organization_id);
-    if (result === "confirmed" || result === "confirmed_late") after(() => sendConfirmationEmail({ registrationId: payment.externalReference }));
+    if (result === "confirmed" || result === "confirmed_late") {
+      const ids = registration_ids?.length ? registration_ids : [payment.externalReference];
+      after(() => ids.forEach((registrationId) => sendConfirmationEmail({ registrationId })));
+    }
     return new Response(null, { status: 200 });
   } catch (error) {
     console.error("[pagamentos] falha ao processar notificação", { requestId, dataId, error: error instanceof Error ? error.message : "erro" });

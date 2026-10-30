@@ -46,7 +46,7 @@ export function TicketForm({
       <form action={action} className="grid gap-4" noValidate>
         {hidden}
         {state.message ? <Alert tone={state.ok ? "success" : "danger"}>{state.message}</Alert> : null}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-[2fr_1fr_1fr]">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-[2fr_1fr_1fr_1fr]">
           <div className="col-span-2 sm:col-span-1">
             <TextInput id={`${p}-name`} name="name" label="Nome" placeholder="Ex.: Inteira, Meia, Lote 1" defaultValue={ticket?.name} required maxLength={80} error={errors.name} />
           </div>
@@ -78,13 +78,14 @@ export function TicketForm({
             hint={`Até ${capacity.toLocaleString("pt-BR")} (capacidade do evento)`}
             error={errors.quantityLimit}
           />
+          <TextInput id={`${p}-max`} name="maxPerOrder" label="Máximo de ingressos por inscrição" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} error={errors.maxPerOrder} />
         </div>
         {/* Aberto quando já há valor ou erro nesses campos, para nada ficar escondido. */}
         <details
-          open={Boolean(ticket?.sales_start_at || ticket?.sales_end_at || errors.salesStartAt || errors.salesEndAt || errors.minPerOrder || errors.maxPerOrder) || undefined}
+          open={Boolean(ticket?.sales_start_at || ticket?.sales_end_at || errors.salesStartAt || errors.salesEndAt || errors.minPerOrder) || undefined}
           className="rounded-(--radius-control) border border-line bg-brand-50 px-4 py-2 open:bg-surface"
         >
-          <summary className="flex min-h-7 cursor-pointer items-center text-sm font-semibold">Período de vendas e limite por pedido</summary>
+          <summary className="flex min-h-7 cursor-pointer items-center text-sm font-semibold">Período de vendas e mínimo por inscrição</summary>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <TextInput
               id={`${p}-salesStartAt`}
@@ -104,8 +105,7 @@ export function TicketForm({
               hint="Em branco: até o fim do evento"
               error={errors.salesEndAt}
             />
-            <TextInput id={`${p}-min`} name="minPerOrder" label="Mínimo por pedido" type="number" min={1} defaultValue={ticket?.min_per_order ?? 1} error={errors.minPerOrder} />
-            <TextInput id={`${p}-max`} name="maxPerOrder" label="Máximo por pedido" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} error={errors.maxPerOrder} />
+            <TextInput id={`${p}-min`} name="minPerOrder" label="Mínimo de ingressos por inscrição" type="number" min={1} defaultValue={ticket?.min_per_order ?? 1} error={errors.minPerOrder} />
           </div>
         </details>
         <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-4">

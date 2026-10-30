@@ -12,6 +12,10 @@ export type PublicRegistration = {
   attendee_email: string;
   created_at: string;
   price_cents: number;
+  // Em grupo, só quem lidera paga e o total cobre todas as inscrições.
+  pays_here: boolean;
+  total_cents: number;
+  group_names: string[];
   // Prazo da reserva de ingresso pago.
   expires_at: string | null;
   // Só com inscrição confirmada e evento não cancelado.
