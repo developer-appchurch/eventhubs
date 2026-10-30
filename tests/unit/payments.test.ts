@@ -144,7 +144,7 @@ describe("chamadas ao Mercado Pago", () => {
 describe("Pix", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("checkout só com Pix: mantém a taxa e exclui os outros meios, com chave própria", async () => {
+  it("checkout do Pix: abre no Pix, mantém a taxa e os outros meios, com chave própria", async () => {
     const fetchMock = vi.fn(async () => Response.json({ id: "pref-1", init_point: "https://mp.test/pix" }));
     vi.stubGlobal("fetch", fetchMock);
     const result = await mp.createCheckout(
@@ -167,7 +167,7 @@ describe("Pix", () => {
     expect((init.headers as Record<string, string>)["X-Idempotency-Key"]).toBe("pix-reg-1");
     const body = JSON.parse(String(init.body));
     expect(body.marketplace_fee).toBe(0.1);
-    expect(body.payment_methods.excluded_payment_types.map((t: { id: string }) => t.id)).toEqual(["ticket", "credit_card", "debit_card", "prepaid_card"]);
+    expect(body.payment_methods).toEqual({ excluded_payment_types: [{ id: "ticket" }], default_payment_method_id: "pix" });
   });
 });
 

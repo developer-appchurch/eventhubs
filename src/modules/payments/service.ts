@@ -134,7 +134,7 @@ export async function checkoutUrlFor(publicToken: string): Promise<string | null
   return checkout.url;
 }
 
-// Checkout só com Pix. Não fica guardado: checkout_url é o do cartão, que a pessoa ainda pode usar.
+// Checkout que abre no Pix. Não fica guardado: checkout_url é o do botão de cartão.
 export async function pixCheckoutUrlFor(publicToken: string): Promise<string | null> {
   const payable = await payableContext(publicToken);
   if (!payable) return null;

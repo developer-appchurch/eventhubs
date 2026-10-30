@@ -153,14 +153,14 @@ export type CheckoutInput = {
 
 // Checkout Pro criado com o token do vendedor (a organização). marketplace_fee é a parte do
 // EventHub, em reais. Boleto fica de fora: compensa em dias e a reserva dura 30 minutos.
-// pixOnly deixa só o Pix: na API de pagamentos o Mercado Pago recusa a taxa no Pix (cause 2059),
+// pixFirst abre já no Pix: na API de pagamentos o Mercado Pago recusa a taxa no Pix (cause 2059),
 // no Checkout Pro ele a cobra.
-export async function createCheckout(sellerToken: string, input: CheckoutInput, pixOnly = false): Promise<{ id: string; url: string }> {
-  const excluded = pixOnly ? ["ticket", "credit_card", "debit_card", "prepaid_card"] : ["ticket"];
+// Os outros meios ficam: conta sem chave Pix não mostra Pix, e a pessoa ainda paga com cartão.
+export async function createCheckout(sellerToken: string, input: CheckoutInput, pixFirst = false): Promise<{ id: string; url: string }> {
   const data = await call("checkout", "/checkout/preferences", {
     method: "POST",
     token: sellerToken,
-    headers: { "X-Idempotency-Key": `${pixOnly ? "pix-" : ""}${input.registrationId}` },
+    headers: { "X-Idempotency-Key": `${pixFirst ? "pix-" : ""}${input.registrationId}` },
     body: JSON.stringify({
       items: [{ id: input.registrationId, title: input.title.slice(0, 250), quantity: 1, unit_price: input.priceCents / 100, currency_id: "BRL" }],
       payer: { name: input.payer.name, email: input.payer.email },
@@ -171,7 +171,7 @@ export async function createCheckout(sellerToken: string, input: CheckoutInput, 
       back_urls: { success: input.returnUrl, pending: input.returnUrl, failure: input.returnUrl },
       auto_return: "approved",
       marketplace_fee: input.platformFeeCents / 100,
-      payment_methods: { excluded_payment_types: excluded.map((id) => ({ id })) },
+      payment_methods: { excluded_payment_types: [{ id: "ticket" }], ...(pixFirst ? { default_payment_method_id: "pix" } : {}) },
       expires: true,
       expiration_date_to: input.expiresAt.toISOString(),
       date_of_expiration: input.expiresAt.toISOString(),
