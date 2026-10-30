@@ -19,7 +19,7 @@ export async function getEventReport(eventId: string): Promise<EventReport> {
 }
 
 export type OrganizationOverview = {
-  by_event: { title: string; confirmed: number; pending: number }[];
+  daily: { day: string; n: number }[];
   by_method: { free: number; pix: number; card: number; other: number };
 };
 

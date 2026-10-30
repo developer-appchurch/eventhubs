@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { countEvents } from "@/modules/events/queries";
 import { canReadPayments } from "@/modules/payments/queries";
 import { getOrganizationOverview, type OrganizationOverview } from "@/modules/reports/queries";
+import { RegistrationsChart } from "./registrations-chart";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
@@ -38,7 +39,7 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
 
       {overview ? (
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <RegistrationsByEvent rows={overview.by_event} />
+          <RegistrationsByDay daily={overview.daily} />
           <RegistrationsByMethod counts={overview.by_method} />
         </div>
       ) : null}
@@ -107,40 +108,22 @@ function Stat({ icon, label, value, href, link }: { icon: IconName; label: strin
   );
 }
 
-function RegistrationsByEvent({ rows }: { rows: OrganizationOverview["by_event"] }) {
-  const max = Math.max(1, ...rows.map((r) => r.confirmed + r.pending));
+function RegistrationsByDay({ daily }: { daily: OrganizationOverview["daily"] }) {
+  const total = daily.reduce((sum, d) => sum + d.n, 0);
   return (
     <Card>
-      <CardTitle>Inscrições por evento</CardTitle>
-      {rows.every((r) => r.confirmed + r.pending === 0) ? (
-        <p className="mt-2 text-sm text-ink-muted">Nenhuma inscrição ainda. Quando seus eventos receberem inscrições, elas aparecem aqui.</p>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <CardTitle>Inscrições por dia</CardTitle>
+        <span className="text-sm text-ink-muted">
+          <span className="font-semibold tabular-nums text-ink">{total}</span> nos últimos 30 dias
+        </span>
+      </div>
+      {total === 0 ? (
+        <p className="mt-2 text-sm text-ink-muted">Nenhuma inscrição confirmada nos últimos 30 dias.</p>
       ) : (
-        <>
-          <ul className="mt-4 grid gap-3 text-sm">
-            {rows.map((r, i) => (
-              <li key={i} className="grid gap-1">
-                <div className="flex justify-between gap-3">
-                  <span className="truncate">{r.title}</span>
-                  <span className="shrink-0 tabular-nums text-ink-muted">
-                    <span className="font-semibold text-ink">{r.confirmed}</span>
-                    {r.pending > 0 ? ` + ${r.pending}` : null}
-                    <span className="sr-only">
-                      {" "}confirmadas{r.pending > 0 ? " e aguardando pagamento" : ""}
-                    </span>
-                  </span>
-                </div>
-                <span aria-hidden="true" className="flex h-3 overflow-hidden rounded-full bg-brand-100">
-                  <span className="block h-3 bg-brand-gradient" style={{ width: `${(r.confirmed / max) * 100}%` }} />
-                  <span className="block h-3 bg-brand-300" style={{ width: `${(r.pending / max) * 100}%` }} />
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p aria-hidden="true" className="mt-4 flex flex-wrap gap-4 text-xs text-ink-muted">
-            <Legend color="var(--color-brand-600)">Confirmadas</Legend>
-            <Legend color="var(--color-brand-300)">Aguardando pagamento</Legend>
-          </p>
-        </>
+        <div className="mt-4">
+          <RegistrationsChart daily={daily} />
+        </div>
       )}
     </Card>
   );
@@ -194,14 +177,5 @@ function RegistrationsByMethod({ counts }: { counts: OrganizationOverview["by_me
         </div>
       )}
     </Card>
-  );
-}
-
-function Legend({ color, children }: { color: string; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="size-2.5 rounded-full" style={{ background: color }} />
-      {children}
-    </span>
   );
 }
