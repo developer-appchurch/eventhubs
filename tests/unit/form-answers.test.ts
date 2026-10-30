@@ -26,6 +26,13 @@ describe("validateAnswers", () => {
     expect(errors([f({ required: true })], { campo: "  " })).toHaveProperty("campo");
   });
 
+  it("valida CPF e guarda com máscara", () => {
+    const cpf = f({ type: "cpf" });
+    expect(errors([cpf], { campo: "111.111.111-11" })).toHaveProperty("campo");
+    const r = validateAnswers([cpf], { campo: "52998224725" });
+    expect(r.ok && r.values.campo).toBe("529.982.247-25");
+  });
+
   it("valida e-mail", () => {
     const e = f({ type: "email" });
     expect(errors([e], { campo: "x@y" })).toHaveProperty("campo");
