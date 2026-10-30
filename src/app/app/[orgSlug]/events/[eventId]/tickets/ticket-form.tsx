@@ -32,6 +32,8 @@ export function TicketForm({
   const errors = state.fieldErrors ?? {};
   // Ids únicos por formulário: vários formulários de ingresso convivem na mesma página.
   const p = ticket?.id ?? "new";
+  // Teto do banco (50) ou a capacidade do evento, o que for menor.
+  const maxPerOrder = Math.min(50, capacity);
 
   const hidden = (
     <>
@@ -78,7 +80,20 @@ export function TicketForm({
             hint={`Até ${capacity.toLocaleString("pt-BR")} (capacidade do evento)`}
             error={errors.quantityLimit}
           />
-          <TextInput id={`${p}-max`} name="maxPerOrder" label="Máximo por inscrição" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} hint="Até 50 ingressos por inscrição" error={errors.maxPerOrder} />
+          <TextInput
+            id={`${p}-max`}
+            name="maxPerOrder"
+            label="Máximo por inscrição"
+            type="number"
+            min={1}
+            max={maxPerOrder}
+            defaultValue={ticket?.max_per_order ?? 1}
+            onInput={(e) => {
+              if (Number(e.currentTarget.value) > maxPerOrder) e.currentTarget.value = String(maxPerOrder);
+            }}
+            hint={`Até ${maxPerOrder.toLocaleString("pt-BR")} por inscrição`}
+            error={errors.maxPerOrder}
+          />
         </div>
         {/* Aberto quando já há valor ou erro nesses campos, para nada ficar escondido. */}
         <details
