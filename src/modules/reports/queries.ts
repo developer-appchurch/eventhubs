@@ -17,3 +17,15 @@ export async function getEventReport(eventId: string): Promise<EventReport> {
   if (error) throw new Error("Não foi possível carregar o relatório.");
   return data as EventReport;
 }
+
+export type OrganizationOverview = {
+  by_event: { title: string; confirmed: number; pending: number }[];
+  by_method: { free: number; pix: number; card: number; other: number };
+};
+
+export async function getOrganizationOverview(organizationId: string): Promise<OrganizationOverview> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("organization_overview", { p_org: organizationId });
+  if (error) throw new Error("Não foi possível carregar os gráficos.");
+  return data as OrganizationOverview;
+}

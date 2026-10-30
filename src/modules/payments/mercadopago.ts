@@ -192,6 +192,7 @@ export type ProviderPayment = {
   amountCents: number;
   currency: string;
   collectorId: string;
+  method: PaymentMethod;
 };
 
 export async function getPayment(sellerToken: string, paymentId: string): Promise<ProviderPayment> {
@@ -207,6 +208,7 @@ export async function getPayment(sellerToken: string, paymentId: string): Promis
     amountCents: toCents(Number(data.transaction_amount)),
     currency: String(data.currency_id ?? ""),
     collectorId: String(data.collector_id ?? (data.collector as { id?: unknown } | undefined)?.id ?? ""),
+    method: paymentMethodOf(data.payment_method_id, data.payment_type_id),
   };
 }
 
@@ -219,6 +221,14 @@ export async function refundPayment(sellerToken: string, paymentId: string): Pro
     headers: { "X-Idempotency-Key": `refund-${paymentId}` },
     body: "{}",
   });
+}
+
+export type PaymentMethod = "pix" | "card" | "other";
+
+export function paymentMethodOf(methodId: unknown, typeId: unknown): PaymentMethod {
+  if (methodId === "pix") return "pix";
+  if (typeId === "credit_card" || typeId === "debit_card" || typeId === "prepaid_card") return "card";
+  return "other";
 }
 
 export function toCents(amount: number): number {

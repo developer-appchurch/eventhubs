@@ -142,6 +142,42 @@ describe("relatório do evento", () => {
   });
 });
 
+const overview = (caller: Caller, org = orgA) =>
+  as<{ r: { by_event: unknown; by_method: unknown } }[]>(caller, "select public.organization_overview($1) as r", [org]).then((rows) => rows[0].r);
+
+describe("visão geral da organização", () => {
+  it("conta inscrições por evento e por forma de pagamento", async () => {
+    expect(await overview(user(ids.ownerA))).toEqual({
+      by_event: [{ title: "Relatório", confirmed: 2, pending: 0 }],
+      by_method: { free: 2, pix: 0, card: 0, other: 0 },
+    });
+
+    // Tudo que tem preço e não tem forma conhecida cai em "outras"; o pagamento com aviso não conta.
+    const [a, b] = await pool
+      .query("select id from public.registrations where event_id = $1 and status = 'confirmed' order by attendee_email", [eventId])
+      .then((res) => res.rows as { id: string }[]);
+    await pool.query("update public.registrations set price_cents = 5000 where id = any($1::uuid[])", [[a.id, b.id]]);
+    expect((await overview(user(ids.viewerA))).by_method).toEqual({ free: 0, pix: 0, card: 0, other: 2 });
+
+    await pool.query("update public.payments set method = 'pix' where external_id = '111'");
+    await pool.query("update public.payments set method = 'card' where external_id = '113'");
+    await pool.query(
+      `insert into public.payments (organization_id, event_id, registration_id, external_id, status, amount_cents, currency, method)
+       values ($1, $2, $3, '114', 'approved', 5000, 'BRL', 'card')`,
+      [orgA, eventId, b.id],
+    );
+    expect((await overview(user(ids.managerA))).by_method).toEqual({ free: 0, pix: 1, card: 1, other: 0 });
+    expect(JSON.stringify(await overview(user(ids.ownerA)))).not.toMatch(/exemplo\.com|Maria/);
+  });
+
+  it("equipe financeira lê; operador de check-in, outra organização e anônimo não", async () => {
+    await expect(overview(user(ids.checkinA))).rejects.toThrow("FORBIDDEN");
+    await expect(overview(user(ids.ownerB))).rejects.toThrow("FORBIDDEN");
+    await expect(overview(anon)).rejects.toThrow(/permission denied/);
+    expect(await overview(user(ids.ownerB), orgB)).toEqual({ by_event: [], by_method: { free: 0, pix: 0, card: 0, other: 0 } });
+  });
+});
+
 describe("acesso", () => {
   it("equipe financeira lê; operador de check-in, outra organização e anônimo não", async () => {
     for (const id of [ids.ownerA, ids.managerA, ids.viewerA]) await expect(report(user(id))).resolves.toBeTruthy();

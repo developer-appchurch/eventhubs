@@ -62,6 +62,9 @@ export async function POST(request: Request) {
       }
       throw error;
     }
+    // Só alimenta o gráfico Pix x cartão da visão geral: falhar aqui não deve travar a notificação.
+    const method = await admin.from("payments").update({ method: payment.method }).eq("provider", "mercadopago").eq("external_id", payment.id);
+    if (method.error) console.error("[pagamentos] falha ao gravar a forma de pagamento", { dataId, error: method.error.message });
     // A conta pode ser compartilhada entre organizações: a dona do pagamento é a da inscrição.
     const { result, organization_id } = data as { result: string; organization_id: string };
     // Pagou depois de a vaga ir para outra pessoa: devolve sozinho. Se falhar, o aviso na tela
