@@ -1,4 +1,5 @@
 import { inputClass } from "@/components/ui/field";
+import { maskCpf } from "@/lib/cpf";
 import { maskPhone } from "@/lib/phone";
 import type { FormField } from "@/modules/forms/fields";
 
@@ -6,6 +7,7 @@ const INPUT_TYPES: Partial<Record<FormField["type"], string>> = {
   name: "text",
   email: "email",
   phone: "tel",
+  cpf: "text",
   short_text: "text",
   number: "text",
   date: "date",
@@ -94,10 +96,16 @@ export function RegistrationFields({
                 id={id}
                 name={name}
                 type={INPUT_TYPES[field.type] ?? "text"}
-                inputMode={field.type === "number" ? "decimal" : undefined}
+                inputMode={field.type === "number" ? "decimal" : field.type === "cpf" ? "numeric" : undefined}
                 autoComplete={field.type === "name" ? "name" : field.type === "email" ? "email" : field.type === "phone" ? "tel" : undefined}
                 placeholder={field.placeholder}
-                onInput={field.type === "phone" ? (e) => (e.currentTarget.value = maskPhone(e.currentTarget.value)) : undefined}
+                onInput={
+                  field.type === "phone"
+                    ? (e) => (e.currentTarget.value = maskPhone(e.currentTarget.value))
+                    : field.type === "cpf"
+                      ? (e) => (e.currentTarget.value = maskCpf(e.currentTarget.value))
+                      : undefined
+                }
                 aria-invalid={Boolean(error) || undefined}
                 aria-describedby={describedBy}
                 className={inputClass(Boolean(error))}

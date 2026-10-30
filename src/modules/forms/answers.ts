@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidCpf, maskCpf } from "@/lib/cpf";
 import type { FormField } from "./fields";
 
 export type RawAnswers = Record<string, string | string[] | undefined>;
@@ -39,7 +40,7 @@ export function validateAnswers(
       continue;
     }
     values[field.key] =
-      field.type === "multiple_choice" ? list : field.type === "number" ? Number(single.replace(",", ".")) : single;
+      field.type === "multiple_choice" ? list : field.type === "number" ? Number(single.replace(",", ".")) : field.type === "cpf" ? maskCpf(single) : single;
   }
 
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, values };
@@ -54,6 +55,8 @@ function checkValue(field: FormField, list: string[], value: string): string | n
       const digits = value.replace(/\D/g, "");
       return /^[\d\s()+-]+$/.test(value) && digits.length >= 10 && digits.length <= 13 ? null : "Informe um telefone com DDD.";
     }
+    case "cpf":
+      return isValidCpf(value) ? null : "Informe um CPF válido.";
     case "number": {
       const n = Number(value.replace(",", "."));
       if (!Number.isFinite(n)) return "Informe um número.";
