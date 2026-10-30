@@ -134,7 +134,7 @@ function RegistrationsByMethod({ counts }: { counts: OrganizationOverview["by_me
     { label: "Pix", n: counts.pix, color: "var(--color-brand-700)" },
     { label: "Cartão", n: counts.card, color: "var(--color-brand-300)" },
     { label: "Gratuitas", n: counts.free, color: "var(--color-success-ink)" },
-    { label: "Outras ou não informado", n: counts.other, color: "var(--color-line-strong)" },
+    { label: "Outros/Vazio", n: counts.other, color: "var(--color-line-strong)" },
   ].filter((s) => s.n > 0);
   const total = slices.reduce((sum, s) => sum + s.n, 0);
   let start = 0;
@@ -153,7 +153,7 @@ function RegistrationsByMethod({ counts }: { counts: OrganizationOverview["by_me
       {total === 0 ? (
         <p className="mt-2 text-sm text-ink-muted">Nenhuma inscrição confirmada ainda.</p>
       ) : (
-        <div className="mt-4 flex flex-wrap items-center gap-6">
+        <div className="mt-4 grid justify-items-center gap-6">
           <div
             aria-hidden="true"
             className="relative grid size-32 shrink-0 place-items-center rounded-full"
@@ -164,7 +164,7 @@ function RegistrationsByMethod({ counts }: { counts: OrganizationOverview["by_me
               <span className="text-[0.65rem] text-ink-muted">confirmadas</span>
             </div>
           </div>
-          <ul className="grid gap-2 text-sm">
+          <ul className="grid w-full max-w-xs gap-2 text-sm">
             {slices.map((s) => (
               <li key={s.label} className="flex items-center gap-2">
                 <span aria-hidden="true" className="size-3 shrink-0 rounded-full" style={{ background: s.color }} />
