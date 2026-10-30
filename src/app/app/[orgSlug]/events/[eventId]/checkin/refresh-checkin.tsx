@@ -36,7 +36,8 @@ export function RefreshCheckin() {
   useEffect(() => {
     let startY: number | null = null;
     const start = (e: TouchEvent) => {
-      startY = window.scrollY === 0 ? e.touches[0].clientY : null;
+      // Toque no menu lateral (aside) não conta: a página atrás dele fica no topo.
+      startY = window.scrollY === 0 && !(e.target as Element).closest("aside") ? e.touches[0].clientY : null;
     };
     const move = (e: TouchEvent) => {
       if (startY !== null) setPull(Math.max(0, Math.min(PULL_PX, e.touches[0].clientY - startY)));
