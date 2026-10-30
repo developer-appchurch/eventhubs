@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     await finish(result, organization_id);
     if (result === "confirmed" || result === "confirmed_late") {
       const ids = registration_ids?.length ? registration_ids : [payment.externalReference];
-      after(() => ids.forEach((registrationId) => sendConfirmationEmail({ registrationId })));
+      after(() => Promise.all(ids.map((registrationId) => sendConfirmationEmail({ registrationId }))));
     }
     return new Response(null, { status: 200 });
   } catch (error) {

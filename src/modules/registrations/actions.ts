@@ -91,7 +91,7 @@ export async function registerForEvent(_prev: ActionState, formData: FormData): 
   });
   // O e-mail sai depois da resposta: a pessoa não espera o provedor para ver a inscrição.
   // Na confirmação direta cada participante recebe o seu; o pagamento pendente avisa só quem lidera.
-  if (status === "confirmed") after(() => tokens.forEach((t) => sendConfirmationEmail({ token: t })));
+  if (status === "confirmed") after(() => Promise.all(tokens.map((t) => sendConfirmationEmail({ token: t }))));
   if (status === "pending_payment") after(() => sendPendingPaymentEmail(token));
   // Vai para a página da inscrição, que oferece Pix no app e cartão no Mercado Pago. Mandar direto
   // ao Checkout Pro escondia o Pix quando a conta do vendedor não tem chave Pix cadastrada.
