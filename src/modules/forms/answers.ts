@@ -84,10 +84,10 @@ function checkValue(field: FormField, list: string[], value: string): string | n
 }
 
 // Lê as respostas de um FormData mantendo listas para seleção múltipla.
-export function answersFromFormData(fields: readonly FormField[], formData: FormData): RawAnswers {
+export function answersFromFormData(fields: readonly FormField[], formData: FormData, prefix = ""): RawAnswers {
   const raw: RawAnswers = {};
   for (const field of fields) {
-    const all = formData.getAll(`answer.${field.key}`).filter((v): v is string => typeof v === "string");
+    const all = formData.getAll(`${prefix}answer.${field.key}`).filter((v): v is string => typeof v === "string");
     raw[field.key] = field.type === "multiple_choice" ? all : all[0];
   }
   return raw;

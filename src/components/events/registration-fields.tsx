@@ -18,15 +18,18 @@ const INPUT_TYPES: Partial<Record<FormField["type"], string>> = {
 export function RegistrationFields({
   fields,
   errors = {},
+  prefix = "",
 }: {
   fields: Omit<FormField, "is_active">[];
   errors?: Record<string, string>;
+  prefix?: string;
 }) {
+  const idPrefix = prefix.replace(/\W/g, "-");
   return (
     <div className="grid gap-5">
       {fields.map((field) => {
-        const id = `answer-${field.key}`;
-        const name = `answer.${field.key}`;
+        const id = `${idPrefix}answer-${field.key}`;
+        const name = `${prefix}answer.${field.key}`;
         const error = errors[field.key];
         const describedBy = [field.help_text ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
         const label = (

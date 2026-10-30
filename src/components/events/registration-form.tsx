@@ -1,14 +1,25 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
 import { formatCents, formatDateTime } from "@/lib/datetime";
 import { INITIAL_STATE } from "@/lib/errors";
 import type { PublicTicket } from "@/modules/events/queries";
 import type { FormField } from "@/modules/forms/fields";
 import { registerForEvent } from "@/modules/registrations/actions";
-import { TICKET_AVAILABILITY_LABELS, ticketAvailability } from "@/modules/registrations/tickets";
+import {
+  TICKET_AVAILABILITY_LABELS,
+  ticketAvailability,
+} from "@/modules/registrations/tickets";
 import { RegistrationFields } from "./registration-fields";
 
 type Props = {
@@ -22,21 +33,51 @@ type Props = {
   timezone: string;
 };
 
-export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, fields, hasTerms, paymentsEnabled, timezone }: Props) {
-  const [state, action, pending] = useActionState(registerForEvent, INITIAL_STATE);
+export function RegistrationForm({
+  orgSlug,
+  eventSlug,
+  idempotencyKey,
+  tickets,
+  fields,
+  hasTerms,
+  paymentsEnabled,
+  timezone,
+}: Props) {
+  const [state, action, pending] = useActionState(
+    registerForEvent,
+    INITIAL_STATE,
+  );
   const formRef = useRef<HTMLFormElement>(null);
-  const available = tickets.filter((t) => ticketAvailability(t, undefined, paymentsEnabled) === "available");
+  const available = tickets.filter(
+    (t) => ticketAvailability(t, undefined, paymentsEnabled) === "available",
+  );
   const errors = state.fieldErrors ?? {};
-  const [selectedId, setSelectedId] = useState(available.length === 1 ? available[0].id : "");
+  const [selectedId, setSelectedId] = useState(
+    available.length === 1 ? available[0].id : "",
+  );
   const selected = tickets.find((t) => t.id === selectedId);
-  const submitLabel = selected && selected.price_cents > 0 && paymentsEnabled ? `Ir para o pagamento · ${formatCents(selected.price_cents)}` : "Garantir minha vaga";
+  const [requested, setQuantity] = useState(1);
+  const minQty = Math.max(1, selected?.min_per_order ?? 1);
+  const maxQty = Math.max(minQty, selected?.max_per_order ?? 1);
+  // Ao trocar de ingresso, os limites mudam: mantém a quantidade dentro deles.
+  const quantity = Math.min(maxQty, Math.max(minQty, requested));
+  const total = (selected?.price_cents ?? 0) * quantity;
+  const submitLabel =
+    total > 0 && paymentsEnabled
+      ? `Finalizar e pagar · ${formatCents(total)}`
+      : "Finalizar inscrição";
 
   // Com erro, leva o foco ao primeiro campo inválido (o formulário é longo no celular).
   useEffect(() => {
     if (state.ok || !state.fieldErrors) return;
-    const target = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"], fieldset[data-invalid]');
+    const target = formRef.current?.querySelector<HTMLElement>(
+      '[aria-invalid="true"], fieldset[data-invalid]',
+    );
     target?.scrollIntoView({ block: "center", behavior: "smooth" });
-    (target?.matches("fieldset") ? target.querySelector<HTMLElement>("input") : target)?.focus({ preventScroll: true });
+    (target?.matches("fieldset")
+      ? target.querySelector<HTMLElement>("input")
+      : target
+    )?.focus({ preventScroll: true });
   }, [state]);
 
   // Envio manual: com <form action>, o React limpa os campos ao terminar e o participante
@@ -48,7 +89,11 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
   }
 
   if (available.length === 0) {
-    return <p className="text-sm text-ink-muted">Nenhum ingresso disponível para inscrição online no momento.</p>;
+    return (
+      <p className="text-sm text-ink-muted">
+        Nenhum ingresso disponível para inscrição online no momento.
+      </p>
+    );
   }
 
   return (
@@ -63,74 +108,195 @@ export function RegistrationForm({ orgSlug, eventSlug, idempotencyKey, tickets, 
         </label>
       </div>
 
-      {state.message && !state.ok ? <Alert tone="danger">{state.message}</Alert> : null}
+      {state.message && !state.ok ? (
+        <Alert tone="danger">{state.message}</Alert>
+      ) : null}
 
-      <fieldset className="grid gap-2" aria-describedby={errors.ticketTypeId ? "ticket-error" : undefined} data-invalid={errors.ticketTypeId ? "" : undefined}>
-        <legend className="mb-1 text-sm font-medium">
-          Ingresso<span className="text-danger-ink"> *</span>
-        </legend>
-        {tickets.map((ticket) => {
-          const status = ticketAvailability(ticket, undefined, paymentsEnabled);
-          const disabled = status !== "available";
-          return (
-            <label
-              key={ticket.id}
-              className={`flex items-center justify-between gap-3 rounded-(--radius-control) border border-line p-3 text-sm ${disabled ? "opacity-60" : "cursor-pointer"}`}
-            >
-              <span className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  name="ticketTypeId"
-                  value={ticket.id}
-                  disabled={disabled}
-                  defaultChecked={available.length === 1 && !disabled}
-                  className="size-4"
-                  onChange={() => setSelectedId(ticket.id)}
-                />
-                <span>
-                  <span className="font-medium">{ticket.name}</span>
-                  {ticket.description ? <span className="block text-xs text-ink-muted">{ticket.description}</span> : null}
-                  {!disabled && ticket.sales_end_at ? (
-                    <span className="block text-xs text-ink-muted">Vendas até {formatDateTime(ticket.sales_end_at, timezone)}</span>
-                  ) : null}
-                  {disabled ? <span className="block text-xs text-ink-muted">{TICKET_AVAILABILITY_LABELS[status]}</span> : null}
+      <Card className="grid gap-4">
+        <CardTitle>1. Ingresso</CardTitle>
+        <fieldset
+          className="grid gap-2"
+          aria-describedby={errors.ticketTypeId ? "ticket-error" : undefined}
+          data-invalid={errors.ticketTypeId ? "" : undefined}
+        >
+          <legend className="mb-1 text-sm font-medium">
+            Ingresso<span className="text-danger-ink"> *</span>
+          </legend>
+          {tickets.map((ticket) => {
+            const status = ticketAvailability(
+              ticket,
+              undefined,
+              paymentsEnabled,
+            );
+            const disabled = status !== "available";
+            return (
+              <label
+                key={ticket.id}
+                className={`flex items-center justify-between gap-3 rounded-(--radius-control) border border-line p-3 text-sm ${disabled ? "opacity-60" : "cursor-pointer"}`}
+              >
+                <span className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="ticketTypeId"
+                    value={ticket.id}
+                    disabled={disabled}
+                    defaultChecked={available.length === 1 && !disabled}
+                    className="size-4"
+                    onChange={() => setSelectedId(ticket.id)}
+                  />
+                  <span>
+                    <span className="font-medium">{ticket.name}</span>
+                    {ticket.description ? (
+                      <span className="block text-xs text-ink-muted">
+                        {ticket.description}
+                      </span>
+                    ) : null}
+                    {!disabled && ticket.sales_end_at ? (
+                      <span className="block text-xs text-ink-muted">
+                        Vendas até{" "}
+                        {formatDateTime(ticket.sales_end_at, timezone)}
+                      </span>
+                    ) : null}
+                    {disabled ? (
+                      <span className="block text-xs text-ink-muted">
+                        {TICKET_AVAILABILITY_LABELS[status]}
+                      </span>
+                    ) : null}
+                  </span>
                 </span>
+                <span className="tabular-nums">
+                  {ticket.price_cents === 0
+                    ? "Gratuito"
+                    : formatCents(ticket.price_cents)}
+                </span>
+              </label>
+            );
+          })}
+          {errors.ticketTypeId ? (
+            <p
+              id="ticket-error"
+              className="text-sm font-medium text-danger-ink"
+            >
+              {errors.ticketTypeId}
+            </p>
+          ) : null}
+        </fieldset>
+        <input type="hidden" name="quantity" value={quantity} />
+        {selected && maxQty > 1 ? (
+          <div className="grid gap-1.5">
+            <div className="flex items-center gap-3">
+              <span id="quantity-label" className="text-sm font-medium">
+                Quantidade
               </span>
-              <span className="tabular-nums">{ticket.price_cents === 0 ? "Gratuito" : formatCents(ticket.price_cents)}</span>
-            </label>
-          );
-        })}
-        {errors.ticketTypeId ? (
-          <p id="ticket-error" className="text-sm font-medium text-danger-ink">
-            {errors.ticketTypeId}
+              <Button
+                type="button"
+                variant="secondary"
+                aria-label="Diminuir quantidade"
+                disabled={quantity <= minQty}
+                onClick={() => setQuantity(quantity - 1)}
+              >
+                −
+              </Button>
+              <output
+                aria-labelledby="quantity-label"
+                className="min-w-8 text-center font-semibold tabular-nums"
+              >
+                {quantity}
+              </output>
+              <Button
+                type="button"
+                variant="secondary"
+                aria-label="Aumentar quantidade"
+                disabled={quantity >= maxQty}
+                onClick={() => setQuantity(quantity + 1)}
+              >
+                +
+              </Button>
+            </div>
+            <p className="text-xs text-ink-muted">
+              Máximo de {maxQty} por inscrição
+            </p>
+            {errors.quantity ? (
+              <p className="text-sm font-medium text-danger-ink">
+                {errors.quantity}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </Card>
+
+      <Card className="grid gap-6">
+        <CardTitle>2. Participantes</CardTitle>
+        {Array.from({ length: quantity }, (_, i) => (
+          <div key={i} className="grid gap-4">
+            <h3 className="text-base font-semibold">
+              {quantity === 1 ? "Seus dados" : `Participante ${i + 1}`}
+            </h3>
+            <RegistrationFields
+              fields={fields}
+              prefix={`p${i}.`}
+              errors={Object.fromEntries(
+                Object.entries(errors).flatMap(([k, v]) =>
+                  k.startsWith(`${i}.`) ? [[k.slice(`${i}.`.length), v]] : [],
+                ),
+              )}
+            />
+          </div>
+        ))}
+      </Card>
+
+      <Card className="grid gap-4">
+        <CardTitle>3. Finalizar inscrição</CardTitle>
+        {selected ? (
+          <p className="flex justify-between gap-3 text-sm">
+            <span>
+              {quantity} × {selected.name}
+            </span>
+            <span className="font-semibold tabular-nums">
+              {total > 0 ? `Total ${formatCents(total)}` : "Gratuito"}
+            </span>
           </p>
         ) : null}
-      </fieldset>
+        {hasTerms ? (
+          <div className="grid gap-1.5">
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                name="acceptTerms"
+                className="mt-1 size-4"
+                aria-invalid={Boolean(errors.acceptTerms) || undefined}
+              />
+              <span>
+                Li e aceito os termos e orientações do evento
+                <span className="text-danger-ink"> *</span>
+              </span>
+            </label>
+            {errors.acceptTerms ? (
+              <p className="text-sm font-medium text-danger-ink">
+                {errors.acceptTerms}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
-      <RegistrationFields fields={fields} errors={errors} />
-
-      {hasTerms ? (
-        <div className="grid gap-1.5">
-          <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" name="acceptTerms" className="mt-1 size-4" aria-invalid={Boolean(errors.acceptTerms) || undefined} />
-            <span>
-              Li e aceito os termos e orientações do evento<span className="text-danger-ink"> *</span>
-            </span>
-          </label>
-          {errors.acceptTerms ? <p className="text-sm font-medium text-danger-ink">{errors.acceptTerms}</p> : null}
-        </div>
-      ) : null}
-
-      <Button type="submit" disabled={pending} aria-busy={pending} className="w-full sm:w-auto">
-        {pending ? "Enviando inscrição…" : submitLabel}
-      </Button>
-      {paymentsEnabled && tickets.some((t) => t.price_cents > 0) ? (
-        <p className="text-sm text-ink-muted">
-          Em ingressos pagos, a vaga fica reservada por 30 minutos e você é levado ao Mercado Pago para pagar. A inscrição é confirmada quando o
-          pagamento é aprovado. No cartão parcelado, os juros das parcelas são acrescentados ao valor e informados pelo Mercado Pago antes de
-          você confirmar.
-        </p>
-      ) : null}
+        <Button
+          type="submit"
+          disabled={pending}
+          aria-busy={pending}
+          className="w-full sm:w-auto"
+        >
+          {pending ? "Enviando inscrição…" : submitLabel}
+        </Button>
+        {paymentsEnabled && tickets.some((t) => t.price_cents > 0) ? (
+          <p className="text-sm text-ink-muted">
+            Em ingressos pagos, a vaga fica reservada por 30 minutos e você é
+            levado ao Mercado Pago para pagar. A inscrição é confirmada quando o
+            pagamento é aprovado. No cartão parcelado, os juros das parcelas são
+            acrescentados ao valor e informados pelo Mercado Pago antes de você
+            confirmar.
+          </p>
+        ) : null}
+      </Card>
     </form>
   );
 }

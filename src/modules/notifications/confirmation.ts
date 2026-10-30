@@ -80,7 +80,7 @@ export function buildPendingEmail(registration: PublicRegistration, token: strin
   const statusUrl = `${getEnv().NEXT_PUBLIC_APP_URL}/${registration.organization.slug}/${event.slug}/inscricao/${token}`;
   const until = formatDateTime(registration.expires_at as string, event.timezone);
   const subject = `Finalize o pagamento: ${event.title}`;
-  const intro = `Olá, ${registration.attendee_name}. Sua vaga no ingresso ${registration.ticket.name} está reservada até ${until}. Pague ${formatCents(registration.price_cents)} para confirmar a inscrição.`;
+  const intro = `Olá, ${registration.attendee_name}. Sua vaga no ingresso ${registration.ticket.name} está reservada até ${until}. Pague ${formatCents(registration.total_cents)} para confirmar a inscrição.`;
   const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#1f2933">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;padding:28px">
