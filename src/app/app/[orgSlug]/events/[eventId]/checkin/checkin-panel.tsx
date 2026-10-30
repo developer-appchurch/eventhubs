@@ -12,6 +12,7 @@ import { type EventRecord, listTicketTypes } from "@/modules/events/queries";
 import { listRegistrations, type PresenceFilter, REGISTRATION_STATUS_LABELS, REGISTRATIONS_PAGE_SIZE } from "@/modules/registrations/queries";
 import { CheckInButton, UndoCheckInButton } from "./check-in-button";
 import { QrScanner } from "./qr-scanner";
+import { RefreshCheckin } from "./refresh-checkin";
 
 const FILTERS = ["todos", "pendentes", "presentes"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -60,6 +61,7 @@ export async function CheckinPanel({
 
   return (
     <div className="grid gap-5">
+      <RefreshCheckin />
       {showProgress ? (
         <div data-surface="dark" className="bg-hero grid gap-3 rounded-(--radius-card) p-5 text-white shadow-(--shadow-card)">
           <p className="text-sm text-brand-200">
