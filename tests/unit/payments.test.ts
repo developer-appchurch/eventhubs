@@ -100,10 +100,10 @@ describe("chamadas ao Mercado Pago", () => {
 
   it("consulta normaliza o pagamento e erro HTTP não vaza resposta", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
-      Response.json({ id: 42, status: "approved", status_detail: "accredited", external_reference: "reg-1", transaction_amount: 50, currency_id: "BRL", collector_id: 123 }),
+      Response.json({ id: 42, status: "approved", status_detail: "accredited", external_reference: "reg-1", transaction_amount: 50, currency_id: "BRL", collector_id: 123, payment_method_id: "pix", payment_type_id: "bank_transfer" }),
     ));
     await expect(mp.getPayment("T", "42")).resolves.toEqual({
-      id: "42", status: "approved", statusDetail: "accredited", externalReference: "reg-1", amountCents: 5000, currency: "BRL", collectorId: "123",
+      id: "42", status: "approved", statusDetail: "accredited", externalReference: "reg-1", amountCents: 5000, currency: "BRL", collectorId: "123", method: "pix",
     });
     await expect(mp.getPayment("T", "../tokens")).rejects.toThrow("id inválido");
 
@@ -171,3 +171,13 @@ describe("Pix", () => {
   });
 });
 
+
+describe("forma de pagamento", () => {
+  it("separa Pix, cartão e outras", () => {
+    expect(mp.paymentMethodOf("pix", "bank_transfer")).toBe("pix");
+    expect(mp.paymentMethodOf("visa", "credit_card")).toBe("card");
+    expect(mp.paymentMethodOf("maestro", "debit_card")).toBe("card");
+    expect(mp.paymentMethodOf("account_money", "account_money")).toBe("other");
+    expect(mp.paymentMethodOf(undefined, undefined)).toBe("other");
+  });
+});

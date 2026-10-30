@@ -7,6 +7,8 @@ import { getOrganizationContext, listTeam } from "@/modules/organizations/querie
 import { canManageOrganization } from "@/modules/organizations/roles";
 import { notFound } from "next/navigation";
 import { countEvents } from "@/modules/events/queries";
+import { canReadPayments } from "@/modules/payments/queries";
+import { getOrganizationOverview, type OrganizationOverview } from "@/modules/reports/queries";
 
 export const metadata: Metadata = { title: "Visão geral" };
 
@@ -15,7 +17,12 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
   const org = await getOrganizationContext(orgSlug);
   if (!org) notFound();
 
-  const [team, events] = await Promise.all([listTeam(org.id), countEvents(org.id)]);
+  const showCharts = canReadPayments(org.role);
+  const [team, events, overview] = await Promise.all([
+    listTeam(org.id),
+    countEvents(org.id),
+    showCharts ? getOrganizationOverview(org.id) : null,
+  ]);
   const activeTeam = team.filter((member) => member.status === "active").length;
 
   const base = `/app/${org.slug}`;
@@ -28,6 +35,13 @@ export default async function OrganizationOverviewPage({ params }: { params: Pro
         <Stat icon="calendar" label="Eventos" value={events.total} href={`${base}/events`} link="Ver eventos" />
         <Stat icon="check" label="Publicados" value={events.published} href={`${base}/events`} link="Gerenciar eventos" />
       </section>
+
+      {overview ? (
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          <RegistrationsByEvent rows={overview.by_event} />
+          <RegistrationsByMethod counts={overview.by_method} />
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>
@@ -90,5 +104,104 @@ function Stat({ icon, label, value, href, link }: { icon: IconName; label: strin
         {link}
       </Link>
     </Card>
+  );
+}
+
+function RegistrationsByEvent({ rows }: { rows: OrganizationOverview["by_event"] }) {
+  const max = Math.max(1, ...rows.map((r) => r.confirmed + r.pending));
+  return (
+    <Card>
+      <CardTitle>Inscrições por evento</CardTitle>
+      {rows.every((r) => r.confirmed + r.pending === 0) ? (
+        <p className="mt-2 text-sm text-ink-muted">Nenhuma inscrição ainda. Quando seus eventos receberem inscrições, elas aparecem aqui.</p>
+      ) : (
+        <>
+          <ul className="mt-4 grid gap-3 text-sm">
+            {rows.map((r, i) => (
+              <li key={i} className="grid gap-1">
+                <div className="flex justify-between gap-3">
+                  <span className="truncate">{r.title}</span>
+                  <span className="shrink-0 tabular-nums text-ink-muted">
+                    <span className="font-semibold text-ink">{r.confirmed}</span>
+                    {r.pending > 0 ? ` + ${r.pending}` : null}
+                    <span className="sr-only">
+                      {" "}confirmadas{r.pending > 0 ? " e aguardando pagamento" : ""}
+                    </span>
+                  </span>
+                </div>
+                <span aria-hidden="true" className="flex h-3 overflow-hidden rounded-full bg-brand-100">
+                  <span className="block h-3 bg-brand-gradient" style={{ width: `${(r.confirmed / max) * 100}%` }} />
+                  <span className="block h-3 bg-brand-300" style={{ width: `${(r.pending / max) * 100}%` }} />
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p aria-hidden="true" className="mt-4 flex flex-wrap gap-4 text-xs text-ink-muted">
+            <Legend color="var(--color-brand-600)">Confirmadas</Legend>
+            <Legend color="var(--color-brand-300)">Aguardando pagamento</Legend>
+          </p>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function RegistrationsByMethod({ counts }: { counts: OrganizationOverview["by_method"] }) {
+  const slices = [
+    { label: "Pix", n: counts.pix, color: "var(--color-brand-700)" },
+    { label: "Cartão", n: counts.card, color: "var(--color-brand-300)" },
+    { label: "Gratuitas", n: counts.free, color: "var(--color-success-ink)" },
+    { label: "Outras ou não informado", n: counts.other, color: "var(--color-line-strong)" },
+  ].filter((s) => s.n > 0);
+  const total = slices.reduce((sum, s) => sum + s.n, 0);
+  let start = 0;
+  const gradient = slices
+    .map((s) => {
+      const end = start + (s.n / total) * 100;
+      const stop = `${s.color} ${start}% ${end}%`;
+      start = end;
+      return stop;
+    })
+    .join(", ");
+
+  return (
+    <Card>
+      <CardTitle>Forma de pagamento</CardTitle>
+      {total === 0 ? (
+        <p className="mt-2 text-sm text-ink-muted">Nenhuma inscrição confirmada ainda.</p>
+      ) : (
+        <div className="mt-4 flex flex-wrap items-center gap-6">
+          <div
+            aria-hidden="true"
+            className="relative grid size-32 shrink-0 place-items-center rounded-full"
+            style={{ background: `conic-gradient(${gradient})` }}
+          >
+            <div className="grid size-20 place-items-center rounded-full bg-surface text-center">
+              <span className="text-2xl font-extrabold leading-none tabular-nums">{total}</span>
+              <span className="text-[0.65rem] text-ink-muted">confirmadas</span>
+            </div>
+          </div>
+          <ul className="grid gap-2 text-sm">
+            {slices.map((s) => (
+              <li key={s.label} className="flex items-center gap-2">
+                <span aria-hidden="true" className="size-3 shrink-0 rounded-full" style={{ background: s.color }} />
+                <span>{s.label}</span>
+                <span className="ml-auto pl-3 tabular-nums font-semibold">{s.n}</span>
+                <span className="w-10 text-right tabular-nums text-ink-muted">{Math.round((s.n / total) * 100)}%</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function Legend({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="size-2.5 rounded-full" style={{ background: color }} />
+      {children}
+    </span>
   );
 }
