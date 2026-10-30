@@ -78,7 +78,7 @@ export function TicketForm({
             hint={`Até ${capacity.toLocaleString("pt-BR")} (capacidade do evento)`}
             error={errors.quantityLimit}
           />
-          <TextInput id={`${p}-max`} name="maxPerOrder" label="Máximo de ingressos por inscrição" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} error={errors.maxPerOrder} />
+          <TextInput id={`${p}-max`} name="maxPerOrder" label="Máximo por inscrição" type="number" min={1} max={50} defaultValue={ticket?.max_per_order ?? 1} hint="Até 50 ingressos por inscrição" error={errors.maxPerOrder} />
         </div>
         {/* Aberto quando já há valor ou erro nesses campos, para nada ficar escondido. */}
         <details
