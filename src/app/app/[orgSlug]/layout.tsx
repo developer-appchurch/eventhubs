@@ -18,9 +18,13 @@ export default async function OrganizationLayout({
 
   return (
     <div className="grid gap-6">
-      <header className="grid border-b border-line pb-3">
-        <p className="text-xs text-ink-muted">Organização</p>
-        <h1 className="text-xl font-bold tracking-tight">{org.name}</h1>
+      <header className="flex items-end justify-between gap-3 border-b border-line pb-3">
+        <div className="grid min-w-0">
+          <p className="text-xs text-ink-muted">Organização</p>
+          <h1 className="truncate text-xl font-bold tracking-tight">{org.name}</h1>
+        </div>
+        {/* Ações da página (ex.: Atualizar no check-in) entram aqui, só no desktop. */}
+        <div id="header-actions" className="hidden shrink-0 lg:block" />
       </header>
       {children}
     </div>

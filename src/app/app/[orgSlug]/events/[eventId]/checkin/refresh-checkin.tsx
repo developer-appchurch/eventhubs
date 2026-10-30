@@ -1,17 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
+import { createPortal } from "react-dom";
 
 const AUTO_MS = 30_000;
 const PULL_PX = 80;
 
-// Mantém o check-in em dia com vários aparelhos: botão, puxar para baixo (o app instalado não
-// tem o gesto nativo), volta para a aba e, a cada 30 s, só com a aba visível.
+// Mantém o check-in em dia com vários aparelhos: botão no cabeçalho (só desktop), puxar para
+// baixo (o app instalado não tem o gesto nativo), volta para a aba e, a cada 30 s, só com a aba visível.
 export function RefreshCheckin() {
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [pull, setPull] = useState(0);
+  // Lê o encaixe do cabeçalho só no cliente (null na hidratação), sem setState em effect.
+  const slot = useSyncExternalStore(
+    () => () => {},
+    () => document.getElementById("header-actions"),
+    () => null,
+  );
   const refresh = () => startTransition(() => router.refresh());
 
   useEffect(() => {
@@ -50,16 +57,26 @@ export function RefreshCheckin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refresh só usa router e startTransition, estáveis
   }, [pull]);
 
+  const button = (
+    <button
+      type="button"
+      onClick={refresh}
+      disabled={busy}
+      className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 hover:underline disabled:opacity-60"
+    >
+      {busy ? "Atualizando…" : "Atualizar"}
+    </button>
+  );
+
   return (
-    <div className="flex justify-end" style={{ marginTop: pull / 4 }}>
-      <button
-        type="button"
-        onClick={refresh}
-        disabled={busy}
-        className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 hover:underline disabled:opacity-60"
-      >
-        {busy ? "Atualizando…" : pull >= PULL_PX ? "Solte para atualizar" : "Atualizar"}
-      </button>
-    </div>
+    <>
+      {slot ? createPortal(button, slot) : null}
+      {/* No celular não há botão: só o retorno do gesto de puxar. */}
+      {pull > 0 || busy ? (
+        <p role="status" className="text-center text-sm font-semibold text-brand-700 lg:hidden" style={{ marginTop: pull / 4 }}>
+          {busy ? "Atualizando…" : pull >= PULL_PX ? "Solte para atualizar" : "Puxe para atualizar"}
+        </p>
+      ) : null}
+    </>
   );
 }
