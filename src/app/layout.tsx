@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // Base das URLs absolutas do Open Graph (imagem de prévia no WhatsApp e redes).
+  metadataBase: process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL) : undefined,
   title: { default: "EventHub", template: "%s · EventHub" },
   description: "Crie eventos, receba inscrições e acompanhe a presença em um único lugar.",
   // iPhone: o atalho da tela inicial abre como app, sem a barra do Safari.
