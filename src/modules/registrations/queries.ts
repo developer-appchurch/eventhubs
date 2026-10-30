@@ -186,3 +186,27 @@ export async function listFormVersions(eventId: string): Promise<Map<string, { k
   if (error) throw new Error("Não foi possível carregar o formulário.");
   return new Map((data ?? []).map((f) => [f.id as string, f.fields as { key: string; label: string; type: string }[]]));
 }
+
+export type OtherRegistration = {
+  public_token: string;
+  status: RegistrationStatus;
+  event_title: string;
+  event_slug: string;
+  cover_image_url: string | null;
+  starts_at: string;
+  ends_at: string;
+  timezone: string;
+  organization: { name: string; slug: string };
+};
+
+// Inscrições ativas do mesmo e-mail, sem o token atual. Falha sem derrubar a página da inscrição.
+export async function listOtherRegistrations(token: string): Promise<OtherRegistration[]> {
+  if (!/^[0-9a-f]{64}$/.test(token)) return [];
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("list_registrations_by_token", { p_token: token });
+  if (error) {
+    console.error("[inscricoes] outras inscrições não carregadas", { error: error.message });
+    return [];
+  }
+  return (data as OtherRegistration[]) ?? [];
+}
