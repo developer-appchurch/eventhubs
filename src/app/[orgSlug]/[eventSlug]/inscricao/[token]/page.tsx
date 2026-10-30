@@ -12,7 +12,7 @@ import { formatCents, formatDate, formatDateTime } from "@/lib/datetime";
 import { getEnv } from "@/lib/env";
 import { checkinUrl } from "@/modules/checkins/code";
 import { FORMAT_LABELS } from "@/modules/events/status";
-import { getRegistrationByToken, REGISTRATION_STATUS_LABELS } from "@/modules/registrations/queries";
+import { getRegistrationByToken, listOtherRegistrations, REGISTRATION_STATUS_LABELS } from "@/modules/registrations/queries";
 import { redirectIfOrganizationRenamed } from "@/modules/organizations/queries";
 
 type Props = { params: Promise<{ orgSlug: string; eventSlug: string; token: string }> };
@@ -22,7 +22,8 @@ export const metadata: Metadata = { title: "Sua inscrição", robots: { index: f
 
 export default async function RegistrationStatusPage({ params }: Props) {
   const { orgSlug, eventSlug, token } = await params;
-  const registration = await getRegistrationByToken(token);
+  // As duas consultas dependem só do token: rodam juntas, em uma ida ao banco cada.
+  const [registration, others] = await Promise.all([getRegistrationByToken(token), listOtherRegistrations(token)]);
   if (!registration || registration.organization.slug !== orgSlug.toLowerCase() || registration.event.slug !== eventSlug.toLowerCase()) {
     await redirectIfOrganizationRenamed(orgSlug);
     notFound();
@@ -179,6 +180,27 @@ export default async function RegistrationStatusPage({ params }: Props) {
           ) : null}
         </dl>
       </Card>
+      {others.length > 0 ? (
+        <section className="grid gap-3">
+          <h2 className="text-lg font-semibold tracking-tight">Suas outras inscrições</h2>
+          {others.map((o) => (
+            <Link key={o.public_token} href={`/${o.organization.slug}/${o.event_slug}/inscricao/${o.public_token}`} className="block">
+              <Card className="flex gap-4 transition hover:border-brand-600">
+                {o.cover_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={o.cover_image_url} alt="" className="h-20 w-28 shrink-0 rounded-md object-cover" />
+                ) : null}
+                <div className="grid min-w-0 gap-1">
+                  <p className="text-xs font-semibold text-brand-700">{o.organization.name}</p>
+                  <p className="font-semibold text-ink">{o.event_title}</p>
+                  <p className="text-sm text-ink-muted">{formatDate(o.starts_at, o.timezone)}</p>
+                  <p className="text-sm font-medium">{REGISTRATION_STATUS_LABELS[o.status]}</p>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </section>
+      ) : null}
       {registration.status === "pending_payment" && registration.expires_at && !cancelledEvent ? <RefreshWhilePending until={registration.expires_at} /> : null}
     </div>
   );
