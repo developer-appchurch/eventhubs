@@ -11,8 +11,8 @@ export function Brand({ href = "/", tone = "light" }: { href?: string; tone?: "l
       <Image
         src={dark ? "/brand/eventhub.png" : "/brand/eventhub-escuro.png"}
         alt="EventHub"
-        width={dark ? 360 : 358}
-        height={dark ? 76 : 77}
+        width={dark ? 400 : 402}
+        height={dark ? 72 : 76}
         priority
         className="relative h-8 w-auto"
       />
