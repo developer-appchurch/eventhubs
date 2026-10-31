@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 
 // `tone="dark"` para fundos roxos escuros (sidebar, hero, autenticação).
 export function Brand({ href = "/", tone = "light" }: { href?: string; tone?: "light" | "dark" }) {

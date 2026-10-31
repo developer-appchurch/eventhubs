@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { buttonClass } from "@/components/ui/button";

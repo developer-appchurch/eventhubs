@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 import { notFound } from "next/navigation";
 import { EventStatusBadge } from "@/components/events/event-status-badge";
 import { publishReadiness } from "@/lib/readiness";

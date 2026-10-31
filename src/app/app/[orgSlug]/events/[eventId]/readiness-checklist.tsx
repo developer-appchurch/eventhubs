@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 import type { ReadinessItem } from "@/lib/readiness";
 
 // Lista do que falta antes de publicar; some quando tudo está feito.

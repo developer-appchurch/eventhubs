@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";

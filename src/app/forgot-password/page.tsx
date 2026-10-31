@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 import { AuthPage } from "@/components/navigation/auth-page";
 import { ForgotPasswordForm } from "./forgot-password-form";
 
