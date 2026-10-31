@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 import { Icon } from "@/components/ui/icon";
 import { signOut } from "@/modules/auth/actions";
 import type { OrganizationContext } from "@/modules/organizations/queries";

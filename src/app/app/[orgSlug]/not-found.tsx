@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation/intent-link";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export default function OrganizationNotFound() {
